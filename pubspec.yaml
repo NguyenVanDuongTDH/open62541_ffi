@@ -45,7 +45,7 @@ flutter:
       macos:
         pluginClass: Open62541FfiPlugin
       windows:
-        pluginClass: Open62541FfiPluginCApi
+        ffiPlugin: true
 
   # To add assets to your plugin package, add an assets section, like this:
   # assets:

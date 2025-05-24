@@ -19,8 +19,11 @@ class _MyAppState extends State<MyApp> {
   void initState() {
     // TODO: implement initState
     super.initState();
+    final rev = client.connect("opc.tcp://192.168.31.193:4840/");
+    print("connect: $rev");
   }
 
+  UAClient client = UAClient();
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
@@ -30,9 +33,6 @@ class _MyAppState extends State<MyApp> {
             ElevatedButton(
                 onPressed: () async {
                   cOPC.UA_TYPES;
-                  UAClient client = UAClient();
-                  final rev = client.connect("opc.tcp://192.168.31.193:4840/");
-                  print("connect: $rev");
 
                   for (var i = 0; i < 2; i++) {
                     await Future.delayed(const Duration(milliseconds: 1));

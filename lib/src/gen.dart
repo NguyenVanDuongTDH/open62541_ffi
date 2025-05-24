@@ -8,7 +8,7 @@ String _getPathLib() {
   if (Platform.isLinux) {
     return "/home/duong/Downloads/open62541-main/cpp/open62541.so";
   } else if (Platform.isWindows) {
-    return "cpp/open62541.dll";
+    return "open62541.dll";
   } else if (Platform.isAndroid) {
     return "libopen62541.so";
   }
