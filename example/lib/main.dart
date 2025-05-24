@@ -19,10 +19,15 @@ class _MyAppState extends State<MyApp> {
   void initState() {
     // TODO: implement initState
     super.initState();
-    final rev = client.connect("opc.tcp://192.168.31.145:4840/");
-    print("connect: $rev");
+    server.setAddress();
+    server.addVariableNodeId(
+        uaVariant: "uaVariant".uaString(),
+        nodeid: UANodeId(1, "VAR"),
+        qualifiedName: UAQualifiedName(1, "qualifiedName"));
+    server.start();
   }
 
+  UAServer server = UAServer();
   UAClient client = UAClient();
   @override
   Widget build(BuildContext context) {
@@ -32,17 +37,18 @@ class _MyAppState extends State<MyApp> {
           children: [
             ElevatedButton(
                 onPressed: () async {
-                  cOPC.UA_TYPES;
+                  final rev = client.connect("opc.tcp://127.0.0.1:4840/");
+                  print("connect: $rev");
 
-                  for (var i = 0; i < 2; i++) {
+                  for (var i = 0; i < 5; i++) {
                     await Future.delayed(const Duration(milliseconds: 1));
                     print(await client.writeNodeIdAsync(
                         UANodeId(1, "VAR"), "$i".uaString()));
                     print(
                         "read: ${await client.readNodeIdAsync(UANodeId(1, "VAR"))}");
 
-                    print(
-                        "method: ${await client.methodCallAsync(UANodeId(1, "METHOD"), 'dart'.uaString())}");
+                    // print(
+                    //     "method: ${await client.methodCallAsync(UANodeId(1, "METHOD"), 'dart'.uaString())}");
                   }
                 },
                 child: Text("child"))
