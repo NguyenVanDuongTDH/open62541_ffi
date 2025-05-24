@@ -4,5 +4,5 @@
 cmake_minimum_required(VERSION 3.10)
 
 install(CODE "
-  file(COPY \"${CMAKE_CURRENT_SOURCE_DIR}/../src/linux/open62541.so\" DESTINATION \"${CMAKE_BINARY_DIR}/bundle/lib\")
+  file(COPY \"${CMAKE_CURRENT_SOURCE_DIR}/../src/linux/open62541.so\" DESTINATION \"${CMAKE_BINARY_DIR}/\")
 ")
