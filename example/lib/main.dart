@@ -19,7 +19,7 @@ class _MyAppState extends State<MyApp> {
   void initState() {
     // TODO: implement initState
     super.initState();
-    final rev = client.connect("opc.tcp://192.168.31.193:4840/");
+    final rev = client.connect("opc.tcp://192.168.31.145:4840/");
     print("connect: $rev");
   }
 

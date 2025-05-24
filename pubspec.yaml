@@ -41,7 +41,7 @@ flutter:
       ios:
         pluginClass: Open62541FfiPlugin
       linux:
-        pluginClass: Open62541FfiPlugin
+        ffiPlugin: true
       macos:
         pluginClass: Open62541FfiPlugin
       windows:

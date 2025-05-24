@@ -16,3 +16,5 @@ add_custom_target(copy_open62541_dll ALL
     "${CMAKE_BINARY_DIR}/../x64/runner/Release/open62541.dll"
   COMMENT "Copying open62541.dll to Debug/ and Release/ output directories"
 )
+
+
