@@ -1,0 +1,2 @@
+C:/Users/Admin/Downloads/open62541_ffi/example/android/app/.cxx/RelWithDebInfo/543g1t2l/x86_64/CMakeFiles/edit_cache.dir
+C:/Users/Admin/Downloads/open62541_ffi/example/android/app/.cxx/RelWithDebInfo/543g1t2l/x86_64/CMakeFiles/rebuild_cache.dir

@@ -1,0 +1,1 @@
+C:\Users\Admin\Desktop\tools\open62541_ffi\example\build\app\intermediates\cxx\Debug\1c106pv3\obj\arm64-v8a

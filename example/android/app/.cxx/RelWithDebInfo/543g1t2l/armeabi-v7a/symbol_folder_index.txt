@@ -1,0 +1,1 @@
+C:\Users\Admin\Downloads\open62541_ffi\example\build\app\intermediates\cxx\RelWithDebInfo\543g1t2l\obj\armeabi-v7a
