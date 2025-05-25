@@ -1,6 +1,6 @@
 /* THIS IS A SINGLE-FILE DISTRIBUTION CONCATENATED FROM THE OPEN62541 SOURCES
  * visit http://open62541.org/ for information about this software
- * Git-Revision: v1.4.10-undefined
+ * Git-Revision: v1.4.10
  */
 
 /*
@@ -31,9 +31,9 @@
 #define UA_OPEN62541_VER_MAJOR 1
 #define UA_OPEN62541_VER_MINOR 4
 #define UA_OPEN62541_VER_PATCH 10
-#define UA_OPEN62541_VER_LABEL "-undefined" /* Release candidate label, etc. */
-#define UA_OPEN62541_VER_COMMIT "unknown-commit"
-#define UA_OPEN62541_VERSION "v1.4.10-undefined"
+#define UA_OPEN62541_VER_LABEL "" /* Release candidate label, etc. */
+#define UA_OPEN62541_VER_COMMIT "v1.4.10"
+#define UA_OPEN62541_VERSION "v1.4.10"
 
 /**
  * Architecture
@@ -65,7 +65,7 @@
 #define UA_ENABLE_NODEMANAGEMENT
 #define UA_ENABLE_SUBSCRIPTIONS
 #define UA_ENABLE_PUBSUB
-/* #undef UA_ENABLE_PUBSUB_ENCRYPTION */
+#define UA_ENABLE_PUBSUB_ENCRYPTION
 /* #undef UA_ENABLE_PUBSUB_FILE_CONFIG */
 #define UA_ENABLE_PUBSUB_INFORMATIONMODEL
 #define UA_ENABLE_DA
@@ -78,7 +78,7 @@
 /* #undef UA_ENABLE_MQTT */
 /* #undef UA_ENABLE_NODESET_INJECTOR */
 /* #undef UA_INFORMATION_MODEL_AUTOLOAD */
-/* #undef UA_ENABLE_ENCRYPTION_MBEDTLS */
+#define UA_ENABLE_ENCRYPTION_MBEDTLS
 /* #undef UA_ENABLE_CERT_REJECTED_DIR */
 /* #undef UA_ENABLE_TPM2_SECURITY */
 /* #undef UA_ENABLE_ENCRYPTION_OPENSSL */
@@ -95,7 +95,7 @@
 /* Advanced Options */
 #define UA_ENABLE_STATUSCODE_DESCRIPTIONS
 #define UA_ENABLE_TYPEDESCRIPTION
-#define UA_ENABLE_INLINABLE_EXPORT
+/* #undef UA_ENABLE_INLINABLE_EXPORT */
 #define UA_ENABLE_NODESET_COMPILER_DESCRIPTIONS
 /* #undef UA_ENABLE_DETERMINISTIC_RNG */
 #define UA_ENABLE_DISCOVERY
@@ -104,13 +104,13 @@
 /* #undef UA_ENABLE_MALLOC_SINGLETON */
 #define UA_ENABLE_DISCOVERY_SEMAPHORE
 #define UA_GENERATED_NAMESPACE_ZERO
-/* #undef UA_GENERATED_NAMESPACE_ZERO_FULL */
+#define UA_GENERATED_NAMESPACE_ZERO_FULL
 /* #undef UA_ENABLE_PUBSUB_MONITORING */
 /* #undef UA_ENABLE_PUBSUB_BUFMALLOC */
 /* #undef UA_ENABLE_PUBSUB_SKS */
 
 /* Options for Debugging */
-#define UA_DEBUG
+/* #undef UA_DEBUG */
 /* #undef UA_DEBUG_DUMP_PKGS */
 /* #undef UA_DEBUG_FILE_LINE_INFO */
 
@@ -123,7 +123,7 @@
  * On Win32: Define ``UA_DYNAMIC_LINKING`` and ``UA_DYNAMIC_LINKING_EXPORT`` in
  * order to export symbols for a DLL. Define ``UA_DYNAMIC_LINKING`` only to
  * import symbols from a DLL.*/
-#define UA_DYNAMIC_LINKING
+/* #undef UA_DYNAMIC_LINKING */
 
 /* Shortcuts for extern "C" declarations */
 #if !defined(_UA_BEGIN_DECLS)
@@ -206,7 +206,7 @@
 #elif defined(UA_ENABLE_INLINABLE_EXPORT)
 # define UA_INLINABLE(decl, impl) UA_EXPORT decl;
 #else
-# define UA_INLINABLE(decl, impl) UA_EXPORT decl impl
+# define UA_INLINABLE(decl, impl) static UA_INLINE decl impl
 #endif
 
 /**
@@ -384,30 +384,30 @@ typedef struct {
     int mutexCounter;
 } UA_Lock;
 
-UA_EXPORT void
+static UA_INLINE void
 UA_LOCK_INIT(UA_Lock *lock) {
     InitializeCriticalSection(&lock->mutex);
     lock->mutexCounter = 0;
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_LOCK_DESTROY(UA_Lock *lock) {
     DeleteCriticalSection(&lock->mutex);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_LOCK(UA_Lock *lock) {
     EnterCriticalSection(&lock->mutex);
     ++lock->mutexCounter;
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_UNLOCK(UA_Lock *lock) {
     --lock->mutexCounter;
     LeaveCriticalSection(&lock->mutex);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_LOCK_ASSERT(UA_Lock *lock, int num) {
     UA_assert(num <= 0 || lock->mutexCounter > 0);
 }
@@ -758,7 +758,7 @@ UA_STATIC_ASSERT(sizeof(bool) == 1, cannot_overlay_integers_with_large_bool);
 /* The server has stopped and cannot process any requests. */
 #define UA_STATUSCODE_BADSERVERHALTED 0x800E0000
 
-/* There was nothing to do because the client passed a list of operations with no elements. */
+/* No processing could be done because there was nothing to do. */
 #define UA_STATUSCODE_BADNOTHINGTODO 0x800F0000
 
 /* The request could not be processed because it specified too many operations. */
@@ -1322,7 +1322,7 @@ UA_STATIC_ASSERT(sizeof(bool) == 1, cannot_overlay_integers_with_large_bool);
 /* No data exists for the requested time range or event filter. */
 #define UA_STATUSCODE_GOODNODATA 0x00A50000
 
-/* The data or event field was successfully replaced in the historical database. */
+/* More data is available in the time range beyond the number of values requested. */
 #define UA_STATUSCODE_GOODMOREDATA 0x00A60000
 
 /* The requested number of Aggregates does not match the requested number of NodeIds. */
@@ -1346,11 +1346,17 @@ UA_STATIC_ASSERT(sizeof(bool) == 1, cannot_overlay_integers_with_large_bool);
 /* The request has not been processed by the server yet. */
 #define UA_STATUSCODE_BADREQUESTNOTCOMPLETE 0x81130000
 
+/* The operation is not allowed because a transaction is in progress. */
+#define UA_STATUSCODE_BADTRANSACTIONPENDING 0x80E80000
+
 /* The device identity needs a ticket before it can be accepted. */
 #define UA_STATUSCODE_BADTICKETREQUIRED 0x811F0000
 
 /* The device identity needs a ticket before it can be accepted. */
 #define UA_STATUSCODE_BADTICKETINVALID 0x81200000
+
+/* The requested operation is not allowe */
+#define UA_STATUSCODE_BADLOCKED 0x80E90000
 
 /* The value does not come from the real source and has been edited by the server. */
 #define UA_STATUSCODE_GOODEDITED 0x00DC0000
@@ -1450,6 +1456,42 @@ UA_STATIC_ASSERT(sizeof(bool) == 1, cannot_overlay_integers_with_large_bool);
 
 /* The operation could not be finished because all available connections are in use. */
 #define UA_STATUSCODE_BADMAXCONNECTIONSREACHED 0x80B70000
+
+/* The value may not be accurate because the transducer is in manual mode. */
+#define UA_STATUSCODE_UNCERTAINTRANSDUCERINMANUAL 0x42080000
+
+/* The value is simulated. */
+#define UA_STATUSCODE_UNCERTAINSIMULATEDVALUE 0x42090000
+
+/* The value may not be accurate due to a sensor calibration fault. */
+#define UA_STATUSCODE_UNCERTAINSENSORCALIBRATION 0x420A0000
+
+/* The value may not be accurate due to a configuration issue. */
+#define UA_STATUSCODE_UNCERTAINCONFIGURATIONERROR 0x420F0000
+
+/* The value source supports cascade handshaking and the value has been Initialized based on an initialization request from a cascade secondary. */
+#define UA_STATUSCODE_GOODCASCADEINITIALIZATIONACKNOWLEDGED 0x04010000
+
+/* The value source supports cascade handshaking and is requesting initialization of a cascade primary. */
+#define UA_STATUSCODE_GOODCASCADEINITIALIZATIONREQUEST 0x04020000
+
+/* The value source supports cascade handshakin */
+#define UA_STATUSCODE_GOODCASCADENOTINVITED 0x04030000
+
+/* The value source supports cascade handshakin */
+#define UA_STATUSCODE_GOODCASCADENOTSELECTED 0x04040000
+
+/* There is a fault state condition active in the value source. */
+#define UA_STATUSCODE_GOODFAULTSTATEACTIVE 0x04070000
+
+/* A fault state condition is being requested of the destination. */
+#define UA_STATUSCODE_GOODINITIATEFAULTSTATE 0x04080000
+
+/* The value is accurat */
+#define UA_STATUSCODE_GOODCASCADE 0x04090000
+
+/* The DataSet specified for the DataSetWriter creation is invalid. */
+#define UA_STATUSCODE_BADDATASETIDINVALID 0x80E70000
 
 /* Depending on the version of the schema, the following might be already defined: */
 #ifndef UA_STATUSCODE_GOOD
@@ -23803,7 +23845,7 @@ _UA_BEGIN_DECLS
  * Every type is assigned an index in an array containing the type descriptions.
  * These descriptions are used during type handling (copying, deletion,
  * binary encoding, ...). */
-#define UA_TYPES_COUNT 388
+#define UA_TYPES_COUNT 394
 extern UA_EXPORT UA_DataType UA_TYPES[UA_TYPES_COUNT];
 
 /* Boolean */
@@ -23966,13 +24008,23 @@ typedef struct {
 
 #define UA_TYPES_EPHEMERALKEYTYPE 37
 
+/* Handle */
+typedef UA_ByteString UA_Handle;
+
+#define UA_TYPES_HANDLE 38
+
+/* TrimmedString */
+typedef UA_ByteString UA_TrimmedString;
+
+#define UA_TYPES_TRIMMEDSTRING 39
+
 /* RationalNumber */
 typedef struct {
     UA_Int32 numerator;
     UA_UInt32 denominator;
 } UA_RationalNumber;
 
-#define UA_TYPES_RATIONALNUMBER 38
+#define UA_TYPES_RATIONALNUMBER 40
 
 /* ThreeDVector */
 typedef struct {
@@ -23981,7 +24033,7 @@ typedef struct {
     UA_Double z;
 } UA_ThreeDVector;
 
-#define UA_TYPES_THREEDVECTOR 39
+#define UA_TYPES_THREEDVECTOR 41
 
 /* ThreeDCartesianCoordinates */
 typedef struct {
@@ -23990,7 +24042,7 @@ typedef struct {
     UA_Double z;
 } UA_ThreeDCartesianCoordinates;
 
-#define UA_TYPES_THREEDCARTESIANCOORDINATES 40
+#define UA_TYPES_THREEDCARTESIANCOORDINATES 42
 
 /* ThreeDOrientation */
 typedef struct {
@@ -23999,7 +24051,7 @@ typedef struct {
     UA_Double c;
 } UA_ThreeDOrientation;
 
-#define UA_TYPES_THREEDORIENTATION 41
+#define UA_TYPES_THREEDORIENTATION 43
 
 /* ThreeDFrame */
 typedef struct {
@@ -24007,7 +24059,7 @@ typedef struct {
     UA_ThreeDOrientation orientation;
 } UA_ThreeDFrame;
 
-#define UA_TYPES_THREEDFRAME 42
+#define UA_TYPES_THREEDFRAME 44
 
 /* OpenFileMode */
 typedef enum {
@@ -24020,7 +24072,7 @@ typedef enum {
 
 UA_STATIC_ASSERT(sizeof(UA_OpenFileMode) == sizeof(UA_Int32), enum_must_be_32bit);
 
-#define UA_TYPES_OPENFILEMODE 43
+#define UA_TYPES_OPENFILEMODE 45
 
 /* IdentityCriteriaType */
 typedef enum {
@@ -24037,7 +24089,7 @@ typedef enum {
 
 UA_STATIC_ASSERT(sizeof(UA_IdentityCriteriaType) == sizeof(UA_Int32), enum_must_be_32bit);
 
-#define UA_TYPES_IDENTITYCRITERIATYPE 44
+#define UA_TYPES_IDENTITYCRITERIATYPE 46
 
 /* IdentityMappingRuleType */
 typedef struct {
@@ -24045,7 +24097,7 @@ typedef struct {
     UA_String criteria;
 } UA_IdentityMappingRuleType;
 
-#define UA_TYPES_IDENTITYMAPPINGRULETYPE 45
+#define UA_TYPES_IDENTITYMAPPINGRULETYPE 47
 
 /* CurrencyUnitType */
 typedef struct {
@@ -24055,7 +24107,31 @@ typedef struct {
     UA_LocalizedText currency;
 } UA_CurrencyUnitType;
 
-#define UA_TYPES_CURRENCYUNITTYPE 46
+#define UA_TYPES_CURRENCYUNITTYPE 48
+
+/* AlarmMask */
+typedef UA_UInt16 UA_AlarmMask;
+
+#define UA_ALARMMASK_NONE 0
+#define UA_ALARMMASK_ACTIVE 1
+#define UA_ALARMMASK_UNACKNOWLEDGED 2
+#define UA_ALARMMASK_UNCONFIRMED 4
+
+#define UA_TYPES_ALARMMASK 49
+
+/* TrustListValidationOptions */
+typedef UA_UInt32 UA_TrustListValidationOptions;
+
+#define UA_TRUSTLISTVALIDATIONOPTIONS_NONE 0
+#define UA_TRUSTLISTVALIDATIONOPTIONS_SUPPRESSCERTIFICATEEXPIRED 1
+#define UA_TRUSTLISTVALIDATIONOPTIONS_SUPPRESSHOSTNAMEINVALID 2
+#define UA_TRUSTLISTVALIDATIONOPTIONS_SUPPRESSREVOCATIONSTATUSUNKNOWN 4
+#define UA_TRUSTLISTVALIDATIONOPTIONS_SUPPRESSISSUERCERTIFICATEEXPIRED 8
+#define UA_TRUSTLISTVALIDATIONOPTIONS_SUPPRESSISSUERREVOCATIONSTATUSUNKNOWN 16
+#define UA_TRUSTLISTVALIDATIONOPTIONS_CHECKREVOCATIONSTATUSONLINE 32
+#define UA_TRUSTLISTVALIDATIONOPTIONS_CHECKREVOCATIONSTATUSOFFLINE 64
+
+#define UA_TYPES_TRUSTLISTVALIDATIONOPTIONS 50
 
 /* TrustListMasks */
 typedef enum {
@@ -24070,7 +24146,7 @@ typedef enum {
 
 UA_STATIC_ASSERT(sizeof(UA_TrustListMasks) == sizeof(UA_Int32), enum_must_be_32bit);
 
-#define UA_TYPES_TRUSTLISTMASKS 47
+#define UA_TYPES_TRUSTLISTMASKS 51
 
 /* TrustListDataType */
 typedef struct {
@@ -24085,15 +24161,16 @@ typedef struct {
     UA_ByteString *issuerCrls;
 } UA_TrustListDataType;
 
-#define UA_TYPES_TRUSTLISTDATATYPE 48
+#define UA_TYPES_TRUSTLISTDATATYPE 52
 
-/* DecimalDataType */
+/* TransactionErrorType */
 typedef struct {
-    UA_Int16 scale;
-    UA_ByteString value;
-} UA_DecimalDataType;
+    UA_NodeId targetId;
+    UA_StatusCode error;
+    UA_LocalizedText message;
+} UA_TransactionErrorType;
 
-#define UA_TYPES_DECIMALDATATYPE 49
+#define UA_TYPES_TRANSACTIONERRORTYPE 53
 
 /* DataTypeDescription */
 typedef struct {
@@ -24101,7 +24178,7 @@ typedef struct {
     UA_QualifiedName name;
 } UA_DataTypeDescription;
 
-#define UA_TYPES_DATATYPEDESCRIPTION 50
+#define UA_TYPES_DATATYPEDESCRIPTION 54
 
 /* SimpleTypeDescription */
 typedef struct {
@@ -24111,7 +24188,7 @@ typedef struct {
     UA_Byte builtInType;
 } UA_SimpleTypeDescription;
 
-#define UA_TYPES_SIMPLETYPEDESCRIPTION 51
+#define UA_TYPES_SIMPLETYPEDESCRIPTION 55
 
 /* PortableQualifiedName */
 typedef struct {
@@ -24119,7 +24196,7 @@ typedef struct {
     UA_String name;
 } UA_PortableQualifiedName;
 
-#define UA_TYPES_PORTABLEQUALIFIEDNAME 52
+#define UA_TYPES_PORTABLEQUALIFIEDNAME 56
 
 /* PortableNodeId */
 typedef struct {
@@ -24127,7 +24204,7 @@ typedef struct {
     UA_NodeId identifier;
 } UA_PortableNodeId;
 
-#define UA_TYPES_PORTABLENODEID 53
+#define UA_TYPES_PORTABLENODEID 57
 
 /* UnsignedRationalNumber */
 typedef struct {
@@ -24135,7 +24212,7 @@ typedef struct {
     UA_UInt32 denominator;
 } UA_UnsignedRationalNumber;
 
-#define UA_TYPES_UNSIGNEDRATIONALNUMBER 54
+#define UA_TYPES_UNSIGNEDRATIONALNUMBER 58
 
 /* PubSubState */
 typedef enum {
@@ -24149,7 +24226,7 @@ typedef enum {
 
 UA_STATIC_ASSERT(sizeof(UA_PubSubState) == sizeof(UA_Int32), enum_must_be_32bit);
 
-#define UA_TYPES_PUBSUBSTATE 55
+#define UA_TYPES_PUBSUBSTATE 59
 
 /* DataSetFieldFlags */
 typedef UA_UInt16 UA_DataSetFieldFlags;
@@ -24157,7 +24234,7 @@ typedef UA_UInt16 UA_DataSetFieldFlags;
 #define UA_DATASETFIELDFLAGS_NONE 0
 #define UA_DATASETFIELDFLAGS_PROMOTEDFIELD 1
 
-#define UA_TYPES_DATASETFIELDFLAGS 56
+#define UA_TYPES_DATASETFIELDFLAGS 60
 
 /* ConfigurationVersionDataType */
 typedef struct {
@@ -24165,7 +24242,7 @@ typedef struct {
     UA_UInt32 minorVersion;
 } UA_ConfigurationVersionDataType;
 
-#define UA_TYPES_CONFIGURATIONVERSIONDATATYPE 57
+#define UA_TYPES_CONFIGURATIONVERSIONDATATYPE 61
 
 /* PublishedVariableDataType */
 typedef struct {
@@ -24180,7 +24257,7 @@ typedef struct {
     UA_QualifiedName *metaDataProperties;
 } UA_PublishedVariableDataType;
 
-#define UA_TYPES_PUBLISHEDVARIABLEDATATYPE 58
+#define UA_TYPES_PUBLISHEDVARIABLEDATATYPE 62
 
 /* PublishedDataItemsDataType */
 typedef struct {
@@ -24188,14 +24265,14 @@ typedef struct {
     UA_PublishedVariableDataType *publishedData;
 } UA_PublishedDataItemsDataType;
 
-#define UA_TYPES_PUBLISHEDDATAITEMSDATATYPE 59
+#define UA_TYPES_PUBLISHEDDATAITEMSDATATYPE 63
 
 /* PublishedDataSetCustomSourceDataType */
 typedef struct {
     UA_Boolean cyclicDataSet;
 } UA_PublishedDataSetCustomSourceDataType;
 
-#define UA_TYPES_PUBLISHEDDATASETCUSTOMSOURCEDATATYPE 60
+#define UA_TYPES_PUBLISHEDDATASETCUSTOMSOURCEDATATYPE 64
 
 /* DataSetFieldContentMask */
 typedef UA_UInt32 UA_DataSetFieldContentMask;
@@ -24208,7 +24285,7 @@ typedef UA_UInt32 UA_DataSetFieldContentMask;
 #define UA_DATASETFIELDCONTENTMASK_SERVERPICOSECONDS 16
 #define UA_DATASETFIELDCONTENTMASK_RAWDATA 32
 
-#define UA_TYPES_DATASETFIELDCONTENTMASK 61
+#define UA_TYPES_DATASETFIELDCONTENTMASK 65
 
 /* DataSetWriterDataType */
 typedef struct {
@@ -24224,14 +24301,14 @@ typedef struct {
     UA_ExtensionObject messageSettings;
 } UA_DataSetWriterDataType;
 
-#define UA_TYPES_DATASETWRITERDATATYPE 62
+#define UA_TYPES_DATASETWRITERDATATYPE 66
 
 /* NetworkAddressDataType */
 typedef struct {
     UA_String networkInterface;
 } UA_NetworkAddressDataType;
 
-#define UA_TYPES_NETWORKADDRESSDATATYPE 63
+#define UA_TYPES_NETWORKADDRESSDATATYPE 67
 
 /* NetworkAddressUrlDataType */
 typedef struct {
@@ -24239,7 +24316,7 @@ typedef struct {
     UA_String url;
 } UA_NetworkAddressUrlDataType;
 
-#define UA_TYPES_NETWORKADDRESSURLDATATYPE 64
+#define UA_TYPES_NETWORKADDRESSURLDATATYPE 68
 
 /* OverrideValueHandling */
 typedef enum {
@@ -24251,14 +24328,14 @@ typedef enum {
 
 UA_STATIC_ASSERT(sizeof(UA_OverrideValueHandling) == sizeof(UA_Int32), enum_must_be_32bit);
 
-#define UA_TYPES_OVERRIDEVALUEHANDLING 65
+#define UA_TYPES_OVERRIDEVALUEHANDLING 69
 
 /* StandaloneSubscribedDataSetRefDataType */
 typedef struct {
     UA_String dataSetName;
 } UA_StandaloneSubscribedDataSetRefDataType;
 
-#define UA_TYPES_STANDALONESUBSCRIBEDDATASETREFDATATYPE 66
+#define UA_TYPES_STANDALONESUBSCRIBEDDATASETREFDATATYPE 70
 
 /* DataSetOrderingType */
 typedef enum {
@@ -24270,7 +24347,7 @@ typedef enum {
 
 UA_STATIC_ASSERT(sizeof(UA_DataSetOrderingType) == sizeof(UA_Int32), enum_must_be_32bit);
 
-#define UA_TYPES_DATASETORDERINGTYPE 67
+#define UA_TYPES_DATASETORDERINGTYPE 71
 
 /* UadpNetworkMessageContentMask */
 typedef UA_UInt32 UA_UadpNetworkMessageContentMask;
@@ -24288,7 +24365,7 @@ typedef UA_UInt32 UA_UadpNetworkMessageContentMask;
 #define UA_UADPNETWORKMESSAGECONTENTMASK_DATASETCLASSID 512
 #define UA_UADPNETWORKMESSAGECONTENTMASK_PROMOTEDFIELDS 1024
 
-#define UA_TYPES_UADPNETWORKMESSAGECONTENTMASK 68
+#define UA_TYPES_UADPNETWORKMESSAGECONTENTMASK 72
 
 /* UadpWriterGroupMessageDataType */
 typedef struct {
@@ -24300,7 +24377,7 @@ typedef struct {
     UA_Double *publishingOffset;
 } UA_UadpWriterGroupMessageDataType;
 
-#define UA_TYPES_UADPWRITERGROUPMESSAGEDATATYPE 69
+#define UA_TYPES_UADPWRITERGROUPMESSAGEDATATYPE 73
 
 /* UadpDataSetMessageContentMask */
 typedef UA_UInt32 UA_UadpDataSetMessageContentMask;
@@ -24313,7 +24390,7 @@ typedef UA_UInt32 UA_UadpDataSetMessageContentMask;
 #define UA_UADPDATASETMESSAGECONTENTMASK_MINORVERSION 16
 #define UA_UADPDATASETMESSAGECONTENTMASK_SEQUENCENUMBER 32
 
-#define UA_TYPES_UADPDATASETMESSAGECONTENTMASK 70
+#define UA_TYPES_UADPDATASETMESSAGECONTENTMASK 74
 
 /* UadpDataSetWriterMessageDataType */
 typedef struct {
@@ -24323,7 +24400,7 @@ typedef struct {
     UA_UInt16 dataSetOffset;
 } UA_UadpDataSetWriterMessageDataType;
 
-#define UA_TYPES_UADPDATASETWRITERMESSAGEDATATYPE 71
+#define UA_TYPES_UADPDATASETWRITERMESSAGEDATATYPE 75
 
 /* UadpDataSetReaderMessageDataType */
 typedef struct {
@@ -24338,7 +24415,7 @@ typedef struct {
     UA_Double processingOffset;
 } UA_UadpDataSetReaderMessageDataType;
 
-#define UA_TYPES_UADPDATASETREADERMESSAGEDATATYPE 72
+#define UA_TYPES_UADPDATASETREADERMESSAGEDATATYPE 76
 
 /* JsonNetworkMessageContentMask */
 typedef UA_UInt32 UA_JsonNetworkMessageContentMask;
@@ -24351,14 +24428,14 @@ typedef UA_UInt32 UA_JsonNetworkMessageContentMask;
 #define UA_JSONNETWORKMESSAGECONTENTMASK_DATASETCLASSID 16
 #define UA_JSONNETWORKMESSAGECONTENTMASK_REPLYTO 32
 
-#define UA_TYPES_JSONNETWORKMESSAGECONTENTMASK 73
+#define UA_TYPES_JSONNETWORKMESSAGECONTENTMASK 77
 
 /* JsonWriterGroupMessageDataType */
 typedef struct {
     UA_JsonNetworkMessageContentMask networkMessageContentMask;
 } UA_JsonWriterGroupMessageDataType;
 
-#define UA_TYPES_JSONWRITERGROUPMESSAGEDATATYPE 74
+#define UA_TYPES_JSONWRITERGROUPMESSAGEDATATYPE 78
 
 /* JsonDataSetMessageContentMask */
 typedef UA_UInt32 UA_JsonDataSetMessageContentMask;
@@ -24373,14 +24450,14 @@ typedef UA_UInt32 UA_JsonDataSetMessageContentMask;
 #define UA_JSONDATASETMESSAGECONTENTMASK_DATASETWRITERNAME 64
 #define UA_JSONDATASETMESSAGECONTENTMASK_REVERSIBLEFIELDENCODING 128
 
-#define UA_TYPES_JSONDATASETMESSAGECONTENTMASK 75
+#define UA_TYPES_JSONDATASETMESSAGECONTENTMASK 79
 
 /* JsonDataSetWriterMessageDataType */
 typedef struct {
     UA_JsonDataSetMessageContentMask dataSetMessageContentMask;
 } UA_JsonDataSetWriterMessageDataType;
 
-#define UA_TYPES_JSONDATASETWRITERMESSAGEDATATYPE 76
+#define UA_TYPES_JSONDATASETWRITERMESSAGEDATATYPE 80
 
 /* JsonDataSetReaderMessageDataType */
 typedef struct {
@@ -24388,28 +24465,28 @@ typedef struct {
     UA_JsonDataSetMessageContentMask dataSetMessageContentMask;
 } UA_JsonDataSetReaderMessageDataType;
 
-#define UA_TYPES_JSONDATASETREADERMESSAGEDATATYPE 77
+#define UA_TYPES_JSONDATASETREADERMESSAGEDATATYPE 81
 
 /* TransmitQosPriorityDataType */
 typedef struct {
     UA_String priorityLabel;
 } UA_TransmitQosPriorityDataType;
 
-#define UA_TYPES_TRANSMITQOSPRIORITYDATATYPE 78
+#define UA_TYPES_TRANSMITQOSPRIORITYDATATYPE 82
 
 /* ReceiveQosPriorityDataType */
 typedef struct {
     UA_String priorityLabel;
 } UA_ReceiveQosPriorityDataType;
 
-#define UA_TYPES_RECEIVEQOSPRIORITYDATATYPE 79
+#define UA_TYPES_RECEIVEQOSPRIORITYDATATYPE 83
 
 /* DatagramConnectionTransportDataType */
 typedef struct {
     UA_ExtensionObject discoveryAddress;
 } UA_DatagramConnectionTransportDataType;
 
-#define UA_TYPES_DATAGRAMCONNECTIONTRANSPORTDATATYPE 80
+#define UA_TYPES_DATAGRAMCONNECTIONTRANSPORTDATATYPE 84
 
 /* DatagramConnectionTransport2DataType */
 typedef struct {
@@ -24421,7 +24498,7 @@ typedef struct {
     UA_ExtensionObject *datagramQos;
 } UA_DatagramConnectionTransport2DataType;
 
-#define UA_TYPES_DATAGRAMCONNECTIONTRANSPORT2DATATYPE 81
+#define UA_TYPES_DATAGRAMCONNECTIONTRANSPORT2DATATYPE 85
 
 /* DatagramWriterGroupTransportDataType */
 typedef struct {
@@ -24429,7 +24506,7 @@ typedef struct {
     UA_Double messageRepeatDelay;
 } UA_DatagramWriterGroupTransportDataType;
 
-#define UA_TYPES_DATAGRAMWRITERGROUPTRANSPORTDATATYPE 82
+#define UA_TYPES_DATAGRAMWRITERGROUPTRANSPORTDATATYPE 86
 
 /* DatagramWriterGroupTransport2DataType */
 typedef struct {
@@ -24443,7 +24520,7 @@ typedef struct {
     UA_String topic;
 } UA_DatagramWriterGroupTransport2DataType;
 
-#define UA_TYPES_DATAGRAMWRITERGROUPTRANSPORT2DATATYPE 83
+#define UA_TYPES_DATAGRAMWRITERGROUPTRANSPORT2DATATYPE 87
 
 /* DatagramDataSetReaderTransportDataType */
 typedef struct {
@@ -24454,7 +24531,7 @@ typedef struct {
     UA_String topic;
 } UA_DatagramDataSetReaderTransportDataType;
 
-#define UA_TYPES_DATAGRAMDATASETREADERTRANSPORTDATATYPE 84
+#define UA_TYPES_DATAGRAMDATASETREADERTRANSPORTDATATYPE 88
 
 /* BrokerConnectionTransportDataType */
 typedef struct {
@@ -24462,7 +24539,7 @@ typedef struct {
     UA_String authenticationProfileUri;
 } UA_BrokerConnectionTransportDataType;
 
-#define UA_TYPES_BROKERCONNECTIONTRANSPORTDATATYPE 85
+#define UA_TYPES_BROKERCONNECTIONTRANSPORTDATATYPE 89
 
 /* BrokerTransportQualityOfService */
 typedef enum {
@@ -24476,7 +24553,7 @@ typedef enum {
 
 UA_STATIC_ASSERT(sizeof(UA_BrokerTransportQualityOfService) == sizeof(UA_Int32), enum_must_be_32bit);
 
-#define UA_TYPES_BROKERTRANSPORTQUALITYOFSERVICE 86
+#define UA_TYPES_BROKERTRANSPORTQUALITYOFSERVICE 90
 
 /* BrokerWriterGroupTransportDataType */
 typedef struct {
@@ -24486,7 +24563,7 @@ typedef struct {
     UA_BrokerTransportQualityOfService requestedDeliveryGuarantee;
 } UA_BrokerWriterGroupTransportDataType;
 
-#define UA_TYPES_BROKERWRITERGROUPTRANSPORTDATATYPE 87
+#define UA_TYPES_BROKERWRITERGROUPTRANSPORTDATATYPE 91
 
 /* BrokerDataSetWriterTransportDataType */
 typedef struct {
@@ -24498,7 +24575,7 @@ typedef struct {
     UA_Double metaDataUpdateTime;
 } UA_BrokerDataSetWriterTransportDataType;
 
-#define UA_TYPES_BROKERDATASETWRITERTRANSPORTDATATYPE 88
+#define UA_TYPES_BROKERDATASETWRITERTRANSPORTDATATYPE 92
 
 /* BrokerDataSetReaderTransportDataType */
 typedef struct {
@@ -24509,7 +24586,7 @@ typedef struct {
     UA_String metaDataQueueName;
 } UA_BrokerDataSetReaderTransportDataType;
 
-#define UA_TYPES_BROKERDATASETREADERTRANSPORTDATATYPE 89
+#define UA_TYPES_BROKERDATASETREADERTRANSPORTDATATYPE 93
 
 /* PubSubConfigurationRefMask */
 typedef UA_UInt32 UA_PubSubConfigurationRefMask;
@@ -24529,7 +24606,7 @@ typedef UA_UInt32 UA_PubSubConfigurationRefMask;
 #define UA_PUBSUBCONFIGURATIONREFMASK_REFERENCESECURITYGROUP 2048
 #define UA_PUBSUBCONFIGURATIONREFMASK_REFERENCEPUSHTARGET 4096
 
-#define UA_TYPES_PUBSUBCONFIGURATIONREFMASK 90
+#define UA_TYPES_PUBSUBCONFIGURATIONREFMASK 94
 
 /* PubSubConfigurationRefDataType */
 typedef struct {
@@ -24539,7 +24616,7 @@ typedef struct {
     UA_UInt16 groupIndex;
 } UA_PubSubConfigurationRefDataType;
 
-#define UA_TYPES_PUBSUBCONFIGURATIONREFDATATYPE 91
+#define UA_TYPES_PUBSUBCONFIGURATIONREFDATATYPE 95
 
 /* PubSubConfigurationValueDataType */
 typedef struct {
@@ -24548,7 +24625,7 @@ typedef struct {
     UA_Variant identifier;
 } UA_PubSubConfigurationValueDataType;
 
-#define UA_TYPES_PUBSUBCONFIGURATIONVALUEDATATYPE 92
+#define UA_TYPES_PUBSUBCONFIGURATIONVALUEDATATYPE 96
 
 /* DiagnosticsLevel */
 typedef enum {
@@ -24562,7 +24639,7 @@ typedef enum {
 
 UA_STATIC_ASSERT(sizeof(UA_DiagnosticsLevel) == sizeof(UA_Int32), enum_must_be_32bit);
 
-#define UA_TYPES_DIAGNOSTICSLEVEL 93
+#define UA_TYPES_DIAGNOSTICSLEVEL 97
 
 /* PubSubDiagnosticsCounterClassification */
 typedef enum {
@@ -24573,7 +24650,7 @@ typedef enum {
 
 UA_STATIC_ASSERT(sizeof(UA_PubSubDiagnosticsCounterClassification) == sizeof(UA_Int32), enum_must_be_32bit);
 
-#define UA_TYPES_PUBSUBDIAGNOSTICSCOUNTERCLASSIFICATION 94
+#define UA_TYPES_PUBSUBDIAGNOSTICSCOUNTERCLASSIFICATION 98
 
 /* AliasNameDataType */
 typedef struct {
@@ -24582,7 +24659,7 @@ typedef struct {
     UA_ExpandedNodeId *referencedNodes;
 } UA_AliasNameDataType;
 
-#define UA_TYPES_ALIASNAMEDATATYPE 95
+#define UA_TYPES_ALIASNAMEDATATYPE 99
 
 /* PasswordOptionsMask */
 typedef UA_UInt32 UA_PasswordOptionsMask;
@@ -24598,7 +24675,7 @@ typedef UA_UInt32 UA_PasswordOptionsMask;
 #define UA_PASSWORDOPTIONSMASK_REQUIRESDIGITCHARACTERS 128
 #define UA_PASSWORDOPTIONSMASK_REQUIRESSPECIALCHARACTERS 256
 
-#define UA_TYPES_PASSWORDOPTIONSMASK 96
+#define UA_TYPES_PASSWORDOPTIONSMASK 100
 
 /* UserConfigurationMask */
 typedef UA_UInt32 UA_UserConfigurationMask;
@@ -24609,7 +24686,7 @@ typedef UA_UInt32 UA_UserConfigurationMask;
 #define UA_USERCONFIGURATIONMASK_NOCHANGEBYUSER 4
 #define UA_USERCONFIGURATIONMASK_MUSTCHANGEPASSWORD 8
 
-#define UA_TYPES_USERCONFIGURATIONMASK 97
+#define UA_TYPES_USERCONFIGURATIONMASK 101
 
 /* UserManagementDataType */
 typedef struct {
@@ -24618,7 +24695,12 @@ typedef struct {
     UA_String description;
 } UA_UserManagementDataType;
 
-#define UA_TYPES_USERMANAGEMENTDATATYPE 98
+#define UA_TYPES_USERMANAGEMENTDATATYPE 102
+
+/* EncodedTicket */
+typedef UA_ByteString UA_EncodedTicket;
+
+#define UA_TYPES_ENCODEDTICKET 103
 
 /* Duplex */
 typedef enum {
@@ -24630,7 +24712,7 @@ typedef enum {
 
 UA_STATIC_ASSERT(sizeof(UA_Duplex) == sizeof(UA_Int32), enum_must_be_32bit);
 
-#define UA_TYPES_DUPLEX 99
+#define UA_TYPES_DUPLEX 104
 
 /* InterfaceAdminStatus */
 typedef enum {
@@ -24642,7 +24724,7 @@ typedef enum {
 
 UA_STATIC_ASSERT(sizeof(UA_InterfaceAdminStatus) == sizeof(UA_Int32), enum_must_be_32bit);
 
-#define UA_TYPES_INTERFACEADMINSTATUS 100
+#define UA_TYPES_INTERFACEADMINSTATUS 105
 
 /* InterfaceOperStatus */
 typedef enum {
@@ -24658,7 +24740,7 @@ typedef enum {
 
 UA_STATIC_ASSERT(sizeof(UA_InterfaceOperStatus) == sizeof(UA_Int32), enum_must_be_32bit);
 
-#define UA_TYPES_INTERFACEOPERSTATUS 101
+#define UA_TYPES_INTERFACEOPERSTATUS 106
 
 /* NegotiationStatus */
 typedef enum {
@@ -24672,7 +24754,7 @@ typedef enum {
 
 UA_STATIC_ASSERT(sizeof(UA_NegotiationStatus) == sizeof(UA_Int32), enum_must_be_32bit);
 
-#define UA_TYPES_NEGOTIATIONSTATUS 102
+#define UA_TYPES_NEGOTIATIONSTATUS 107
 
 /* TsnFailureCode */
 typedef enum {
@@ -24707,7 +24789,7 @@ typedef enum {
 
 UA_STATIC_ASSERT(sizeof(UA_TsnFailureCode) == sizeof(UA_Int32), enum_must_be_32bit);
 
-#define UA_TYPES_TSNFAILURECODE 103
+#define UA_TYPES_TSNFAILURECODE 108
 
 /* TsnStreamState */
 typedef enum {
@@ -24721,7 +24803,7 @@ typedef enum {
 
 UA_STATIC_ASSERT(sizeof(UA_TsnStreamState) == sizeof(UA_Int32), enum_must_be_32bit);
 
-#define UA_TYPES_TSNSTREAMSTATE 104
+#define UA_TYPES_TSNSTREAMSTATE 109
 
 /* TsnTalkerStatus */
 typedef enum {
@@ -24733,7 +24815,7 @@ typedef enum {
 
 UA_STATIC_ASSERT(sizeof(UA_TsnTalkerStatus) == sizeof(UA_Int32), enum_must_be_32bit);
 
-#define UA_TYPES_TSNTALKERSTATUS 105
+#define UA_TYPES_TSNTALKERSTATUS 110
 
 /* TsnListenerStatus */
 typedef enum {
@@ -24746,7 +24828,7 @@ typedef enum {
 
 UA_STATIC_ASSERT(sizeof(UA_TsnListenerStatus) == sizeof(UA_Int32), enum_must_be_32bit);
 
-#define UA_TYPES_TSNLISTENERSTATUS 106
+#define UA_TYPES_TSNLISTENERSTATUS 111
 
 /* PriorityMappingEntryType */
 typedef struct {
@@ -24756,7 +24838,26 @@ typedef struct {
     UA_UInt32 priorityValue_DSCP;
 } UA_PriorityMappingEntryType;
 
-#define UA_TYPES_PRIORITYMAPPINGENTRYTYPE 107
+#define UA_TYPES_PRIORITYMAPPINGENTRYTYPE 112
+
+/* ReferenceDescriptionDataType */
+typedef struct {
+    UA_NodeId sourceNode;
+    UA_NodeId referenceType;
+    UA_Boolean isForward;
+    UA_ExpandedNodeId targetNode;
+} UA_ReferenceDescriptionDataType;
+
+#define UA_TYPES_REFERENCEDESCRIPTIONDATATYPE 113
+
+/* ReferenceListEntryDataType */
+typedef struct {
+    UA_NodeId referenceType;
+    UA_Boolean isForward;
+    UA_ExpandedNodeId targetNode;
+} UA_ReferenceListEntryDataType;
+
+#define UA_TYPES_REFERENCELISTENTRYDATATYPE 114
 
 /* IdType */
 typedef enum {
@@ -24769,7 +24870,7 @@ typedef enum {
 
 UA_STATIC_ASSERT(sizeof(UA_IdType) == sizeof(UA_Int32), enum_must_be_32bit);
 
-#define UA_TYPES_IDTYPE 108
+#define UA_TYPES_IDTYPE 115
 
 /* NodeClass */
 typedef enum {
@@ -24787,7 +24888,7 @@ typedef enum {
 
 UA_STATIC_ASSERT(sizeof(UA_NodeClass) == sizeof(UA_Int32), enum_must_be_32bit);
 
-#define UA_TYPES_NODECLASS 109
+#define UA_TYPES_NODECLASS 116
 
 /* PermissionType */
 typedef UA_UInt32 UA_PermissionType;
@@ -24811,7 +24912,7 @@ typedef UA_UInt32 UA_PermissionType;
 #define UA_PERMISSIONTYPE_DELETENODE 32768
 #define UA_PERMISSIONTYPE_ADDNODE 65536
 
-#define UA_TYPES_PERMISSIONTYPE 110
+#define UA_TYPES_PERMISSIONTYPE 117
 
 /* AccessLevelType */
 typedef UA_Byte UA_AccessLevelType;
@@ -24825,7 +24926,7 @@ typedef UA_Byte UA_AccessLevelType;
 #define UA_ACCESSLEVELTYPE_STATUSWRITE 32
 #define UA_ACCESSLEVELTYPE_TIMESTAMPWRITE 64
 
-#define UA_TYPES_ACCESSLEVELTYPE 111
+#define UA_TYPES_ACCESSLEVELTYPE 118
 
 /* AccessLevelExType */
 typedef UA_UInt32 UA_AccessLevelExType;
@@ -24845,7 +24946,7 @@ typedef UA_UInt32 UA_AccessLevelExType;
 #define UA_ACCESSLEVELEXTYPE_NONVOLATILE 4096
 #define UA_ACCESSLEVELEXTYPE_CONSTANT 8192
 
-#define UA_TYPES_ACCESSLEVELEXTYPE 112
+#define UA_TYPES_ACCESSLEVELEXTYPE 119
 
 /* EventNotifierType */
 typedef UA_Byte UA_EventNotifierType;
@@ -24855,7 +24956,7 @@ typedef UA_Byte UA_EventNotifierType;
 #define UA_EVENTNOTIFIERTYPE_HISTORYREAD 4
 #define UA_EVENTNOTIFIERTYPE_HISTORYWRITE 8
 
-#define UA_TYPES_EVENTNOTIFIERTYPE 113
+#define UA_TYPES_EVENTNOTIFIERTYPE 120
 
 /* AccessRestrictionType */
 typedef UA_UInt16 UA_AccessRestrictionType;
@@ -24866,7 +24967,7 @@ typedef UA_UInt16 UA_AccessRestrictionType;
 #define UA_ACCESSRESTRICTIONTYPE_SESSIONREQUIRED 4
 #define UA_ACCESSRESTRICTIONTYPE_APPLYRESTRICTIONSTOBROWSE 8
 
-#define UA_TYPES_ACCESSRESTRICTIONTYPE 114
+#define UA_TYPES_ACCESSRESTRICTIONTYPE 121
 
 /* RolePermissionType */
 typedef struct {
@@ -24874,7 +24975,7 @@ typedef struct {
     UA_PermissionType permissions;
 } UA_RolePermissionType;
 
-#define UA_TYPES_ROLEPERMISSIONTYPE 115
+#define UA_TYPES_ROLEPERMISSIONTYPE 122
 
 /* StructureType */
 typedef enum {
@@ -24888,7 +24989,7 @@ typedef enum {
 
 UA_STATIC_ASSERT(sizeof(UA_StructureType) == sizeof(UA_Int32), enum_must_be_32bit);
 
-#define UA_TYPES_STRUCTURETYPE 116
+#define UA_TYPES_STRUCTURETYPE 123
 
 /* StructureField */
 typedef struct {
@@ -24902,7 +25003,7 @@ typedef struct {
     UA_Boolean isOptional;
 } UA_StructureField;
 
-#define UA_TYPES_STRUCTUREFIELD 117
+#define UA_TYPES_STRUCTUREFIELD 124
 
 /* StructureDefinition */
 typedef struct {
@@ -24913,16 +25014,7 @@ typedef struct {
     UA_StructureField *fields;
 } UA_StructureDefinition;
 
-#define UA_TYPES_STRUCTUREDEFINITION 118
-
-/* ReferenceNode */
-typedef struct {
-    UA_NodeId referenceTypeId;
-    UA_Boolean isInverse;
-    UA_ExpandedNodeId targetId;
-} UA_ReferenceNode;
-
-#define UA_TYPES_REFERENCENODE 119
+#define UA_TYPES_STRUCTUREDEFINITION 125
 
 /* Argument */
 typedef struct {
@@ -24934,7 +25026,7 @@ typedef struct {
     UA_LocalizedText description;
 } UA_Argument;
 
-#define UA_TYPES_ARGUMENT 120
+#define UA_TYPES_ARGUMENT 126
 
 /* EnumValueType */
 typedef struct {
@@ -24943,7 +25035,7 @@ typedef struct {
     UA_LocalizedText description;
 } UA_EnumValueType;
 
-#define UA_TYPES_ENUMVALUETYPE 121
+#define UA_TYPES_ENUMVALUETYPE 127
 
 /* EnumField */
 typedef struct {
@@ -24953,7 +25045,7 @@ typedef struct {
     UA_String name;
 } UA_EnumField;
 
-#define UA_TYPES_ENUMFIELD 122
+#define UA_TYPES_ENUMFIELD 128
 
 /* OptionSet */
 typedef struct {
@@ -24961,47 +25053,47 @@ typedef struct {
     UA_ByteString validBits;
 } UA_OptionSet;
 
-#define UA_TYPES_OPTIONSET 123
+#define UA_TYPES_OPTIONSET 129
 
 /* NormalizedString */
 typedef UA_String UA_NormalizedString;
 
-#define UA_TYPES_NORMALIZEDSTRING 124
+#define UA_TYPES_NORMALIZEDSTRING 130
 
 /* DecimalString */
 typedef UA_String UA_DecimalString;
 
-#define UA_TYPES_DECIMALSTRING 125
+#define UA_TYPES_DECIMALSTRING 131
 
 /* DurationString */
 typedef UA_String UA_DurationString;
 
-#define UA_TYPES_DURATIONSTRING 126
+#define UA_TYPES_DURATIONSTRING 132
 
 /* TimeString */
 typedef UA_String UA_TimeString;
 
-#define UA_TYPES_TIMESTRING 127
+#define UA_TYPES_TIMESTRING 133
 
 /* DateString */
 typedef UA_String UA_DateString;
 
-#define UA_TYPES_DATESTRING 128
+#define UA_TYPES_DATESTRING 134
 
 /* Duration */
 typedef UA_Double UA_Duration;
 
-#define UA_TYPES_DURATION 129
+#define UA_TYPES_DURATION 135
 
 /* UtcTime */
 typedef UA_DateTime UA_UtcTime;
 
-#define UA_TYPES_UTCTIME 130
+#define UA_TYPES_UTCTIME 136
 
 /* LocaleId */
 typedef UA_String UA_LocaleId;
 
-#define UA_TYPES_LOCALEID 131
+#define UA_TYPES_LOCALEID 137
 
 /* TimeZoneDataType */
 typedef struct {
@@ -25009,17 +25101,17 @@ typedef struct {
     UA_Boolean daylightSavingInOffset;
 } UA_TimeZoneDataType;
 
-#define UA_TYPES_TIMEZONEDATATYPE 132
+#define UA_TYPES_TIMEZONEDATATYPE 138
 
 /* Index */
 typedef UA_ByteString UA_Index;
 
-#define UA_TYPES_INDEX 133
+#define UA_TYPES_INDEX 139
 
 /* IntegerId */
 typedef UA_UInt32 UA_IntegerId;
 
-#define UA_TYPES_INTEGERID 134
+#define UA_TYPES_INTEGERID 140
 
 /* ApplicationType */
 typedef enum {
@@ -25032,7 +25124,7 @@ typedef enum {
 
 UA_STATIC_ASSERT(sizeof(UA_ApplicationType) == sizeof(UA_Int32), enum_must_be_32bit);
 
-#define UA_TYPES_APPLICATIONTYPE 135
+#define UA_TYPES_APPLICATIONTYPE 141
 
 /* ApplicationDescription */
 typedef struct {
@@ -25046,7 +25138,7 @@ typedef struct {
     UA_String *discoveryUrls;
 } UA_ApplicationDescription;
 
-#define UA_TYPES_APPLICATIONDESCRIPTION 136
+#define UA_TYPES_APPLICATIONDESCRIPTION 142
 
 /* RequestHeader */
 typedef struct {
@@ -25059,7 +25151,7 @@ typedef struct {
     UA_ExtensionObject additionalHeader;
 } UA_RequestHeader;
 
-#define UA_TYPES_REQUESTHEADER 137
+#define UA_TYPES_REQUESTHEADER 143
 
 /* ResponseHeader */
 typedef struct {
@@ -25072,19 +25164,19 @@ typedef struct {
     UA_ExtensionObject additionalHeader;
 } UA_ResponseHeader;
 
-#define UA_TYPES_RESPONSEHEADER 138
+#define UA_TYPES_RESPONSEHEADER 144
 
 /* VersionTime */
 typedef UA_ByteString UA_VersionTime;
 
-#define UA_TYPES_VERSIONTIME 139
+#define UA_TYPES_VERSIONTIME 145
 
 /* ServiceFault */
 typedef struct {
     UA_ResponseHeader responseHeader;
 } UA_ServiceFault;
 
-#define UA_TYPES_SERVICEFAULT 140
+#define UA_TYPES_SERVICEFAULT 146
 
 /* SessionlessInvokeRequestType */
 typedef struct {
@@ -25098,7 +25190,7 @@ typedef struct {
     UA_UInt32 serviceId;
 } UA_SessionlessInvokeRequestType;
 
-#define UA_TYPES_SESSIONLESSINVOKEREQUESTTYPE 141
+#define UA_TYPES_SESSIONLESSINVOKEREQUESTTYPE 147
 
 /* SessionlessInvokeResponseType */
 typedef struct {
@@ -25109,7 +25201,7 @@ typedef struct {
     UA_UInt32 serviceId;
 } UA_SessionlessInvokeResponseType;
 
-#define UA_TYPES_SESSIONLESSINVOKERESPONSETYPE 142
+#define UA_TYPES_SESSIONLESSINVOKERESPONSETYPE 148
 
 /* FindServersRequest */
 typedef struct {
@@ -25121,7 +25213,7 @@ typedef struct {
     UA_String *serverUris;
 } UA_FindServersRequest;
 
-#define UA_TYPES_FINDSERVERSREQUEST 143
+#define UA_TYPES_FINDSERVERSREQUEST 149
 
 /* FindServersResponse */
 typedef struct {
@@ -25130,7 +25222,7 @@ typedef struct {
     UA_ApplicationDescription *servers;
 } UA_FindServersResponse;
 
-#define UA_TYPES_FINDSERVERSRESPONSE 144
+#define UA_TYPES_FINDSERVERSRESPONSE 150
 
 /* ServerOnNetwork */
 typedef struct {
@@ -25141,7 +25233,7 @@ typedef struct {
     UA_String *serverCapabilities;
 } UA_ServerOnNetwork;
 
-#define UA_TYPES_SERVERONNETWORK 145
+#define UA_TYPES_SERVERONNETWORK 151
 
 /* FindServersOnNetworkRequest */
 typedef struct {
@@ -25152,7 +25244,7 @@ typedef struct {
     UA_String *serverCapabilityFilter;
 } UA_FindServersOnNetworkRequest;
 
-#define UA_TYPES_FINDSERVERSONNETWORKREQUEST 146
+#define UA_TYPES_FINDSERVERSONNETWORKREQUEST 152
 
 /* FindServersOnNetworkResponse */
 typedef struct {
@@ -25162,12 +25254,12 @@ typedef struct {
     UA_ServerOnNetwork *servers;
 } UA_FindServersOnNetworkResponse;
 
-#define UA_TYPES_FINDSERVERSONNETWORKRESPONSE 147
+#define UA_TYPES_FINDSERVERSONNETWORKRESPONSE 153
 
 /* ApplicationInstanceCertificate */
 typedef UA_ByteString UA_ApplicationInstanceCertificate;
 
-#define UA_TYPES_APPLICATIONINSTANCECERTIFICATE 148
+#define UA_TYPES_APPLICATIONINSTANCECERTIFICATE 154
 
 /* MessageSecurityMode */
 typedef enum {
@@ -25180,7 +25272,7 @@ typedef enum {
 
 UA_STATIC_ASSERT(sizeof(UA_MessageSecurityMode) == sizeof(UA_Int32), enum_must_be_32bit);
 
-#define UA_TYPES_MESSAGESECURITYMODE 149
+#define UA_TYPES_MESSAGESECURITYMODE 155
 
 /* UserTokenType */
 typedef enum {
@@ -25193,7 +25285,7 @@ typedef enum {
 
 UA_STATIC_ASSERT(sizeof(UA_UserTokenType) == sizeof(UA_Int32), enum_must_be_32bit);
 
-#define UA_TYPES_USERTOKENTYPE 150
+#define UA_TYPES_USERTOKENTYPE 156
 
 /* UserTokenPolicy */
 typedef struct {
@@ -25204,7 +25296,7 @@ typedef struct {
     UA_String securityPolicyUri;
 } UA_UserTokenPolicy;
 
-#define UA_TYPES_USERTOKENPOLICY 151
+#define UA_TYPES_USERTOKENPOLICY 157
 
 /* EndpointDescription */
 typedef struct {
@@ -25219,7 +25311,7 @@ typedef struct {
     UA_Byte securityLevel;
 } UA_EndpointDescription;
 
-#define UA_TYPES_ENDPOINTDESCRIPTION 152
+#define UA_TYPES_ENDPOINTDESCRIPTION 158
 
 /* GetEndpointsRequest */
 typedef struct {
@@ -25231,7 +25323,7 @@ typedef struct {
     UA_String *profileUris;
 } UA_GetEndpointsRequest;
 
-#define UA_TYPES_GETENDPOINTSREQUEST 153
+#define UA_TYPES_GETENDPOINTSREQUEST 159
 
 /* GetEndpointsResponse */
 typedef struct {
@@ -25240,7 +25332,7 @@ typedef struct {
     UA_EndpointDescription *endpoints;
 } UA_GetEndpointsResponse;
 
-#define UA_TYPES_GETENDPOINTSRESPONSE 154
+#define UA_TYPES_GETENDPOINTSRESPONSE 160
 
 /* RegisteredServer */
 typedef struct {
@@ -25256,7 +25348,7 @@ typedef struct {
     UA_Boolean isOnline;
 } UA_RegisteredServer;
 
-#define UA_TYPES_REGISTEREDSERVER 155
+#define UA_TYPES_REGISTEREDSERVER 161
 
 /* RegisterServerRequest */
 typedef struct {
@@ -25264,14 +25356,14 @@ typedef struct {
     UA_RegisteredServer server;
 } UA_RegisterServerRequest;
 
-#define UA_TYPES_REGISTERSERVERREQUEST 156
+#define UA_TYPES_REGISTERSERVERREQUEST 162
 
 /* RegisterServerResponse */
 typedef struct {
     UA_ResponseHeader responseHeader;
 } UA_RegisterServerResponse;
 
-#define UA_TYPES_REGISTERSERVERRESPONSE 157
+#define UA_TYPES_REGISTERSERVERRESPONSE 163
 
 /* MdnsDiscoveryConfiguration */
 typedef struct {
@@ -25280,7 +25372,7 @@ typedef struct {
     UA_String *serverCapabilities;
 } UA_MdnsDiscoveryConfiguration;
 
-#define UA_TYPES_MDNSDISCOVERYCONFIGURATION 158
+#define UA_TYPES_MDNSDISCOVERYCONFIGURATION 164
 
 /* RegisterServer2Request */
 typedef struct {
@@ -25290,7 +25382,7 @@ typedef struct {
     UA_ExtensionObject *discoveryConfiguration;
 } UA_RegisterServer2Request;
 
-#define UA_TYPES_REGISTERSERVER2REQUEST 159
+#define UA_TYPES_REGISTERSERVER2REQUEST 165
 
 /* RegisterServer2Response */
 typedef struct {
@@ -25301,7 +25393,7 @@ typedef struct {
     UA_DiagnosticInfo *diagnosticInfos;
 } UA_RegisterServer2Response;
 
-#define UA_TYPES_REGISTERSERVER2RESPONSE 160
+#define UA_TYPES_REGISTERSERVER2RESPONSE 166
 
 /* SecurityTokenRequestType */
 typedef enum {
@@ -25312,7 +25404,7 @@ typedef enum {
 
 UA_STATIC_ASSERT(sizeof(UA_SecurityTokenRequestType) == sizeof(UA_Int32), enum_must_be_32bit);
 
-#define UA_TYPES_SECURITYTOKENREQUESTTYPE 161
+#define UA_TYPES_SECURITYTOKENREQUESTTYPE 167
 
 /* ChannelSecurityToken */
 typedef struct {
@@ -25322,7 +25414,7 @@ typedef struct {
     UA_UInt32 revisedLifetime;
 } UA_ChannelSecurityToken;
 
-#define UA_TYPES_CHANNELSECURITYTOKEN 162
+#define UA_TYPES_CHANNELSECURITYTOKEN 168
 
 /* OpenSecureChannelRequest */
 typedef struct {
@@ -25334,7 +25426,7 @@ typedef struct {
     UA_UInt32 requestedLifetime;
 } UA_OpenSecureChannelRequest;
 
-#define UA_TYPES_OPENSECURECHANNELREQUEST 163
+#define UA_TYPES_OPENSECURECHANNELREQUEST 169
 
 /* OpenSecureChannelResponse */
 typedef struct {
@@ -25344,21 +25436,21 @@ typedef struct {
     UA_ByteString serverNonce;
 } UA_OpenSecureChannelResponse;
 
-#define UA_TYPES_OPENSECURECHANNELRESPONSE 164
+#define UA_TYPES_OPENSECURECHANNELRESPONSE 170
 
 /* CloseSecureChannelRequest */
 typedef struct {
     UA_RequestHeader requestHeader;
 } UA_CloseSecureChannelRequest;
 
-#define UA_TYPES_CLOSESECURECHANNELREQUEST 165
+#define UA_TYPES_CLOSESECURECHANNELREQUEST 171
 
 /* CloseSecureChannelResponse */
 typedef struct {
     UA_ResponseHeader responseHeader;
 } UA_CloseSecureChannelResponse;
 
-#define UA_TYPES_CLOSESECURECHANNELRESPONSE 166
+#define UA_TYPES_CLOSESECURECHANNELRESPONSE 172
 
 /* SignedSoftwareCertificate */
 typedef struct {
@@ -25366,12 +25458,12 @@ typedef struct {
     UA_ByteString signature;
 } UA_SignedSoftwareCertificate;
 
-#define UA_TYPES_SIGNEDSOFTWARECERTIFICATE 167
+#define UA_TYPES_SIGNEDSOFTWARECERTIFICATE 173
 
 /* SessionAuthenticationToken */
 typedef UA_NodeId UA_SessionAuthenticationToken;
 
-#define UA_TYPES_SESSIONAUTHENTICATIONTOKEN 168
+#define UA_TYPES_SESSIONAUTHENTICATIONTOKEN 174
 
 /* SignatureData */
 typedef struct {
@@ -25379,7 +25471,7 @@ typedef struct {
     UA_ByteString signature;
 } UA_SignatureData;
 
-#define UA_TYPES_SIGNATUREDATA 169
+#define UA_TYPES_SIGNATUREDATA 175
 
 /* CreateSessionRequest */
 typedef struct {
@@ -25394,7 +25486,7 @@ typedef struct {
     UA_UInt32 maxResponseMessageSize;
 } UA_CreateSessionRequest;
 
-#define UA_TYPES_CREATESESSIONREQUEST 170
+#define UA_TYPES_CREATESESSIONREQUEST 176
 
 /* CreateSessionResponse */
 typedef struct {
@@ -25412,21 +25504,21 @@ typedef struct {
     UA_UInt32 maxRequestMessageSize;
 } UA_CreateSessionResponse;
 
-#define UA_TYPES_CREATESESSIONRESPONSE 171
+#define UA_TYPES_CREATESESSIONRESPONSE 177
 
 /* UserIdentityToken */
 typedef struct {
     UA_String policyId;
 } UA_UserIdentityToken;
 
-#define UA_TYPES_USERIDENTITYTOKEN 172
+#define UA_TYPES_USERIDENTITYTOKEN 178
 
 /* AnonymousIdentityToken */
 typedef struct {
     UA_String policyId;
 } UA_AnonymousIdentityToken;
 
-#define UA_TYPES_ANONYMOUSIDENTITYTOKEN 173
+#define UA_TYPES_ANONYMOUSIDENTITYTOKEN 179
 
 /* UserNameIdentityToken */
 typedef struct {
@@ -25436,7 +25528,7 @@ typedef struct {
     UA_String encryptionAlgorithm;
 } UA_UserNameIdentityToken;
 
-#define UA_TYPES_USERNAMEIDENTITYTOKEN 174
+#define UA_TYPES_USERNAMEIDENTITYTOKEN 180
 
 /* X509IdentityToken */
 typedef struct {
@@ -25444,7 +25536,7 @@ typedef struct {
     UA_ByteString certificateData;
 } UA_X509IdentityToken;
 
-#define UA_TYPES_X509IDENTITYTOKEN 175
+#define UA_TYPES_X509IDENTITYTOKEN 181
 
 /* IssuedIdentityToken */
 typedef struct {
@@ -25453,17 +25545,17 @@ typedef struct {
     UA_String encryptionAlgorithm;
 } UA_IssuedIdentityToken;
 
-#define UA_TYPES_ISSUEDIDENTITYTOKEN 176
+#define UA_TYPES_ISSUEDIDENTITYTOKEN 182
 
 /* RsaEncryptedSecret */
 typedef UA_ByteString UA_RsaEncryptedSecret;
 
-#define UA_TYPES_RSAENCRYPTEDSECRET 177
+#define UA_TYPES_RSAENCRYPTEDSECRET 183
 
 /* EccEncryptedSecret */
 typedef UA_ByteString UA_EccEncryptedSecret;
 
-#define UA_TYPES_ECCENCRYPTEDSECRET 178
+#define UA_TYPES_ECCENCRYPTEDSECRET 184
 
 /* ActivateSessionRequest */
 typedef struct {
@@ -25477,7 +25569,7 @@ typedef struct {
     UA_SignatureData userTokenSignature;
 } UA_ActivateSessionRequest;
 
-#define UA_TYPES_ACTIVATESESSIONREQUEST 179
+#define UA_TYPES_ACTIVATESESSIONREQUEST 185
 
 /* ActivateSessionResponse */
 typedef struct {
@@ -25489,7 +25581,7 @@ typedef struct {
     UA_DiagnosticInfo *diagnosticInfos;
 } UA_ActivateSessionResponse;
 
-#define UA_TYPES_ACTIVATESESSIONRESPONSE 180
+#define UA_TYPES_ACTIVATESESSIONRESPONSE 186
 
 /* CloseSessionRequest */
 typedef struct {
@@ -25497,14 +25589,14 @@ typedef struct {
     UA_Boolean deleteSubscriptions;
 } UA_CloseSessionRequest;
 
-#define UA_TYPES_CLOSESESSIONREQUEST 181
+#define UA_TYPES_CLOSESESSIONREQUEST 187
 
 /* CloseSessionResponse */
 typedef struct {
     UA_ResponseHeader responseHeader;
 } UA_CloseSessionResponse;
 
-#define UA_TYPES_CLOSESESSIONRESPONSE 182
+#define UA_TYPES_CLOSESESSIONRESPONSE 188
 
 /* CancelRequest */
 typedef struct {
@@ -25512,7 +25604,7 @@ typedef struct {
     UA_UInt32 requestHandle;
 } UA_CancelRequest;
 
-#define UA_TYPES_CANCELREQUEST 183
+#define UA_TYPES_CANCELREQUEST 189
 
 /* CancelResponse */
 typedef struct {
@@ -25520,7 +25612,7 @@ typedef struct {
     UA_UInt32 cancelCount;
 } UA_CancelResponse;
 
-#define UA_TYPES_CANCELRESPONSE 184
+#define UA_TYPES_CANCELRESPONSE 190
 
 /* NodeAttributesMask */
 typedef enum {
@@ -25564,7 +25656,7 @@ typedef enum {
 
 UA_STATIC_ASSERT(sizeof(UA_NodeAttributesMask) == sizeof(UA_Int32), enum_must_be_32bit);
 
-#define UA_TYPES_NODEATTRIBUTESMASK 185
+#define UA_TYPES_NODEATTRIBUTESMASK 191
 
 /* NodeAttributes */
 typedef struct {
@@ -25575,7 +25667,7 @@ typedef struct {
     UA_UInt32 userWriteMask;
 } UA_NodeAttributes;
 
-#define UA_TYPES_NODEATTRIBUTES 186
+#define UA_TYPES_NODEATTRIBUTES 192
 
 /* ObjectAttributes */
 typedef struct {
@@ -25587,7 +25679,7 @@ typedef struct {
     UA_Byte eventNotifier;
 } UA_ObjectAttributes;
 
-#define UA_TYPES_OBJECTATTRIBUTES 187
+#define UA_TYPES_OBJECTATTRIBUTES 193
 
 /* VariableAttributes */
 typedef struct {
@@ -25607,7 +25699,7 @@ typedef struct {
     UA_Boolean historizing;
 } UA_VariableAttributes;
 
-#define UA_TYPES_VARIABLEATTRIBUTES 188
+#define UA_TYPES_VARIABLEATTRIBUTES 194
 
 /* MethodAttributes */
 typedef struct {
@@ -25620,7 +25712,7 @@ typedef struct {
     UA_Boolean userExecutable;
 } UA_MethodAttributes;
 
-#define UA_TYPES_METHODATTRIBUTES 189
+#define UA_TYPES_METHODATTRIBUTES 195
 
 /* ObjectTypeAttributes */
 typedef struct {
@@ -25632,7 +25724,7 @@ typedef struct {
     UA_Boolean isAbstract;
 } UA_ObjectTypeAttributes;
 
-#define UA_TYPES_OBJECTTYPEATTRIBUTES 190
+#define UA_TYPES_OBJECTTYPEATTRIBUTES 196
 
 /* VariableTypeAttributes */
 typedef struct {
@@ -25649,7 +25741,7 @@ typedef struct {
     UA_Boolean isAbstract;
 } UA_VariableTypeAttributes;
 
-#define UA_TYPES_VARIABLETYPEATTRIBUTES 191
+#define UA_TYPES_VARIABLETYPEATTRIBUTES 197
 
 /* ReferenceTypeAttributes */
 typedef struct {
@@ -25663,7 +25755,7 @@ typedef struct {
     UA_LocalizedText inverseName;
 } UA_ReferenceTypeAttributes;
 
-#define UA_TYPES_REFERENCETYPEATTRIBUTES 192
+#define UA_TYPES_REFERENCETYPEATTRIBUTES 198
 
 /* DataTypeAttributes */
 typedef struct {
@@ -25675,7 +25767,7 @@ typedef struct {
     UA_Boolean isAbstract;
 } UA_DataTypeAttributes;
 
-#define UA_TYPES_DATATYPEATTRIBUTES 193
+#define UA_TYPES_DATATYPEATTRIBUTES 199
 
 /* ViewAttributes */
 typedef struct {
@@ -25688,7 +25780,7 @@ typedef struct {
     UA_Byte eventNotifier;
 } UA_ViewAttributes;
 
-#define UA_TYPES_VIEWATTRIBUTES 194
+#define UA_TYPES_VIEWATTRIBUTES 200
 
 /* GenericAttributeValue */
 typedef struct {
@@ -25696,7 +25788,7 @@ typedef struct {
     UA_Variant value;
 } UA_GenericAttributeValue;
 
-#define UA_TYPES_GENERICATTRIBUTEVALUE 195
+#define UA_TYPES_GENERICATTRIBUTEVALUE 201
 
 /* GenericAttributes */
 typedef struct {
@@ -25709,7 +25801,7 @@ typedef struct {
     UA_GenericAttributeValue *attributeValues;
 } UA_GenericAttributes;
 
-#define UA_TYPES_GENERICATTRIBUTES 196
+#define UA_TYPES_GENERICATTRIBUTES 202
 
 /* AddNodesItem */
 typedef struct {
@@ -25722,7 +25814,7 @@ typedef struct {
     UA_ExpandedNodeId typeDefinition;
 } UA_AddNodesItem;
 
-#define UA_TYPES_ADDNODESITEM 197
+#define UA_TYPES_ADDNODESITEM 203
 
 /* AddNodesResult */
 typedef struct {
@@ -25730,7 +25822,7 @@ typedef struct {
     UA_NodeId addedNodeId;
 } UA_AddNodesResult;
 
-#define UA_TYPES_ADDNODESRESULT 198
+#define UA_TYPES_ADDNODESRESULT 204
 
 /* AddNodesRequest */
 typedef struct {
@@ -25739,7 +25831,7 @@ typedef struct {
     UA_AddNodesItem *nodesToAdd;
 } UA_AddNodesRequest;
 
-#define UA_TYPES_ADDNODESREQUEST 199
+#define UA_TYPES_ADDNODESREQUEST 205
 
 /* AddNodesResponse */
 typedef struct {
@@ -25750,7 +25842,7 @@ typedef struct {
     UA_DiagnosticInfo *diagnosticInfos;
 } UA_AddNodesResponse;
 
-#define UA_TYPES_ADDNODESRESPONSE 200
+#define UA_TYPES_ADDNODESRESPONSE 206
 
 /* AddReferencesItem */
 typedef struct {
@@ -25762,7 +25854,7 @@ typedef struct {
     UA_NodeClass targetNodeClass;
 } UA_AddReferencesItem;
 
-#define UA_TYPES_ADDREFERENCESITEM 201
+#define UA_TYPES_ADDREFERENCESITEM 207
 
 /* AddReferencesRequest */
 typedef struct {
@@ -25771,7 +25863,7 @@ typedef struct {
     UA_AddReferencesItem *referencesToAdd;
 } UA_AddReferencesRequest;
 
-#define UA_TYPES_ADDREFERENCESREQUEST 202
+#define UA_TYPES_ADDREFERENCESREQUEST 208
 
 /* AddReferencesResponse */
 typedef struct {
@@ -25782,7 +25874,7 @@ typedef struct {
     UA_DiagnosticInfo *diagnosticInfos;
 } UA_AddReferencesResponse;
 
-#define UA_TYPES_ADDREFERENCESRESPONSE 203
+#define UA_TYPES_ADDREFERENCESRESPONSE 209
 
 /* DeleteNodesItem */
 typedef struct {
@@ -25790,7 +25882,7 @@ typedef struct {
     UA_Boolean deleteTargetReferences;
 } UA_DeleteNodesItem;
 
-#define UA_TYPES_DELETENODESITEM 204
+#define UA_TYPES_DELETENODESITEM 210
 
 /* DeleteNodesRequest */
 typedef struct {
@@ -25799,7 +25891,7 @@ typedef struct {
     UA_DeleteNodesItem *nodesToDelete;
 } UA_DeleteNodesRequest;
 
-#define UA_TYPES_DELETENODESREQUEST 205
+#define UA_TYPES_DELETENODESREQUEST 211
 
 /* DeleteNodesResponse */
 typedef struct {
@@ -25810,7 +25902,7 @@ typedef struct {
     UA_DiagnosticInfo *diagnosticInfos;
 } UA_DeleteNodesResponse;
 
-#define UA_TYPES_DELETENODESRESPONSE 206
+#define UA_TYPES_DELETENODESRESPONSE 212
 
 /* DeleteReferencesItem */
 typedef struct {
@@ -25821,7 +25913,7 @@ typedef struct {
     UA_Boolean deleteBidirectional;
 } UA_DeleteReferencesItem;
 
-#define UA_TYPES_DELETEREFERENCESITEM 207
+#define UA_TYPES_DELETEREFERENCESITEM 213
 
 /* DeleteReferencesRequest */
 typedef struct {
@@ -25830,7 +25922,7 @@ typedef struct {
     UA_DeleteReferencesItem *referencesToDelete;
 } UA_DeleteReferencesRequest;
 
-#define UA_TYPES_DELETEREFERENCESREQUEST 208
+#define UA_TYPES_DELETEREFERENCESREQUEST 214
 
 /* DeleteReferencesResponse */
 typedef struct {
@@ -25841,7 +25933,7 @@ typedef struct {
     UA_DiagnosticInfo *diagnosticInfos;
 } UA_DeleteReferencesResponse;
 
-#define UA_TYPES_DELETEREFERENCESRESPONSE 209
+#define UA_TYPES_DELETEREFERENCESRESPONSE 215
 
 /* AttributeWriteMask */
 typedef UA_UInt32 UA_AttributeWriteMask;
@@ -25874,7 +25966,7 @@ typedef UA_UInt32 UA_AttributeWriteMask;
 #define UA_ATTRIBUTEWRITEMASK_ACCESSRESTRICTIONS 16777216
 #define UA_ATTRIBUTEWRITEMASK_ACCESSLEVELEX 33554432
 
-#define UA_TYPES_ATTRIBUTEWRITEMASK 210
+#define UA_TYPES_ATTRIBUTEWRITEMASK 216
 
 /* BrowseDirection */
 typedef enum {
@@ -25887,7 +25979,7 @@ typedef enum {
 
 UA_STATIC_ASSERT(sizeof(UA_BrowseDirection) == sizeof(UA_Int32), enum_must_be_32bit);
 
-#define UA_TYPES_BROWSEDIRECTION 211
+#define UA_TYPES_BROWSEDIRECTION 217
 
 /* ViewDescription */
 typedef struct {
@@ -25896,7 +25988,7 @@ typedef struct {
     UA_UInt32 viewVersion;
 } UA_ViewDescription;
 
-#define UA_TYPES_VIEWDESCRIPTION 212
+#define UA_TYPES_VIEWDESCRIPTION 218
 
 /* BrowseDescription */
 typedef struct {
@@ -25908,7 +26000,7 @@ typedef struct {
     UA_UInt32 resultMask;
 } UA_BrowseDescription;
 
-#define UA_TYPES_BROWSEDESCRIPTION 213
+#define UA_TYPES_BROWSEDESCRIPTION 219
 
 /* BrowseResultMask */
 typedef enum {
@@ -25927,7 +26019,7 @@ typedef enum {
 
 UA_STATIC_ASSERT(sizeof(UA_BrowseResultMask) == sizeof(UA_Int32), enum_must_be_32bit);
 
-#define UA_TYPES_BROWSERESULTMASK 214
+#define UA_TYPES_BROWSERESULTMASK 220
 
 /* ReferenceDescription */
 typedef struct {
@@ -25940,12 +26032,12 @@ typedef struct {
     UA_ExpandedNodeId typeDefinition;
 } UA_ReferenceDescription;
 
-#define UA_TYPES_REFERENCEDESCRIPTION 215
+#define UA_TYPES_REFERENCEDESCRIPTION 221
 
 /* ContinuationPoint */
 typedef UA_ByteString UA_ContinuationPoint;
 
-#define UA_TYPES_CONTINUATIONPOINT 216
+#define UA_TYPES_CONTINUATIONPOINT 222
 
 /* BrowseResult */
 typedef struct {
@@ -25955,7 +26047,7 @@ typedef struct {
     UA_ReferenceDescription *references;
 } UA_BrowseResult;
 
-#define UA_TYPES_BROWSERESULT 217
+#define UA_TYPES_BROWSERESULT 223
 
 /* BrowseRequest */
 typedef struct {
@@ -25966,7 +26058,7 @@ typedef struct {
     UA_BrowseDescription *nodesToBrowse;
 } UA_BrowseRequest;
 
-#define UA_TYPES_BROWSEREQUEST 218
+#define UA_TYPES_BROWSEREQUEST 224
 
 /* BrowseResponse */
 typedef struct {
@@ -25977,7 +26069,7 @@ typedef struct {
     UA_DiagnosticInfo *diagnosticInfos;
 } UA_BrowseResponse;
 
-#define UA_TYPES_BROWSERESPONSE 219
+#define UA_TYPES_BROWSERESPONSE 225
 
 /* BrowseNextRequest */
 typedef struct {
@@ -25987,7 +26079,7 @@ typedef struct {
     UA_ByteString *continuationPoints;
 } UA_BrowseNextRequest;
 
-#define UA_TYPES_BROWSENEXTREQUEST 220
+#define UA_TYPES_BROWSENEXTREQUEST 226
 
 /* BrowseNextResponse */
 typedef struct {
@@ -25998,7 +26090,7 @@ typedef struct {
     UA_DiagnosticInfo *diagnosticInfos;
 } UA_BrowseNextResponse;
 
-#define UA_TYPES_BROWSENEXTRESPONSE 221
+#define UA_TYPES_BROWSENEXTRESPONSE 227
 
 /* RelativePathElement */
 typedef struct {
@@ -26008,7 +26100,7 @@ typedef struct {
     UA_QualifiedName targetName;
 } UA_RelativePathElement;
 
-#define UA_TYPES_RELATIVEPATHELEMENT 222
+#define UA_TYPES_RELATIVEPATHELEMENT 228
 
 /* RelativePath */
 typedef struct {
@@ -26016,7 +26108,7 @@ typedef struct {
     UA_RelativePathElement *elements;
 } UA_RelativePath;
 
-#define UA_TYPES_RELATIVEPATH 223
+#define UA_TYPES_RELATIVEPATH 229
 
 /* BrowsePath */
 typedef struct {
@@ -26024,7 +26116,7 @@ typedef struct {
     UA_RelativePath relativePath;
 } UA_BrowsePath;
 
-#define UA_TYPES_BROWSEPATH 224
+#define UA_TYPES_BROWSEPATH 230
 
 /* BrowsePathTarget */
 typedef struct {
@@ -26032,7 +26124,7 @@ typedef struct {
     UA_UInt32 remainingPathIndex;
 } UA_BrowsePathTarget;
 
-#define UA_TYPES_BROWSEPATHTARGET 225
+#define UA_TYPES_BROWSEPATHTARGET 231
 
 /* BrowsePathResult */
 typedef struct {
@@ -26041,7 +26133,7 @@ typedef struct {
     UA_BrowsePathTarget *targets;
 } UA_BrowsePathResult;
 
-#define UA_TYPES_BROWSEPATHRESULT 226
+#define UA_TYPES_BROWSEPATHRESULT 232
 
 /* TranslateBrowsePathsToNodeIdsRequest */
 typedef struct {
@@ -26050,7 +26142,7 @@ typedef struct {
     UA_BrowsePath *browsePaths;
 } UA_TranslateBrowsePathsToNodeIdsRequest;
 
-#define UA_TYPES_TRANSLATEBROWSEPATHSTONODEIDSREQUEST 227
+#define UA_TYPES_TRANSLATEBROWSEPATHSTONODEIDSREQUEST 233
 
 /* TranslateBrowsePathsToNodeIdsResponse */
 typedef struct {
@@ -26061,7 +26153,7 @@ typedef struct {
     UA_DiagnosticInfo *diagnosticInfos;
 } UA_TranslateBrowsePathsToNodeIdsResponse;
 
-#define UA_TYPES_TRANSLATEBROWSEPATHSTONODEIDSRESPONSE 228
+#define UA_TYPES_TRANSLATEBROWSEPATHSTONODEIDSRESPONSE 234
 
 /* RegisterNodesRequest */
 typedef struct {
@@ -26070,7 +26162,7 @@ typedef struct {
     UA_NodeId *nodesToRegister;
 } UA_RegisterNodesRequest;
 
-#define UA_TYPES_REGISTERNODESREQUEST 229
+#define UA_TYPES_REGISTERNODESREQUEST 235
 
 /* RegisterNodesResponse */
 typedef struct {
@@ -26079,7 +26171,7 @@ typedef struct {
     UA_NodeId *registeredNodeIds;
 } UA_RegisterNodesResponse;
 
-#define UA_TYPES_REGISTERNODESRESPONSE 230
+#define UA_TYPES_REGISTERNODESRESPONSE 236
 
 /* UnregisterNodesRequest */
 typedef struct {
@@ -26088,24 +26180,24 @@ typedef struct {
     UA_NodeId *nodesToUnregister;
 } UA_UnregisterNodesRequest;
 
-#define UA_TYPES_UNREGISTERNODESREQUEST 231
+#define UA_TYPES_UNREGISTERNODESREQUEST 237
 
 /* UnregisterNodesResponse */
 typedef struct {
     UA_ResponseHeader responseHeader;
 } UA_UnregisterNodesResponse;
 
-#define UA_TYPES_UNREGISTERNODESRESPONSE 232
+#define UA_TYPES_UNREGISTERNODESRESPONSE 238
 
 /* Counter */
 typedef UA_UInt32 UA_Counter;
 
-#define UA_TYPES_COUNTER 233
+#define UA_TYPES_COUNTER 239
 
 /* OpaqueNumericRange */
 typedef UA_String UA_OpaqueNumericRange;
 
-#define UA_TYPES_OPAQUENUMERICRANGE 234
+#define UA_TYPES_OPAQUENUMERICRANGE 240
 
 /* EndpointConfiguration */
 typedef struct {
@@ -26120,7 +26212,7 @@ typedef struct {
     UA_Int32 securityTokenLifetime;
 } UA_EndpointConfiguration;
 
-#define UA_TYPES_ENDPOINTCONFIGURATION 235
+#define UA_TYPES_ENDPOINTCONFIGURATION 241
 
 /* QueryDataDescription */
 typedef struct {
@@ -26129,7 +26221,7 @@ typedef struct {
     UA_String indexRange;
 } UA_QueryDataDescription;
 
-#define UA_TYPES_QUERYDATADESCRIPTION 236
+#define UA_TYPES_QUERYDATADESCRIPTION 242
 
 /* NodeTypeDescription */
 typedef struct {
@@ -26139,7 +26231,7 @@ typedef struct {
     UA_QueryDataDescription *dataToReturn;
 } UA_NodeTypeDescription;
 
-#define UA_TYPES_NODETYPEDESCRIPTION 237
+#define UA_TYPES_NODETYPEDESCRIPTION 243
 
 /* FilterOperator */
 typedef enum {
@@ -26166,7 +26258,7 @@ typedef enum {
 
 UA_STATIC_ASSERT(sizeof(UA_FilterOperator) == sizeof(UA_Int32), enum_must_be_32bit);
 
-#define UA_TYPES_FILTEROPERATOR 238
+#define UA_TYPES_FILTEROPERATOR 244
 
 /* QueryDataSet */
 typedef struct {
@@ -26176,7 +26268,7 @@ typedef struct {
     UA_Variant *values;
 } UA_QueryDataSet;
 
-#define UA_TYPES_QUERYDATASET 239
+#define UA_TYPES_QUERYDATASET 245
 
 /* NodeReference */
 typedef struct {
@@ -26187,7 +26279,7 @@ typedef struct {
     UA_NodeId *referencedNodeIds;
 } UA_NodeReference;
 
-#define UA_TYPES_NODEREFERENCE 240
+#define UA_TYPES_NODEREFERENCE 246
 
 /* ContentFilterElement */
 typedef struct {
@@ -26196,7 +26288,7 @@ typedef struct {
     UA_ExtensionObject *filterOperands;
 } UA_ContentFilterElement;
 
-#define UA_TYPES_CONTENTFILTERELEMENT 241
+#define UA_TYPES_CONTENTFILTERELEMENT 247
 
 /* ContentFilter */
 typedef struct {
@@ -26204,21 +26296,21 @@ typedef struct {
     UA_ContentFilterElement *elements;
 } UA_ContentFilter;
 
-#define UA_TYPES_CONTENTFILTER 242
+#define UA_TYPES_CONTENTFILTER 248
 
 /* ElementOperand */
 typedef struct {
     UA_UInt32 index;
 } UA_ElementOperand;
 
-#define UA_TYPES_ELEMENTOPERAND 243
+#define UA_TYPES_ELEMENTOPERAND 249
 
 /* LiteralOperand */
 typedef struct {
     UA_Variant value;
 } UA_LiteralOperand;
 
-#define UA_TYPES_LITERALOPERAND 244
+#define UA_TYPES_LITERALOPERAND 250
 
 /* AttributeOperand */
 typedef struct {
@@ -26229,7 +26321,7 @@ typedef struct {
     UA_String indexRange;
 } UA_AttributeOperand;
 
-#define UA_TYPES_ATTRIBUTEOPERAND 245
+#define UA_TYPES_ATTRIBUTEOPERAND 251
 
 /* SimpleAttributeOperand */
 typedef struct {
@@ -26240,7 +26332,7 @@ typedef struct {
     UA_String indexRange;
 } UA_SimpleAttributeOperand;
 
-#define UA_TYPES_SIMPLEATTRIBUTEOPERAND 246
+#define UA_TYPES_SIMPLEATTRIBUTEOPERAND 252
 
 /* ContentFilterElementResult */
 typedef struct {
@@ -26251,7 +26343,7 @@ typedef struct {
     UA_DiagnosticInfo *operandDiagnosticInfos;
 } UA_ContentFilterElementResult;
 
-#define UA_TYPES_CONTENTFILTERELEMENTRESULT 247
+#define UA_TYPES_CONTENTFILTERELEMENTRESULT 253
 
 /* ContentFilterResult */
 typedef struct {
@@ -26261,7 +26353,7 @@ typedef struct {
     UA_DiagnosticInfo *elementDiagnosticInfos;
 } UA_ContentFilterResult;
 
-#define UA_TYPES_CONTENTFILTERRESULT 248
+#define UA_TYPES_CONTENTFILTERRESULT 254
 
 /* ParsingResult */
 typedef struct {
@@ -26272,7 +26364,7 @@ typedef struct {
     UA_DiagnosticInfo *dataDiagnosticInfos;
 } UA_ParsingResult;
 
-#define UA_TYPES_PARSINGRESULT 249
+#define UA_TYPES_PARSINGRESULT 255
 
 /* QueryFirstRequest */
 typedef struct {
@@ -26285,7 +26377,7 @@ typedef struct {
     UA_UInt32 maxReferencesToReturn;
 } UA_QueryFirstRequest;
 
-#define UA_TYPES_QUERYFIRSTREQUEST 250
+#define UA_TYPES_QUERYFIRSTREQUEST 256
 
 /* QueryFirstResponse */
 typedef struct {
@@ -26300,7 +26392,7 @@ typedef struct {
     UA_ContentFilterResult filterResult;
 } UA_QueryFirstResponse;
 
-#define UA_TYPES_QUERYFIRSTRESPONSE 251
+#define UA_TYPES_QUERYFIRSTRESPONSE 257
 
 /* QueryNextRequest */
 typedef struct {
@@ -26309,7 +26401,7 @@ typedef struct {
     UA_ByteString continuationPoint;
 } UA_QueryNextRequest;
 
-#define UA_TYPES_QUERYNEXTREQUEST 252
+#define UA_TYPES_QUERYNEXTREQUEST 258
 
 /* QueryNextResponse */
 typedef struct {
@@ -26319,7 +26411,7 @@ typedef struct {
     UA_ByteString revisedContinuationPoint;
 } UA_QueryNextResponse;
 
-#define UA_TYPES_QUERYNEXTRESPONSE 253
+#define UA_TYPES_QUERYNEXTRESPONSE 259
 
 /* TimestampsToReturn */
 typedef enum {
@@ -26333,7 +26425,7 @@ typedef enum {
 
 UA_STATIC_ASSERT(sizeof(UA_TimestampsToReturn) == sizeof(UA_Int32), enum_must_be_32bit);
 
-#define UA_TYPES_TIMESTAMPSTORETURN 254
+#define UA_TYPES_TIMESTAMPSTORETURN 260
 
 /* ReadValueId */
 typedef struct {
@@ -26343,7 +26435,7 @@ typedef struct {
     UA_QualifiedName dataEncoding;
 } UA_ReadValueId;
 
-#define UA_TYPES_READVALUEID 255
+#define UA_TYPES_READVALUEID 261
 
 /* ReadRequest */
 typedef struct {
@@ -26354,7 +26446,7 @@ typedef struct {
     UA_ReadValueId *nodesToRead;
 } UA_ReadRequest;
 
-#define UA_TYPES_READREQUEST 256
+#define UA_TYPES_READREQUEST 262
 
 /* ReadResponse */
 typedef struct {
@@ -26365,7 +26457,7 @@ typedef struct {
     UA_DiagnosticInfo *diagnosticInfos;
 } UA_ReadResponse;
 
-#define UA_TYPES_READRESPONSE 257
+#define UA_TYPES_READRESPONSE 263
 
 /* HistoryReadValueId */
 typedef struct {
@@ -26375,7 +26467,7 @@ typedef struct {
     UA_ByteString continuationPoint;
 } UA_HistoryReadValueId;
 
-#define UA_TYPES_HISTORYREADVALUEID 258
+#define UA_TYPES_HISTORYREADVALUEID 264
 
 /* HistoryReadResult */
 typedef struct {
@@ -26384,7 +26476,7 @@ typedef struct {
     UA_ExtensionObject historyData;
 } UA_HistoryReadResult;
 
-#define UA_TYPES_HISTORYREADRESULT 259
+#define UA_TYPES_HISTORYREADRESULT 265
 
 /* ReadRawModifiedDetails */
 typedef struct {
@@ -26395,7 +26487,7 @@ typedef struct {
     UA_Boolean returnBounds;
 } UA_ReadRawModifiedDetails;
 
-#define UA_TYPES_READRAWMODIFIEDDETAILS 260
+#define UA_TYPES_READRAWMODIFIEDDETAILS 266
 
 /* ReadAtTimeDetails */
 typedef struct {
@@ -26404,7 +26496,7 @@ typedef struct {
     UA_Boolean useSimpleBounds;
 } UA_ReadAtTimeDetails;
 
-#define UA_TYPES_READATTIMEDETAILS 261
+#define UA_TYPES_READATTIMEDETAILS 267
 
 /* ReadAnnotationDataDetails */
 typedef struct {
@@ -26412,7 +26504,7 @@ typedef struct {
     UA_DateTime *reqTimes;
 } UA_ReadAnnotationDataDetails;
 
-#define UA_TYPES_READANNOTATIONDATADETAILS 262
+#define UA_TYPES_READANNOTATIONDATADETAILS 268
 
 /* HistoryData */
 typedef struct {
@@ -26420,7 +26512,7 @@ typedef struct {
     UA_DataValue *dataValues;
 } UA_HistoryData;
 
-#define UA_TYPES_HISTORYDATA 263
+#define UA_TYPES_HISTORYDATA 269
 
 /* HistoryReadRequest */
 typedef struct {
@@ -26432,7 +26524,7 @@ typedef struct {
     UA_HistoryReadValueId *nodesToRead;
 } UA_HistoryReadRequest;
 
-#define UA_TYPES_HISTORYREADREQUEST 264
+#define UA_TYPES_HISTORYREADREQUEST 270
 
 /* HistoryReadResponse */
 typedef struct {
@@ -26443,7 +26535,7 @@ typedef struct {
     UA_DiagnosticInfo *diagnosticInfos;
 } UA_HistoryReadResponse;
 
-#define UA_TYPES_HISTORYREADRESPONSE 265
+#define UA_TYPES_HISTORYREADRESPONSE 271
 
 /* WriteValue */
 typedef struct {
@@ -26453,7 +26545,7 @@ typedef struct {
     UA_DataValue value;
 } UA_WriteValue;
 
-#define UA_TYPES_WRITEVALUE 266
+#define UA_TYPES_WRITEVALUE 272
 
 /* WriteRequest */
 typedef struct {
@@ -26462,7 +26554,7 @@ typedef struct {
     UA_WriteValue *nodesToWrite;
 } UA_WriteRequest;
 
-#define UA_TYPES_WRITEREQUEST 267
+#define UA_TYPES_WRITEREQUEST 273
 
 /* WriteResponse */
 typedef struct {
@@ -26473,14 +26565,14 @@ typedef struct {
     UA_DiagnosticInfo *diagnosticInfos;
 } UA_WriteResponse;
 
-#define UA_TYPES_WRITERESPONSE 268
+#define UA_TYPES_WRITERESPONSE 274
 
 /* HistoryUpdateDetails */
 typedef struct {
     UA_NodeId nodeId;
 } UA_HistoryUpdateDetails;
 
-#define UA_TYPES_HISTORYUPDATEDETAILS 269
+#define UA_TYPES_HISTORYUPDATEDETAILS 275
 
 /* HistoryUpdateType */
 typedef enum {
@@ -26493,7 +26585,7 @@ typedef enum {
 
 UA_STATIC_ASSERT(sizeof(UA_HistoryUpdateType) == sizeof(UA_Int32), enum_must_be_32bit);
 
-#define UA_TYPES_HISTORYUPDATETYPE 270
+#define UA_TYPES_HISTORYUPDATETYPE 276
 
 /* PerformUpdateType */
 typedef enum {
@@ -26506,7 +26598,7 @@ typedef enum {
 
 UA_STATIC_ASSERT(sizeof(UA_PerformUpdateType) == sizeof(UA_Int32), enum_must_be_32bit);
 
-#define UA_TYPES_PERFORMUPDATETYPE 271
+#define UA_TYPES_PERFORMUPDATETYPE 277
 
 /* UpdateDataDetails */
 typedef struct {
@@ -26516,7 +26608,7 @@ typedef struct {
     UA_DataValue *updateValues;
 } UA_UpdateDataDetails;
 
-#define UA_TYPES_UPDATEDATADETAILS 272
+#define UA_TYPES_UPDATEDATADETAILS 278
 
 /* UpdateStructureDataDetails */
 typedef struct {
@@ -26526,7 +26618,7 @@ typedef struct {
     UA_DataValue *updateValues;
 } UA_UpdateStructureDataDetails;
 
-#define UA_TYPES_UPDATESTRUCTUREDATADETAILS 273
+#define UA_TYPES_UPDATESTRUCTUREDATADETAILS 279
 
 /* DeleteRawModifiedDetails */
 typedef struct {
@@ -26536,7 +26628,7 @@ typedef struct {
     UA_DateTime endTime;
 } UA_DeleteRawModifiedDetails;
 
-#define UA_TYPES_DELETERAWMODIFIEDDETAILS 274
+#define UA_TYPES_DELETERAWMODIFIEDDETAILS 280
 
 /* DeleteAtTimeDetails */
 typedef struct {
@@ -26545,7 +26637,7 @@ typedef struct {
     UA_DateTime *reqTimes;
 } UA_DeleteAtTimeDetails;
 
-#define UA_TYPES_DELETEATTIMEDETAILS 275
+#define UA_TYPES_DELETEATTIMEDETAILS 281
 
 /* DeleteEventDetails */
 typedef struct {
@@ -26554,7 +26646,7 @@ typedef struct {
     UA_ByteString *eventIds;
 } UA_DeleteEventDetails;
 
-#define UA_TYPES_DELETEEVENTDETAILS 276
+#define UA_TYPES_DELETEEVENTDETAILS 282
 
 /* HistoryUpdateResult */
 typedef struct {
@@ -26565,7 +26657,7 @@ typedef struct {
     UA_DiagnosticInfo *diagnosticInfos;
 } UA_HistoryUpdateResult;
 
-#define UA_TYPES_HISTORYUPDATERESULT 277
+#define UA_TYPES_HISTORYUPDATERESULT 283
 
 /* HistoryUpdateRequest */
 typedef struct {
@@ -26574,7 +26666,7 @@ typedef struct {
     UA_ExtensionObject *historyUpdateDetails;
 } UA_HistoryUpdateRequest;
 
-#define UA_TYPES_HISTORYUPDATEREQUEST 278
+#define UA_TYPES_HISTORYUPDATEREQUEST 284
 
 /* HistoryUpdateResponse */
 typedef struct {
@@ -26585,7 +26677,7 @@ typedef struct {
     UA_DiagnosticInfo *diagnosticInfos;
 } UA_HistoryUpdateResponse;
 
-#define UA_TYPES_HISTORYUPDATERESPONSE 279
+#define UA_TYPES_HISTORYUPDATERESPONSE 285
 
 /* CallMethodRequest */
 typedef struct {
@@ -26595,7 +26687,7 @@ typedef struct {
     UA_Variant *inputArguments;
 } UA_CallMethodRequest;
 
-#define UA_TYPES_CALLMETHODREQUEST 280
+#define UA_TYPES_CALLMETHODREQUEST 286
 
 /* CallMethodResult */
 typedef struct {
@@ -26608,7 +26700,7 @@ typedef struct {
     UA_Variant *outputArguments;
 } UA_CallMethodResult;
 
-#define UA_TYPES_CALLMETHODRESULT 281
+#define UA_TYPES_CALLMETHODRESULT 287
 
 /* CallRequest */
 typedef struct {
@@ -26617,7 +26709,7 @@ typedef struct {
     UA_CallMethodRequest *methodsToCall;
 } UA_CallRequest;
 
-#define UA_TYPES_CALLREQUEST 282
+#define UA_TYPES_CALLREQUEST 288
 
 /* CallResponse */
 typedef struct {
@@ -26628,7 +26720,7 @@ typedef struct {
     UA_DiagnosticInfo *diagnosticInfos;
 } UA_CallResponse;
 
-#define UA_TYPES_CALLRESPONSE 283
+#define UA_TYPES_CALLRESPONSE 289
 
 /* MonitoringMode */
 typedef enum {
@@ -26640,7 +26732,7 @@ typedef enum {
 
 UA_STATIC_ASSERT(sizeof(UA_MonitoringMode) == sizeof(UA_Int32), enum_must_be_32bit);
 
-#define UA_TYPES_MONITORINGMODE 284
+#define UA_TYPES_MONITORINGMODE 290
 
 /* DataChangeTrigger */
 typedef enum {
@@ -26652,7 +26744,7 @@ typedef enum {
 
 UA_STATIC_ASSERT(sizeof(UA_DataChangeTrigger) == sizeof(UA_Int32), enum_must_be_32bit);
 
-#define UA_TYPES_DATACHANGETRIGGER 285
+#define UA_TYPES_DATACHANGETRIGGER 291
 
 /* DeadbandType */
 typedef enum {
@@ -26664,7 +26756,7 @@ typedef enum {
 
 UA_STATIC_ASSERT(sizeof(UA_DeadbandType) == sizeof(UA_Int32), enum_must_be_32bit);
 
-#define UA_TYPES_DEADBANDTYPE 286
+#define UA_TYPES_DEADBANDTYPE 292
 
 /* DataChangeFilter */
 typedef struct {
@@ -26673,7 +26765,7 @@ typedef struct {
     UA_Double deadbandValue;
 } UA_DataChangeFilter;
 
-#define UA_TYPES_DATACHANGEFILTER 287
+#define UA_TYPES_DATACHANGEFILTER 293
 
 /* EventFilter */
 typedef struct {
@@ -26682,7 +26774,7 @@ typedef struct {
     UA_ContentFilter whereClause;
 } UA_EventFilter;
 
-#define UA_TYPES_EVENTFILTER 288
+#define UA_TYPES_EVENTFILTER 294
 
 /* AggregateConfiguration */
 typedef struct {
@@ -26693,7 +26785,7 @@ typedef struct {
     UA_Boolean useSlopedExtrapolation;
 } UA_AggregateConfiguration;
 
-#define UA_TYPES_AGGREGATECONFIGURATION 289
+#define UA_TYPES_AGGREGATECONFIGURATION 295
 
 /* AggregateFilter */
 typedef struct {
@@ -26703,7 +26795,7 @@ typedef struct {
     UA_AggregateConfiguration aggregateConfiguration;
 } UA_AggregateFilter;
 
-#define UA_TYPES_AGGREGATEFILTER 290
+#define UA_TYPES_AGGREGATEFILTER 296
 
 /* EventFilterResult */
 typedef struct {
@@ -26714,7 +26806,7 @@ typedef struct {
     UA_ContentFilterResult whereClauseResult;
 } UA_EventFilterResult;
 
-#define UA_TYPES_EVENTFILTERRESULT 291
+#define UA_TYPES_EVENTFILTERRESULT 297
 
 /* AggregateFilterResult */
 typedef struct {
@@ -26723,7 +26815,7 @@ typedef struct {
     UA_AggregateConfiguration revisedAggregateConfiguration;
 } UA_AggregateFilterResult;
 
-#define UA_TYPES_AGGREGATEFILTERRESULT 292
+#define UA_TYPES_AGGREGATEFILTERRESULT 298
 
 /* MonitoringParameters */
 typedef struct {
@@ -26734,7 +26826,7 @@ typedef struct {
     UA_Boolean discardOldest;
 } UA_MonitoringParameters;
 
-#define UA_TYPES_MONITORINGPARAMETERS 293
+#define UA_TYPES_MONITORINGPARAMETERS 299
 
 /* MonitoredItemCreateRequest */
 typedef struct {
@@ -26743,7 +26835,7 @@ typedef struct {
     UA_MonitoringParameters requestedParameters;
 } UA_MonitoredItemCreateRequest;
 
-#define UA_TYPES_MONITOREDITEMCREATEREQUEST 294
+#define UA_TYPES_MONITOREDITEMCREATEREQUEST 300
 
 /* MonitoredItemCreateResult */
 typedef struct {
@@ -26754,7 +26846,7 @@ typedef struct {
     UA_ExtensionObject filterResult;
 } UA_MonitoredItemCreateResult;
 
-#define UA_TYPES_MONITOREDITEMCREATERESULT 295
+#define UA_TYPES_MONITOREDITEMCREATERESULT 301
 
 /* CreateMonitoredItemsRequest */
 typedef struct {
@@ -26765,7 +26857,7 @@ typedef struct {
     UA_MonitoredItemCreateRequest *itemsToCreate;
 } UA_CreateMonitoredItemsRequest;
 
-#define UA_TYPES_CREATEMONITOREDITEMSREQUEST 296
+#define UA_TYPES_CREATEMONITOREDITEMSREQUEST 302
 
 /* CreateMonitoredItemsResponse */
 typedef struct {
@@ -26776,7 +26868,7 @@ typedef struct {
     UA_DiagnosticInfo *diagnosticInfos;
 } UA_CreateMonitoredItemsResponse;
 
-#define UA_TYPES_CREATEMONITOREDITEMSRESPONSE 297
+#define UA_TYPES_CREATEMONITOREDITEMSRESPONSE 303
 
 /* MonitoredItemModifyRequest */
 typedef struct {
@@ -26784,7 +26876,7 @@ typedef struct {
     UA_MonitoringParameters requestedParameters;
 } UA_MonitoredItemModifyRequest;
 
-#define UA_TYPES_MONITOREDITEMMODIFYREQUEST 298
+#define UA_TYPES_MONITOREDITEMMODIFYREQUEST 304
 
 /* MonitoredItemModifyResult */
 typedef struct {
@@ -26794,7 +26886,7 @@ typedef struct {
     UA_ExtensionObject filterResult;
 } UA_MonitoredItemModifyResult;
 
-#define UA_TYPES_MONITOREDITEMMODIFYRESULT 299
+#define UA_TYPES_MONITOREDITEMMODIFYRESULT 305
 
 /* ModifyMonitoredItemsRequest */
 typedef struct {
@@ -26805,7 +26897,7 @@ typedef struct {
     UA_MonitoredItemModifyRequest *itemsToModify;
 } UA_ModifyMonitoredItemsRequest;
 
-#define UA_TYPES_MODIFYMONITOREDITEMSREQUEST 300
+#define UA_TYPES_MODIFYMONITOREDITEMSREQUEST 306
 
 /* ModifyMonitoredItemsResponse */
 typedef struct {
@@ -26816,7 +26908,7 @@ typedef struct {
     UA_DiagnosticInfo *diagnosticInfos;
 } UA_ModifyMonitoredItemsResponse;
 
-#define UA_TYPES_MODIFYMONITOREDITEMSRESPONSE 301
+#define UA_TYPES_MODIFYMONITOREDITEMSRESPONSE 307
 
 /* SetMonitoringModeRequest */
 typedef struct {
@@ -26827,7 +26919,7 @@ typedef struct {
     UA_UInt32 *monitoredItemIds;
 } UA_SetMonitoringModeRequest;
 
-#define UA_TYPES_SETMONITORINGMODEREQUEST 302
+#define UA_TYPES_SETMONITORINGMODEREQUEST 308
 
 /* SetMonitoringModeResponse */
 typedef struct {
@@ -26838,7 +26930,7 @@ typedef struct {
     UA_DiagnosticInfo *diagnosticInfos;
 } UA_SetMonitoringModeResponse;
 
-#define UA_TYPES_SETMONITORINGMODERESPONSE 303
+#define UA_TYPES_SETMONITORINGMODERESPONSE 309
 
 /* SetTriggeringRequest */
 typedef struct {
@@ -26851,7 +26943,7 @@ typedef struct {
     UA_UInt32 *linksToRemove;
 } UA_SetTriggeringRequest;
 
-#define UA_TYPES_SETTRIGGERINGREQUEST 304
+#define UA_TYPES_SETTRIGGERINGREQUEST 310
 
 /* SetTriggeringResponse */
 typedef struct {
@@ -26866,7 +26958,7 @@ typedef struct {
     UA_DiagnosticInfo *removeDiagnosticInfos;
 } UA_SetTriggeringResponse;
 
-#define UA_TYPES_SETTRIGGERINGRESPONSE 305
+#define UA_TYPES_SETTRIGGERINGRESPONSE 311
 
 /* DeleteMonitoredItemsRequest */
 typedef struct {
@@ -26876,7 +26968,7 @@ typedef struct {
     UA_UInt32 *monitoredItemIds;
 } UA_DeleteMonitoredItemsRequest;
 
-#define UA_TYPES_DELETEMONITOREDITEMSREQUEST 306
+#define UA_TYPES_DELETEMONITOREDITEMSREQUEST 312
 
 /* DeleteMonitoredItemsResponse */
 typedef struct {
@@ -26887,7 +26979,7 @@ typedef struct {
     UA_DiagnosticInfo *diagnosticInfos;
 } UA_DeleteMonitoredItemsResponse;
 
-#define UA_TYPES_DELETEMONITOREDITEMSRESPONSE 307
+#define UA_TYPES_DELETEMONITOREDITEMSRESPONSE 313
 
 /* CreateSubscriptionRequest */
 typedef struct {
@@ -26900,7 +26992,7 @@ typedef struct {
     UA_Byte priority;
 } UA_CreateSubscriptionRequest;
 
-#define UA_TYPES_CREATESUBSCRIPTIONREQUEST 308
+#define UA_TYPES_CREATESUBSCRIPTIONREQUEST 314
 
 /* CreateSubscriptionResponse */
 typedef struct {
@@ -26911,7 +27003,7 @@ typedef struct {
     UA_UInt32 revisedMaxKeepAliveCount;
 } UA_CreateSubscriptionResponse;
 
-#define UA_TYPES_CREATESUBSCRIPTIONRESPONSE 309
+#define UA_TYPES_CREATESUBSCRIPTIONRESPONSE 315
 
 /* ModifySubscriptionRequest */
 typedef struct {
@@ -26924,7 +27016,7 @@ typedef struct {
     UA_Byte priority;
 } UA_ModifySubscriptionRequest;
 
-#define UA_TYPES_MODIFYSUBSCRIPTIONREQUEST 310
+#define UA_TYPES_MODIFYSUBSCRIPTIONREQUEST 316
 
 /* ModifySubscriptionResponse */
 typedef struct {
@@ -26934,7 +27026,7 @@ typedef struct {
     UA_UInt32 revisedMaxKeepAliveCount;
 } UA_ModifySubscriptionResponse;
 
-#define UA_TYPES_MODIFYSUBSCRIPTIONRESPONSE 311
+#define UA_TYPES_MODIFYSUBSCRIPTIONRESPONSE 317
 
 /* SetPublishingModeRequest */
 typedef struct {
@@ -26944,7 +27036,7 @@ typedef struct {
     UA_UInt32 *subscriptionIds;
 } UA_SetPublishingModeRequest;
 
-#define UA_TYPES_SETPUBLISHINGMODEREQUEST 312
+#define UA_TYPES_SETPUBLISHINGMODEREQUEST 318
 
 /* SetPublishingModeResponse */
 typedef struct {
@@ -26955,7 +27047,7 @@ typedef struct {
     UA_DiagnosticInfo *diagnosticInfos;
 } UA_SetPublishingModeResponse;
 
-#define UA_TYPES_SETPUBLISHINGMODERESPONSE 313
+#define UA_TYPES_SETPUBLISHINGMODERESPONSE 319
 
 /* NotificationMessage */
 typedef struct {
@@ -26965,7 +27057,7 @@ typedef struct {
     UA_ExtensionObject *notificationData;
 } UA_NotificationMessage;
 
-#define UA_TYPES_NOTIFICATIONMESSAGE 314
+#define UA_TYPES_NOTIFICATIONMESSAGE 320
 
 /* MonitoredItemNotification */
 typedef struct {
@@ -26973,7 +27065,7 @@ typedef struct {
     UA_DataValue value;
 } UA_MonitoredItemNotification;
 
-#define UA_TYPES_MONITOREDITEMNOTIFICATION 315
+#define UA_TYPES_MONITOREDITEMNOTIFICATION 321
 
 /* EventFieldList */
 typedef struct {
@@ -26982,7 +27074,7 @@ typedef struct {
     UA_Variant *eventFields;
 } UA_EventFieldList;
 
-#define UA_TYPES_EVENTFIELDLIST 316
+#define UA_TYPES_EVENTFIELDLIST 322
 
 /* HistoryEventFieldList */
 typedef struct {
@@ -26990,7 +27082,7 @@ typedef struct {
     UA_Variant *eventFields;
 } UA_HistoryEventFieldList;
 
-#define UA_TYPES_HISTORYEVENTFIELDLIST 317
+#define UA_TYPES_HISTORYEVENTFIELDLIST 323
 
 /* StatusChangeNotification */
 typedef struct {
@@ -26998,7 +27090,7 @@ typedef struct {
     UA_DiagnosticInfo diagnosticInfo;
 } UA_StatusChangeNotification;
 
-#define UA_TYPES_STATUSCHANGENOTIFICATION 318
+#define UA_TYPES_STATUSCHANGENOTIFICATION 324
 
 /* SubscriptionAcknowledgement */
 typedef struct {
@@ -27006,7 +27098,7 @@ typedef struct {
     UA_UInt32 sequenceNumber;
 } UA_SubscriptionAcknowledgement;
 
-#define UA_TYPES_SUBSCRIPTIONACKNOWLEDGEMENT 319
+#define UA_TYPES_SUBSCRIPTIONACKNOWLEDGEMENT 325
 
 /* PublishRequest */
 typedef struct {
@@ -27015,7 +27107,7 @@ typedef struct {
     UA_SubscriptionAcknowledgement *subscriptionAcknowledgements;
 } UA_PublishRequest;
 
-#define UA_TYPES_PUBLISHREQUEST 320
+#define UA_TYPES_PUBLISHREQUEST 326
 
 /* PublishResponse */
 typedef struct {
@@ -27031,7 +27123,7 @@ typedef struct {
     UA_DiagnosticInfo *diagnosticInfos;
 } UA_PublishResponse;
 
-#define UA_TYPES_PUBLISHRESPONSE 321
+#define UA_TYPES_PUBLISHRESPONSE 327
 
 /* RepublishRequest */
 typedef struct {
@@ -27040,7 +27132,7 @@ typedef struct {
     UA_UInt32 retransmitSequenceNumber;
 } UA_RepublishRequest;
 
-#define UA_TYPES_REPUBLISHREQUEST 322
+#define UA_TYPES_REPUBLISHREQUEST 328
 
 /* RepublishResponse */
 typedef struct {
@@ -27048,7 +27140,7 @@ typedef struct {
     UA_NotificationMessage notificationMessage;
 } UA_RepublishResponse;
 
-#define UA_TYPES_REPUBLISHRESPONSE 323
+#define UA_TYPES_REPUBLISHRESPONSE 329
 
 /* TransferResult */
 typedef struct {
@@ -27057,7 +27149,7 @@ typedef struct {
     UA_UInt32 *availableSequenceNumbers;
 } UA_TransferResult;
 
-#define UA_TYPES_TRANSFERRESULT 324
+#define UA_TYPES_TRANSFERRESULT 330
 
 /* TransferSubscriptionsRequest */
 typedef struct {
@@ -27067,7 +27159,7 @@ typedef struct {
     UA_Boolean sendInitialValues;
 } UA_TransferSubscriptionsRequest;
 
-#define UA_TYPES_TRANSFERSUBSCRIPTIONSREQUEST 325
+#define UA_TYPES_TRANSFERSUBSCRIPTIONSREQUEST 331
 
 /* TransferSubscriptionsResponse */
 typedef struct {
@@ -27078,7 +27170,7 @@ typedef struct {
     UA_DiagnosticInfo *diagnosticInfos;
 } UA_TransferSubscriptionsResponse;
 
-#define UA_TYPES_TRANSFERSUBSCRIPTIONSRESPONSE 326
+#define UA_TYPES_TRANSFERSUBSCRIPTIONSRESPONSE 332
 
 /* DeleteSubscriptionsRequest */
 typedef struct {
@@ -27087,7 +27179,7 @@ typedef struct {
     UA_UInt32 *subscriptionIds;
 } UA_DeleteSubscriptionsRequest;
 
-#define UA_TYPES_DELETESUBSCRIPTIONSREQUEST 327
+#define UA_TYPES_DELETESUBSCRIPTIONSREQUEST 333
 
 /* DeleteSubscriptionsResponse */
 typedef struct {
@@ -27098,7 +27190,7 @@ typedef struct {
     UA_DiagnosticInfo *diagnosticInfos;
 } UA_DeleteSubscriptionsResponse;
 
-#define UA_TYPES_DELETESUBSCRIPTIONSRESPONSE 328
+#define UA_TYPES_DELETESUBSCRIPTIONSRESPONSE 334
 
 /* BuildInfo */
 typedef struct {
@@ -27110,7 +27202,7 @@ typedef struct {
     UA_DateTime buildDate;
 } UA_BuildInfo;
 
-#define UA_TYPES_BUILDINFO 329
+#define UA_TYPES_BUILDINFO 335
 
 /* RedundancySupport */
 typedef enum {
@@ -27125,7 +27217,7 @@ typedef enum {
 
 UA_STATIC_ASSERT(sizeof(UA_RedundancySupport) == sizeof(UA_Int32), enum_must_be_32bit);
 
-#define UA_TYPES_REDUNDANCYSUPPORT 330
+#define UA_TYPES_REDUNDANCYSUPPORT 336
 
 /* ServerState */
 typedef enum {
@@ -27142,7 +27234,7 @@ typedef enum {
 
 UA_STATIC_ASSERT(sizeof(UA_ServerState) == sizeof(UA_Int32), enum_must_be_32bit);
 
-#define UA_TYPES_SERVERSTATE 331
+#define UA_TYPES_SERVERSTATE 337
 
 /* RedundantServerDataType */
 typedef struct {
@@ -27151,7 +27243,7 @@ typedef struct {
     UA_ServerState serverState;
 } UA_RedundantServerDataType;
 
-#define UA_TYPES_REDUNDANTSERVERDATATYPE 332
+#define UA_TYPES_REDUNDANTSERVERDATATYPE 338
 
 /* EndpointUrlListDataType */
 typedef struct {
@@ -27159,7 +27251,7 @@ typedef struct {
     UA_String *endpointUrlList;
 } UA_EndpointUrlListDataType;
 
-#define UA_TYPES_ENDPOINTURLLISTDATATYPE 333
+#define UA_TYPES_ENDPOINTURLLISTDATATYPE 339
 
 /* NetworkGroupDataType */
 typedef struct {
@@ -27168,7 +27260,7 @@ typedef struct {
     UA_EndpointUrlListDataType *networkPaths;
 } UA_NetworkGroupDataType;
 
-#define UA_TYPES_NETWORKGROUPDATATYPE 334
+#define UA_TYPES_NETWORKGROUPDATATYPE 340
 
 /* SamplingIntervalDiagnosticsDataType */
 typedef struct {
@@ -27178,7 +27270,7 @@ typedef struct {
     UA_UInt32 disabledMonitoredItemCount;
 } UA_SamplingIntervalDiagnosticsDataType;
 
-#define UA_TYPES_SAMPLINGINTERVALDIAGNOSTICSDATATYPE 335
+#define UA_TYPES_SAMPLINGINTERVALDIAGNOSTICSDATATYPE 341
 
 /* ServerDiagnosticsSummaryDataType */
 typedef struct {
@@ -27196,7 +27288,7 @@ typedef struct {
     UA_UInt32 rejectedRequestsCount;
 } UA_ServerDiagnosticsSummaryDataType;
 
-#define UA_TYPES_SERVERDIAGNOSTICSSUMMARYDATATYPE 336
+#define UA_TYPES_SERVERDIAGNOSTICSSUMMARYDATATYPE 342
 
 /* ServerStatusDataType */
 typedef struct {
@@ -27208,7 +27300,7 @@ typedef struct {
     UA_LocalizedText shutdownReason;
 } UA_ServerStatusDataType;
 
-#define UA_TYPES_SERVERSTATUSDATATYPE 337
+#define UA_TYPES_SERVERSTATUSDATATYPE 343
 
 /* SessionSecurityDiagnosticsDataType */
 typedef struct {
@@ -27224,7 +27316,7 @@ typedef struct {
     UA_ByteString clientCertificate;
 } UA_SessionSecurityDiagnosticsDataType;
 
-#define UA_TYPES_SESSIONSECURITYDIAGNOSTICSDATATYPE 338
+#define UA_TYPES_SESSIONSECURITYDIAGNOSTICSDATATYPE 344
 
 /* ServiceCounterDataType */
 typedef struct {
@@ -27232,7 +27324,7 @@ typedef struct {
     UA_UInt32 errorCount;
 } UA_ServiceCounterDataType;
 
-#define UA_TYPES_SERVICECOUNTERDATATYPE 339
+#define UA_TYPES_SERVICECOUNTERDATATYPE 345
 
 /* StatusResult */
 typedef struct {
@@ -27240,7 +27332,7 @@ typedef struct {
     UA_DiagnosticInfo diagnosticInfo;
 } UA_StatusResult;
 
-#define UA_TYPES_STATUSRESULT 340
+#define UA_TYPES_STATUSRESULT 346
 
 /* SubscriptionDiagnosticsDataType */
 typedef struct {
@@ -27277,7 +27369,7 @@ typedef struct {
     UA_UInt32 eventQueueOverFlowCount;
 } UA_SubscriptionDiagnosticsDataType;
 
-#define UA_TYPES_SUBSCRIPTIONDIAGNOSTICSDATATYPE 341
+#define UA_TYPES_SUBSCRIPTIONDIAGNOSTICSDATATYPE 347
 
 /* ModelChangeStructureVerbMask */
 typedef enum {
@@ -27291,7 +27383,7 @@ typedef enum {
 
 UA_STATIC_ASSERT(sizeof(UA_ModelChangeStructureVerbMask) == sizeof(UA_Int32), enum_must_be_32bit);
 
-#define UA_TYPES_MODELCHANGESTRUCTUREVERBMASK 342
+#define UA_TYPES_MODELCHANGESTRUCTUREVERBMASK 348
 
 /* ModelChangeStructureDataType */
 typedef struct {
@@ -27300,7 +27392,7 @@ typedef struct {
     UA_Byte verb;
 } UA_ModelChangeStructureDataType;
 
-#define UA_TYPES_MODELCHANGESTRUCTUREDATATYPE 343
+#define UA_TYPES_MODELCHANGESTRUCTUREDATATYPE 349
 
 /* SemanticChangeStructureDataType */
 typedef struct {
@@ -27308,7 +27400,7 @@ typedef struct {
     UA_NodeId affectedType;
 } UA_SemanticChangeStructureDataType;
 
-#define UA_TYPES_SEMANTICCHANGESTRUCTUREDATATYPE 344
+#define UA_TYPES_SEMANTICCHANGESTRUCTUREDATATYPE 350
 
 /* Range */
 typedef struct {
@@ -27316,7 +27408,7 @@ typedef struct {
     UA_Double high;
 } UA_Range;
 
-#define UA_TYPES_RANGE 345
+#define UA_TYPES_RANGE 351
 
 /* EUInformation */
 typedef struct {
@@ -27326,7 +27418,7 @@ typedef struct {
     UA_LocalizedText description;
 } UA_EUInformation;
 
-#define UA_TYPES_EUINFORMATION 346
+#define UA_TYPES_EUINFORMATION 352
 
 /* AxisScaleEnumeration */
 typedef enum {
@@ -27338,7 +27430,7 @@ typedef enum {
 
 UA_STATIC_ASSERT(sizeof(UA_AxisScaleEnumeration) == sizeof(UA_Int32), enum_must_be_32bit);
 
-#define UA_TYPES_AXISSCALEENUMERATION 347
+#define UA_TYPES_AXISSCALEENUMERATION 353
 
 /* ComplexNumberType */
 typedef struct {
@@ -27346,7 +27438,7 @@ typedef struct {
     UA_Float imaginary;
 } UA_ComplexNumberType;
 
-#define UA_TYPES_COMPLEXNUMBERTYPE 348
+#define UA_TYPES_COMPLEXNUMBERTYPE 354
 
 /* DoubleComplexNumberType */
 typedef struct {
@@ -27354,7 +27446,7 @@ typedef struct {
     UA_Double imaginary;
 } UA_DoubleComplexNumberType;
 
-#define UA_TYPES_DOUBLECOMPLEXNUMBERTYPE 349
+#define UA_TYPES_DOUBLECOMPLEXNUMBERTYPE 355
 
 /* AxisInformation */
 typedef struct {
@@ -27366,7 +27458,7 @@ typedef struct {
     UA_Double *axisSteps;
 } UA_AxisInformation;
 
-#define UA_TYPES_AXISINFORMATION 350
+#define UA_TYPES_AXISINFORMATION 356
 
 /* XVType */
 typedef struct {
@@ -27374,7 +27466,7 @@ typedef struct {
     UA_Float value;
 } UA_XVType;
 
-#define UA_TYPES_XVTYPE 351
+#define UA_TYPES_XVTYPE 357
 
 /* ProgramDiagnosticDataType */
 typedef struct {
@@ -27392,7 +27484,7 @@ typedef struct {
     UA_StatusResult lastMethodReturnStatus;
 } UA_ProgramDiagnosticDataType;
 
-#define UA_TYPES_PROGRAMDIAGNOSTICDATATYPE 352
+#define UA_TYPES_PROGRAMDIAGNOSTICDATATYPE 358
 
 /* ProgramDiagnostic2DataType */
 typedef struct {
@@ -27414,7 +27506,7 @@ typedef struct {
     UA_StatusCode lastMethodReturnStatus;
 } UA_ProgramDiagnostic2DataType;
 
-#define UA_TYPES_PROGRAMDIAGNOSTIC2DATATYPE 353
+#define UA_TYPES_PROGRAMDIAGNOSTIC2DATATYPE 359
 
 /* Annotation */
 typedef struct {
@@ -27423,7 +27515,7 @@ typedef struct {
     UA_DateTime annotationTime;
 } UA_Annotation;
 
-#define UA_TYPES_ANNOTATION 354
+#define UA_TYPES_ANNOTATION 360
 
 /* ExceptionDeviationFormat */
 typedef enum {
@@ -27437,7 +27529,7 @@ typedef enum {
 
 UA_STATIC_ASSERT(sizeof(UA_ExceptionDeviationFormat) == sizeof(UA_Int32), enum_must_be_32bit);
 
-#define UA_TYPES_EXCEPTIONDEVIATIONFORMAT 355
+#define UA_TYPES_EXCEPTIONDEVIATIONFORMAT 361
 
 /* EndpointType */
 typedef struct {
@@ -27447,7 +27539,7 @@ typedef struct {
     UA_String transportProfileUri;
 } UA_EndpointType;
 
-#define UA_TYPES_ENDPOINTTYPE 356
+#define UA_TYPES_ENDPOINTTYPE 362
 
 /* StructureDescription */
 typedef struct {
@@ -27456,7 +27548,7 @@ typedef struct {
     UA_StructureDefinition structureDefinition;
 } UA_StructureDescription;
 
-#define UA_TYPES_STRUCTUREDESCRIPTION 357
+#define UA_TYPES_STRUCTUREDESCRIPTION 363
 
 /* FieldMetaData */
 typedef struct {
@@ -27474,7 +27566,7 @@ typedef struct {
     UA_KeyValuePair *properties;
 } UA_FieldMetaData;
 
-#define UA_TYPES_FIELDMETADATA 358
+#define UA_TYPES_FIELDMETADATA 364
 
 /* PublishedEventsDataType */
 typedef struct {
@@ -27484,7 +27576,7 @@ typedef struct {
     UA_ContentFilter filter;
 } UA_PublishedEventsDataType;
 
-#define UA_TYPES_PUBLISHEDEVENTSDATATYPE 359
+#define UA_TYPES_PUBLISHEDEVENTSDATATYPE 365
 
 /* PubSubGroupDataType */
 typedef struct {
@@ -27499,7 +27591,7 @@ typedef struct {
     UA_KeyValuePair *groupProperties;
 } UA_PubSubGroupDataType;
 
-#define UA_TYPES_PUBSUBGROUPDATATYPE 360
+#define UA_TYPES_PUBSUBGROUPDATATYPE 366
 
 /* WriterGroupDataType */
 typedef struct {
@@ -27525,7 +27617,7 @@ typedef struct {
     UA_DataSetWriterDataType *dataSetWriters;
 } UA_WriterGroupDataType;
 
-#define UA_TYPES_WRITERGROUPDATATYPE 361
+#define UA_TYPES_WRITERGROUPDATATYPE 367
 
 /* FieldTargetDataType */
 typedef struct {
@@ -27538,7 +27630,7 @@ typedef struct {
     UA_Variant overrideValue;
 } UA_FieldTargetDataType;
 
-#define UA_TYPES_FIELDTARGETDATATYPE 362
+#define UA_TYPES_FIELDTARGETDATATYPE 368
 
 /* SubscribedDataSetMirrorDataType */
 typedef struct {
@@ -27547,7 +27639,7 @@ typedef struct {
     UA_RolePermissionType *rolePermissions;
 } UA_SubscribedDataSetMirrorDataType;
 
-#define UA_TYPES_SUBSCRIBEDDATASETMIRRORDATATYPE 363
+#define UA_TYPES_SUBSCRIBEDDATASETMIRRORDATATYPE 369
 
 /* SecurityGroupDataType */
 typedef struct {
@@ -27565,7 +27657,7 @@ typedef struct {
     UA_KeyValuePair *groupProperties;
 } UA_SecurityGroupDataType;
 
-#define UA_TYPES_SECURITYGROUPDATATYPE 364
+#define UA_TYPES_SECURITYGROUPDATATYPE 370
 
 /* PubSubKeyPushTargetDataType */
 typedef struct {
@@ -27583,7 +27675,7 @@ typedef struct {
     UA_String *securityGroups;
 } UA_PubSubKeyPushTargetDataType;
 
-#define UA_TYPES_PUBSUBKEYPUSHTARGETDATATYPE 365
+#define UA_TYPES_PUBSUBKEYPUSHTARGETDATATYPE 371
 
 /* EnumDefinition */
 typedef struct {
@@ -27591,7 +27683,7 @@ typedef struct {
     UA_EnumField *fields;
 } UA_EnumDefinition;
 
-#define UA_TYPES_ENUMDEFINITION 366
+#define UA_TYPES_ENUMDEFINITION 372
 
 /* ReadEventDetails */
 typedef struct {
@@ -27601,7 +27693,7 @@ typedef struct {
     UA_EventFilter filter;
 } UA_ReadEventDetails;
 
-#define UA_TYPES_READEVENTDETAILS 367
+#define UA_TYPES_READEVENTDETAILS 373
 
 /* ReadProcessedDetails */
 typedef struct {
@@ -27613,7 +27705,7 @@ typedef struct {
     UA_AggregateConfiguration aggregateConfiguration;
 } UA_ReadProcessedDetails;
 
-#define UA_TYPES_READPROCESSEDDETAILS 368
+#define UA_TYPES_READPROCESSEDDETAILS 374
 
 /* ModificationInfo */
 typedef struct {
@@ -27622,7 +27714,7 @@ typedef struct {
     UA_String userName;
 } UA_ModificationInfo;
 
-#define UA_TYPES_MODIFICATIONINFO 369
+#define UA_TYPES_MODIFICATIONINFO 375
 
 /* HistoryModifiedData */
 typedef struct {
@@ -27632,7 +27724,7 @@ typedef struct {
     UA_ModificationInfo *modificationInfos;
 } UA_HistoryModifiedData;
 
-#define UA_TYPES_HISTORYMODIFIEDDATA 370
+#define UA_TYPES_HISTORYMODIFIEDDATA 376
 
 /* HistoryEvent */
 typedef struct {
@@ -27640,7 +27732,7 @@ typedef struct {
     UA_HistoryEventFieldList *events;
 } UA_HistoryEvent;
 
-#define UA_TYPES_HISTORYEVENT 371
+#define UA_TYPES_HISTORYEVENT 377
 
 /* UpdateEventDetails */
 typedef struct {
@@ -27651,7 +27743,7 @@ typedef struct {
     UA_HistoryEventFieldList *eventData;
 } UA_UpdateEventDetails;
 
-#define UA_TYPES_UPDATEEVENTDETAILS 372
+#define UA_TYPES_UPDATEEVENTDETAILS 378
 
 /* DataChangeNotification */
 typedef struct {
@@ -27661,7 +27753,7 @@ typedef struct {
     UA_DiagnosticInfo *diagnosticInfos;
 } UA_DataChangeNotification;
 
-#define UA_TYPES_DATACHANGENOTIFICATION 373
+#define UA_TYPES_DATACHANGENOTIFICATION 379
 
 /* EventNotificationList */
 typedef struct {
@@ -27669,7 +27761,7 @@ typedef struct {
     UA_EventFieldList *events;
 } UA_EventNotificationList;
 
-#define UA_TYPES_EVENTNOTIFICATIONLIST 374
+#define UA_TYPES_EVENTNOTIFICATIONLIST 380
 
 /* SessionDiagnosticsDataType */
 typedef struct {
@@ -27719,7 +27811,7 @@ typedef struct {
     UA_ServiceCounterDataType unregisterNodesCount;
 } UA_SessionDiagnosticsDataType;
 
-#define UA_TYPES_SESSIONDIAGNOSTICSDATATYPE 375
+#define UA_TYPES_SESSIONDIAGNOSTICSDATATYPE 381
 
 /* EnumDescription */
 typedef struct {
@@ -27729,7 +27821,7 @@ typedef struct {
     UA_Byte builtInType;
 } UA_EnumDescription;
 
-#define UA_TYPES_ENUMDESCRIPTION 376
+#define UA_TYPES_ENUMDESCRIPTION 382
 
 /* UABinaryFileDataType */
 typedef struct {
@@ -27747,7 +27839,7 @@ typedef struct {
     UA_Variant body;
 } UA_UABinaryFileDataType;
 
-#define UA_TYPES_UABINARYFILEDATATYPE 377
+#define UA_TYPES_UABINARYFILEDATATYPE 383
 
 /* DataSetMetaDataType */
 typedef struct {
@@ -27767,7 +27859,7 @@ typedef struct {
     UA_ConfigurationVersionDataType configurationVersion;
 } UA_DataSetMetaDataType;
 
-#define UA_TYPES_DATASETMETADATATYPE 378
+#define UA_TYPES_DATASETMETADATATYPE 384
 
 /* PublishedDataSetDataType */
 typedef struct {
@@ -27780,7 +27872,7 @@ typedef struct {
     UA_ExtensionObject dataSetSource;
 } UA_PublishedDataSetDataType;
 
-#define UA_TYPES_PUBLISHEDDATASETDATATYPE 379
+#define UA_TYPES_PUBLISHEDDATASETDATATYPE 385
 
 /* DataSetReaderDataType */
 typedef struct {
@@ -27805,7 +27897,7 @@ typedef struct {
     UA_ExtensionObject subscribedDataSet;
 } UA_DataSetReaderDataType;
 
-#define UA_TYPES_DATASETREADERDATATYPE 380
+#define UA_TYPES_DATASETREADERDATATYPE 386
 
 /* TargetVariablesDataType */
 typedef struct {
@@ -27813,7 +27905,7 @@ typedef struct {
     UA_FieldTargetDataType *targetVariables;
 } UA_TargetVariablesDataType;
 
-#define UA_TYPES_TARGETVARIABLESDATATYPE 381
+#define UA_TYPES_TARGETVARIABLESDATATYPE 387
 
 /* StandaloneSubscribedDataSetDataType */
 typedef struct {
@@ -27824,7 +27916,7 @@ typedef struct {
     UA_ExtensionObject subscribedDataSet;
 } UA_StandaloneSubscribedDataSetDataType;
 
-#define UA_TYPES_STANDALONESUBSCRIBEDDATASETDATATYPE 382
+#define UA_TYPES_STANDALONESUBSCRIBEDDATASETDATATYPE 388
 
 /* DataTypeSchemaHeader */
 typedef struct {
@@ -27838,7 +27930,7 @@ typedef struct {
     UA_SimpleTypeDescription *simpleDataTypes;
 } UA_DataTypeSchemaHeader;
 
-#define UA_TYPES_DATATYPESCHEMAHEADER 383
+#define UA_TYPES_DATATYPESCHEMAHEADER 389
 
 /* ReaderGroupDataType */
 typedef struct {
@@ -27857,7 +27949,7 @@ typedef struct {
     UA_DataSetReaderDataType *dataSetReaders;
 } UA_ReaderGroupDataType;
 
-#define UA_TYPES_READERGROUPDATATYPE 384
+#define UA_TYPES_READERGROUPDATATYPE 390
 
 /* PubSubConnectionDataType */
 typedef struct {
@@ -27875,7 +27967,7 @@ typedef struct {
     UA_ReaderGroupDataType *readerGroups;
 } UA_PubSubConnectionDataType;
 
-#define UA_TYPES_PUBSUBCONNECTIONDATATYPE 385
+#define UA_TYPES_PUBSUBCONNECTIONDATATYPE 391
 
 /* PubSubConfigurationDataType */
 typedef struct {
@@ -27886,7 +27978,7 @@ typedef struct {
     UA_Boolean enabled;
 } UA_PubSubConfigurationDataType;
 
-#define UA_TYPES_PUBSUBCONFIGURATIONDATATYPE 386
+#define UA_TYPES_PUBSUBCONFIGURATIONDATATYPE 392
 
 /* PubSubConfiguration2DataType */
 typedef struct {
@@ -27910,7 +28002,7 @@ typedef struct {
     UA_KeyValuePair *configurationProperties;
 } UA_PubSubConfiguration2DataType;
 
-#define UA_TYPES_PUBSUBCONFIGURATION2DATATYPE 387
+#define UA_TYPES_PUBSUBCONFIGURATION2DATATYPE 393
 
 
 _UA_END_DECLS
@@ -27934,35 +28026,35 @@ _UA_BEGIN_DECLS
 
 
 /* Boolean */
-UA_EXPORT void
+static UA_INLINE void
 UA_Boolean_init(UA_Boolean *p) {
     memset(p, 0, sizeof(UA_Boolean));
 }
 
-UA_EXPORT UA_Boolean *
+static UA_INLINE UA_Boolean *
 UA_Boolean_new(void) {
     return (UA_Boolean*)UA_new(&UA_TYPES[UA_TYPES_BOOLEAN]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_Boolean_copy(const UA_Boolean *src, UA_Boolean *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_BOOLEAN]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_Boolean_deleteMembers(UA_Boolean *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_BOOLEAN]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_Boolean_clear(UA_Boolean *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_BOOLEAN]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_Boolean_delete(UA_Boolean *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_BOOLEAN]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_Boolean_equal(const UA_Boolean *p1, const UA_Boolean *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_BOOLEAN]) == UA_ORDER_EQ);
 }
@@ -27970,35 +28062,35 @@ UA_Boolean_equal(const UA_Boolean *p1, const UA_Boolean *p2) {
 
 
 /* SByte */
-UA_EXPORT void
+static UA_INLINE void
 UA_SByte_init(UA_SByte *p) {
     memset(p, 0, sizeof(UA_SByte));
 }
 
-UA_EXPORT UA_SByte *
+static UA_INLINE UA_SByte *
 UA_SByte_new(void) {
     return (UA_SByte*)UA_new(&UA_TYPES[UA_TYPES_SBYTE]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_SByte_copy(const UA_SByte *src, UA_SByte *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_SBYTE]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_SByte_deleteMembers(UA_SByte *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_SBYTE]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_SByte_clear(UA_SByte *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_SBYTE]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_SByte_delete(UA_SByte *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_SBYTE]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_SByte_equal(const UA_SByte *p1, const UA_SByte *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_SBYTE]) == UA_ORDER_EQ);
 }
@@ -28006,35 +28098,35 @@ UA_SByte_equal(const UA_SByte *p1, const UA_SByte *p2) {
 
 
 /* Byte */
-UA_EXPORT void
+static UA_INLINE void
 UA_Byte_init(UA_Byte *p) {
     memset(p, 0, sizeof(UA_Byte));
 }
 
-UA_EXPORT UA_Byte *
+static UA_INLINE UA_Byte *
 UA_Byte_new(void) {
     return (UA_Byte*)UA_new(&UA_TYPES[UA_TYPES_BYTE]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_Byte_copy(const UA_Byte *src, UA_Byte *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_BYTE]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_Byte_deleteMembers(UA_Byte *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_BYTE]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_Byte_clear(UA_Byte *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_BYTE]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_Byte_delete(UA_Byte *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_BYTE]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_Byte_equal(const UA_Byte *p1, const UA_Byte *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_BYTE]) == UA_ORDER_EQ);
 }
@@ -28042,35 +28134,35 @@ UA_Byte_equal(const UA_Byte *p1, const UA_Byte *p2) {
 
 
 /* Int16 */
-UA_EXPORT void
+static UA_INLINE void
 UA_Int16_init(UA_Int16 *p) {
     memset(p, 0, sizeof(UA_Int16));
 }
 
-UA_EXPORT UA_Int16 *
+static UA_INLINE UA_Int16 *
 UA_Int16_new(void) {
     return (UA_Int16*)UA_new(&UA_TYPES[UA_TYPES_INT16]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_Int16_copy(const UA_Int16 *src, UA_Int16 *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_INT16]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_Int16_deleteMembers(UA_Int16 *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_INT16]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_Int16_clear(UA_Int16 *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_INT16]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_Int16_delete(UA_Int16 *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_INT16]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_Int16_equal(const UA_Int16 *p1, const UA_Int16 *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_INT16]) == UA_ORDER_EQ);
 }
@@ -28078,35 +28170,35 @@ UA_Int16_equal(const UA_Int16 *p1, const UA_Int16 *p2) {
 
 
 /* UInt16 */
-UA_EXPORT void
+static UA_INLINE void
 UA_UInt16_init(UA_UInt16 *p) {
     memset(p, 0, sizeof(UA_UInt16));
 }
 
-UA_EXPORT UA_UInt16 *
+static UA_INLINE UA_UInt16 *
 UA_UInt16_new(void) {
     return (UA_UInt16*)UA_new(&UA_TYPES[UA_TYPES_UINT16]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_UInt16_copy(const UA_UInt16 *src, UA_UInt16 *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_UINT16]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_UInt16_deleteMembers(UA_UInt16 *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_UINT16]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_UInt16_clear(UA_UInt16 *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_UINT16]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_UInt16_delete(UA_UInt16 *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_UINT16]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_UInt16_equal(const UA_UInt16 *p1, const UA_UInt16 *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_UINT16]) == UA_ORDER_EQ);
 }
@@ -28114,35 +28206,35 @@ UA_UInt16_equal(const UA_UInt16 *p1, const UA_UInt16 *p2) {
 
 
 /* Int32 */
-UA_EXPORT void
+static UA_INLINE void
 UA_Int32_init(UA_Int32 *p) {
     memset(p, 0, sizeof(UA_Int32));
 }
 
-UA_EXPORT UA_Int32 *
+static UA_INLINE UA_Int32 *
 UA_Int32_new(void) {
     return (UA_Int32*)UA_new(&UA_TYPES[UA_TYPES_INT32]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_Int32_copy(const UA_Int32 *src, UA_Int32 *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_INT32]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_Int32_deleteMembers(UA_Int32 *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_INT32]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_Int32_clear(UA_Int32 *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_INT32]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_Int32_delete(UA_Int32 *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_INT32]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_Int32_equal(const UA_Int32 *p1, const UA_Int32 *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_INT32]) == UA_ORDER_EQ);
 }
@@ -28150,35 +28242,35 @@ UA_Int32_equal(const UA_Int32 *p1, const UA_Int32 *p2) {
 
 
 /* UInt32 */
-UA_EXPORT void
+static UA_INLINE void
 UA_UInt32_init(UA_UInt32 *p) {
     memset(p, 0, sizeof(UA_UInt32));
 }
 
-UA_EXPORT UA_UInt32 *
+static UA_INLINE UA_UInt32 *
 UA_UInt32_new(void) {
     return (UA_UInt32*)UA_new(&UA_TYPES[UA_TYPES_UINT32]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_UInt32_copy(const UA_UInt32 *src, UA_UInt32 *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_UINT32]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_UInt32_deleteMembers(UA_UInt32 *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_UINT32]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_UInt32_clear(UA_UInt32 *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_UINT32]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_UInt32_delete(UA_UInt32 *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_UINT32]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_UInt32_equal(const UA_UInt32 *p1, const UA_UInt32 *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_UINT32]) == UA_ORDER_EQ);
 }
@@ -28186,35 +28278,35 @@ UA_UInt32_equal(const UA_UInt32 *p1, const UA_UInt32 *p2) {
 
 
 /* Int64 */
-UA_EXPORT void
+static UA_INLINE void
 UA_Int64_init(UA_Int64 *p) {
     memset(p, 0, sizeof(UA_Int64));
 }
 
-UA_EXPORT UA_Int64 *
+static UA_INLINE UA_Int64 *
 UA_Int64_new(void) {
     return (UA_Int64*)UA_new(&UA_TYPES[UA_TYPES_INT64]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_Int64_copy(const UA_Int64 *src, UA_Int64 *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_INT64]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_Int64_deleteMembers(UA_Int64 *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_INT64]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_Int64_clear(UA_Int64 *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_INT64]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_Int64_delete(UA_Int64 *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_INT64]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_Int64_equal(const UA_Int64 *p1, const UA_Int64 *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_INT64]) == UA_ORDER_EQ);
 }
@@ -28222,35 +28314,35 @@ UA_Int64_equal(const UA_Int64 *p1, const UA_Int64 *p2) {
 
 
 /* UInt64 */
-UA_EXPORT void
+static UA_INLINE void
 UA_UInt64_init(UA_UInt64 *p) {
     memset(p, 0, sizeof(UA_UInt64));
 }
 
-UA_EXPORT UA_UInt64 *
+static UA_INLINE UA_UInt64 *
 UA_UInt64_new(void) {
     return (UA_UInt64*)UA_new(&UA_TYPES[UA_TYPES_UINT64]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_UInt64_copy(const UA_UInt64 *src, UA_UInt64 *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_UINT64]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_UInt64_deleteMembers(UA_UInt64 *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_UINT64]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_UInt64_clear(UA_UInt64 *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_UINT64]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_UInt64_delete(UA_UInt64 *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_UINT64]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_UInt64_equal(const UA_UInt64 *p1, const UA_UInt64 *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_UINT64]) == UA_ORDER_EQ);
 }
@@ -28258,35 +28350,35 @@ UA_UInt64_equal(const UA_UInt64 *p1, const UA_UInt64 *p2) {
 
 
 /* Float */
-UA_EXPORT void
+static UA_INLINE void
 UA_Float_init(UA_Float *p) {
     memset(p, 0, sizeof(UA_Float));
 }
 
-UA_EXPORT UA_Float *
+static UA_INLINE UA_Float *
 UA_Float_new(void) {
     return (UA_Float*)UA_new(&UA_TYPES[UA_TYPES_FLOAT]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_Float_copy(const UA_Float *src, UA_Float *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_FLOAT]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_Float_deleteMembers(UA_Float *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_FLOAT]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_Float_clear(UA_Float *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_FLOAT]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_Float_delete(UA_Float *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_FLOAT]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_Float_equal(const UA_Float *p1, const UA_Float *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_FLOAT]) == UA_ORDER_EQ);
 }
@@ -28294,35 +28386,35 @@ UA_Float_equal(const UA_Float *p1, const UA_Float *p2) {
 
 
 /* Double */
-UA_EXPORT void
+static UA_INLINE void
 UA_Double_init(UA_Double *p) {
     memset(p, 0, sizeof(UA_Double));
 }
 
-UA_EXPORT UA_Double *
+static UA_INLINE UA_Double *
 UA_Double_new(void) {
     return (UA_Double*)UA_new(&UA_TYPES[UA_TYPES_DOUBLE]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_Double_copy(const UA_Double *src, UA_Double *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_DOUBLE]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_Double_deleteMembers(UA_Double *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_DOUBLE]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_Double_clear(UA_Double *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_DOUBLE]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_Double_delete(UA_Double *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_DOUBLE]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_Double_equal(const UA_Double *p1, const UA_Double *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_DOUBLE]) == UA_ORDER_EQ);
 }
@@ -28330,35 +28422,35 @@ UA_Double_equal(const UA_Double *p1, const UA_Double *p2) {
 
 
 /* String */
-UA_EXPORT void
+static UA_INLINE void
 UA_String_init(UA_String *p) {
     memset(p, 0, sizeof(UA_String));
 }
 
-UA_EXPORT UA_String *
+static UA_INLINE UA_String *
 UA_String_new(void) {
     return (UA_String*)UA_new(&UA_TYPES[UA_TYPES_STRING]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_String_copy(const UA_String *src, UA_String *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_STRING]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_String_deleteMembers(UA_String *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_STRING]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_String_clear(UA_String *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_STRING]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_String_delete(UA_String *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_STRING]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_String_equal(const UA_String *p1, const UA_String *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_STRING]) == UA_ORDER_EQ);
 }
@@ -28366,35 +28458,35 @@ UA_String_equal(const UA_String *p1, const UA_String *p2) {
 
 
 /* DateTime */
-UA_EXPORT void
+static UA_INLINE void
 UA_DateTime_init(UA_DateTime *p) {
     memset(p, 0, sizeof(UA_DateTime));
 }
 
-UA_EXPORT UA_DateTime *
+static UA_INLINE UA_DateTime *
 UA_DateTime_new(void) {
     return (UA_DateTime*)UA_new(&UA_TYPES[UA_TYPES_DATETIME]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_DateTime_copy(const UA_DateTime *src, UA_DateTime *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_DATETIME]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_DateTime_deleteMembers(UA_DateTime *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_DATETIME]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_DateTime_clear(UA_DateTime *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_DATETIME]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_DateTime_delete(UA_DateTime *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_DATETIME]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_DateTime_equal(const UA_DateTime *p1, const UA_DateTime *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_DATETIME]) == UA_ORDER_EQ);
 }
@@ -28402,35 +28494,35 @@ UA_DateTime_equal(const UA_DateTime *p1, const UA_DateTime *p2) {
 
 
 /* Guid */
-UA_EXPORT void
+static UA_INLINE void
 UA_Guid_init(UA_Guid *p) {
     memset(p, 0, sizeof(UA_Guid));
 }
 
-UA_EXPORT UA_Guid *
+static UA_INLINE UA_Guid *
 UA_Guid_new(void) {
     return (UA_Guid*)UA_new(&UA_TYPES[UA_TYPES_GUID]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_Guid_copy(const UA_Guid *src, UA_Guid *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_GUID]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_Guid_deleteMembers(UA_Guid *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_GUID]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_Guid_clear(UA_Guid *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_GUID]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_Guid_delete(UA_Guid *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_GUID]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_Guid_equal(const UA_Guid *p1, const UA_Guid *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_GUID]) == UA_ORDER_EQ);
 }
@@ -28438,35 +28530,35 @@ UA_Guid_equal(const UA_Guid *p1, const UA_Guid *p2) {
 
 
 /* ByteString */
-UA_EXPORT void
+static UA_INLINE void
 UA_ByteString_init(UA_ByteString *p) {
     memset(p, 0, sizeof(UA_ByteString));
 }
 
-UA_EXPORT UA_ByteString *
+static UA_INLINE UA_ByteString *
 UA_ByteString_new(void) {
     return (UA_ByteString*)UA_new(&UA_TYPES[UA_TYPES_BYTESTRING]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_ByteString_copy(const UA_ByteString *src, UA_ByteString *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_BYTESTRING]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_ByteString_deleteMembers(UA_ByteString *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_BYTESTRING]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_ByteString_clear(UA_ByteString *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_BYTESTRING]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_ByteString_delete(UA_ByteString *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_BYTESTRING]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_ByteString_equal(const UA_ByteString *p1, const UA_ByteString *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_BYTESTRING]) == UA_ORDER_EQ);
 }
@@ -28474,35 +28566,35 @@ UA_ByteString_equal(const UA_ByteString *p1, const UA_ByteString *p2) {
 
 
 /* XmlElement */
-UA_EXPORT void
+static UA_INLINE void
 UA_XmlElement_init(UA_XmlElement *p) {
     memset(p, 0, sizeof(UA_XmlElement));
 }
 
-UA_EXPORT UA_XmlElement *
+static UA_INLINE UA_XmlElement *
 UA_XmlElement_new(void) {
     return (UA_XmlElement*)UA_new(&UA_TYPES[UA_TYPES_XMLELEMENT]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_XmlElement_copy(const UA_XmlElement *src, UA_XmlElement *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_XMLELEMENT]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_XmlElement_deleteMembers(UA_XmlElement *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_XMLELEMENT]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_XmlElement_clear(UA_XmlElement *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_XMLELEMENT]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_XmlElement_delete(UA_XmlElement *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_XMLELEMENT]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_XmlElement_equal(const UA_XmlElement *p1, const UA_XmlElement *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_XMLELEMENT]) == UA_ORDER_EQ);
 }
@@ -28510,35 +28602,35 @@ UA_XmlElement_equal(const UA_XmlElement *p1, const UA_XmlElement *p2) {
 
 
 /* NodeId */
-UA_EXPORT void
+static UA_INLINE void
 UA_NodeId_init(UA_NodeId *p) {
     memset(p, 0, sizeof(UA_NodeId));
 }
 
-UA_EXPORT UA_NodeId *
+static UA_INLINE UA_NodeId *
 UA_NodeId_new(void) {
     return (UA_NodeId*)UA_new(&UA_TYPES[UA_TYPES_NODEID]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_NodeId_copy(const UA_NodeId *src, UA_NodeId *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_NODEID]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_NodeId_deleteMembers(UA_NodeId *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_NODEID]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_NodeId_clear(UA_NodeId *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_NODEID]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_NodeId_delete(UA_NodeId *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_NODEID]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_NodeId_equal(const UA_NodeId *p1, const UA_NodeId *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_NODEID]) == UA_ORDER_EQ);
 }
@@ -28546,35 +28638,35 @@ UA_NodeId_equal(const UA_NodeId *p1, const UA_NodeId *p2) {
 
 
 /* ExpandedNodeId */
-UA_EXPORT void
+static UA_INLINE void
 UA_ExpandedNodeId_init(UA_ExpandedNodeId *p) {
     memset(p, 0, sizeof(UA_ExpandedNodeId));
 }
 
-UA_EXPORT UA_ExpandedNodeId *
+static UA_INLINE UA_ExpandedNodeId *
 UA_ExpandedNodeId_new(void) {
     return (UA_ExpandedNodeId*)UA_new(&UA_TYPES[UA_TYPES_EXPANDEDNODEID]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_ExpandedNodeId_copy(const UA_ExpandedNodeId *src, UA_ExpandedNodeId *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_EXPANDEDNODEID]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_ExpandedNodeId_deleteMembers(UA_ExpandedNodeId *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_EXPANDEDNODEID]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_ExpandedNodeId_clear(UA_ExpandedNodeId *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_EXPANDEDNODEID]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_ExpandedNodeId_delete(UA_ExpandedNodeId *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_EXPANDEDNODEID]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_ExpandedNodeId_equal(const UA_ExpandedNodeId *p1, const UA_ExpandedNodeId *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_EXPANDEDNODEID]) == UA_ORDER_EQ);
 }
@@ -28582,35 +28674,35 @@ UA_ExpandedNodeId_equal(const UA_ExpandedNodeId *p1, const UA_ExpandedNodeId *p2
 
 
 /* StatusCode */
-UA_EXPORT void
+static UA_INLINE void
 UA_StatusCode_init(UA_StatusCode *p) {
     memset(p, 0, sizeof(UA_StatusCode));
 }
 
-UA_EXPORT UA_StatusCode *
+static UA_INLINE UA_StatusCode *
 UA_StatusCode_new(void) {
     return (UA_StatusCode*)UA_new(&UA_TYPES[UA_TYPES_STATUSCODE]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_StatusCode_copy(const UA_StatusCode *src, UA_StatusCode *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_STATUSCODE]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_StatusCode_deleteMembers(UA_StatusCode *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_STATUSCODE]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_StatusCode_clear(UA_StatusCode *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_STATUSCODE]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_StatusCode_delete(UA_StatusCode *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_STATUSCODE]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_StatusCode_equal(const UA_StatusCode *p1, const UA_StatusCode *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_STATUSCODE]) == UA_ORDER_EQ);
 }
@@ -28618,35 +28710,35 @@ UA_StatusCode_equal(const UA_StatusCode *p1, const UA_StatusCode *p2) {
 
 
 /* QualifiedName */
-UA_EXPORT void
+static UA_INLINE void
 UA_QualifiedName_init(UA_QualifiedName *p) {
     memset(p, 0, sizeof(UA_QualifiedName));
 }
 
-UA_EXPORT UA_QualifiedName *
+static UA_INLINE UA_QualifiedName *
 UA_QualifiedName_new(void) {
     return (UA_QualifiedName*)UA_new(&UA_TYPES[UA_TYPES_QUALIFIEDNAME]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_QualifiedName_copy(const UA_QualifiedName *src, UA_QualifiedName *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_QUALIFIEDNAME]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_QualifiedName_deleteMembers(UA_QualifiedName *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_QUALIFIEDNAME]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_QualifiedName_clear(UA_QualifiedName *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_QUALIFIEDNAME]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_QualifiedName_delete(UA_QualifiedName *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_QUALIFIEDNAME]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_QualifiedName_equal(const UA_QualifiedName *p1, const UA_QualifiedName *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_QUALIFIEDNAME]) == UA_ORDER_EQ);
 }
@@ -28654,35 +28746,35 @@ UA_QualifiedName_equal(const UA_QualifiedName *p1, const UA_QualifiedName *p2) {
 
 
 /* LocalizedText */
-UA_EXPORT void
+static UA_INLINE void
 UA_LocalizedText_init(UA_LocalizedText *p) {
     memset(p, 0, sizeof(UA_LocalizedText));
 }
 
-UA_EXPORT UA_LocalizedText *
+static UA_INLINE UA_LocalizedText *
 UA_LocalizedText_new(void) {
     return (UA_LocalizedText*)UA_new(&UA_TYPES[UA_TYPES_LOCALIZEDTEXT]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_LocalizedText_copy(const UA_LocalizedText *src, UA_LocalizedText *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_LOCALIZEDTEXT]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_LocalizedText_deleteMembers(UA_LocalizedText *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_LOCALIZEDTEXT]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_LocalizedText_clear(UA_LocalizedText *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_LOCALIZEDTEXT]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_LocalizedText_delete(UA_LocalizedText *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_LOCALIZEDTEXT]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_LocalizedText_equal(const UA_LocalizedText *p1, const UA_LocalizedText *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_LOCALIZEDTEXT]) == UA_ORDER_EQ);
 }
@@ -28690,35 +28782,35 @@ UA_LocalizedText_equal(const UA_LocalizedText *p1, const UA_LocalizedText *p2) {
 
 
 /* ExtensionObject */
-UA_EXPORT void
+static UA_INLINE void
 UA_ExtensionObject_init(UA_ExtensionObject *p) {
     memset(p, 0, sizeof(UA_ExtensionObject));
 }
 
-UA_EXPORT UA_ExtensionObject *
+static UA_INLINE UA_ExtensionObject *
 UA_ExtensionObject_new(void) {
     return (UA_ExtensionObject*)UA_new(&UA_TYPES[UA_TYPES_EXTENSIONOBJECT]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_ExtensionObject_copy(const UA_ExtensionObject *src, UA_ExtensionObject *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_EXTENSIONOBJECT]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_ExtensionObject_deleteMembers(UA_ExtensionObject *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_EXTENSIONOBJECT]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_ExtensionObject_clear(UA_ExtensionObject *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_EXTENSIONOBJECT]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_ExtensionObject_delete(UA_ExtensionObject *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_EXTENSIONOBJECT]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_ExtensionObject_equal(const UA_ExtensionObject *p1, const UA_ExtensionObject *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_EXTENSIONOBJECT]) == UA_ORDER_EQ);
 }
@@ -28726,35 +28818,35 @@ UA_ExtensionObject_equal(const UA_ExtensionObject *p1, const UA_ExtensionObject 
 
 
 /* DataValue */
-UA_EXPORT void
+static UA_INLINE void
 UA_DataValue_init(UA_DataValue *p) {
     memset(p, 0, sizeof(UA_DataValue));
 }
 
-UA_EXPORT UA_DataValue *
+static UA_INLINE UA_DataValue *
 UA_DataValue_new(void) {
     return (UA_DataValue*)UA_new(&UA_TYPES[UA_TYPES_DATAVALUE]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_DataValue_copy(const UA_DataValue *src, UA_DataValue *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_DATAVALUE]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_DataValue_deleteMembers(UA_DataValue *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_DATAVALUE]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_DataValue_clear(UA_DataValue *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_DATAVALUE]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_DataValue_delete(UA_DataValue *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_DATAVALUE]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_DataValue_equal(const UA_DataValue *p1, const UA_DataValue *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_DATAVALUE]) == UA_ORDER_EQ);
 }
@@ -28762,35 +28854,35 @@ UA_DataValue_equal(const UA_DataValue *p1, const UA_DataValue *p2) {
 
 
 /* Variant */
-UA_EXPORT void
+static UA_INLINE void
 UA_Variant_init(UA_Variant *p) {
     memset(p, 0, sizeof(UA_Variant));
 }
 
-UA_EXPORT UA_Variant *
+static UA_INLINE UA_Variant *
 UA_Variant_new(void) {
     return (UA_Variant*)UA_new(&UA_TYPES[UA_TYPES_VARIANT]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_Variant_copy(const UA_Variant *src, UA_Variant *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_VARIANT]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_Variant_deleteMembers(UA_Variant *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_VARIANT]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_Variant_clear(UA_Variant *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_VARIANT]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_Variant_delete(UA_Variant *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_VARIANT]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_Variant_equal(const UA_Variant *p1, const UA_Variant *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_VARIANT]) == UA_ORDER_EQ);
 }
@@ -28798,35 +28890,35 @@ UA_Variant_equal(const UA_Variant *p1, const UA_Variant *p2) {
 
 
 /* DiagnosticInfo */
-UA_EXPORT void
+static UA_INLINE void
 UA_DiagnosticInfo_init(UA_DiagnosticInfo *p) {
     memset(p, 0, sizeof(UA_DiagnosticInfo));
 }
 
-UA_EXPORT UA_DiagnosticInfo *
+static UA_INLINE UA_DiagnosticInfo *
 UA_DiagnosticInfo_new(void) {
     return (UA_DiagnosticInfo*)UA_new(&UA_TYPES[UA_TYPES_DIAGNOSTICINFO]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_DiagnosticInfo_copy(const UA_DiagnosticInfo *src, UA_DiagnosticInfo *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_DIAGNOSTICINFO]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_DiagnosticInfo_deleteMembers(UA_DiagnosticInfo *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_DIAGNOSTICINFO]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_DiagnosticInfo_clear(UA_DiagnosticInfo *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_DIAGNOSTICINFO]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_DiagnosticInfo_delete(UA_DiagnosticInfo *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_DIAGNOSTICINFO]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_DiagnosticInfo_equal(const UA_DiagnosticInfo *p1, const UA_DiagnosticInfo *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_DIAGNOSTICINFO]) == UA_ORDER_EQ);
 }
@@ -28834,35 +28926,35 @@ UA_DiagnosticInfo_equal(const UA_DiagnosticInfo *p1, const UA_DiagnosticInfo *p2
 
 
 /* NamingRuleType */
-UA_EXPORT void
+static UA_INLINE void
 UA_NamingRuleType_init(UA_NamingRuleType *p) {
     memset(p, 0, sizeof(UA_NamingRuleType));
 }
 
-UA_EXPORT UA_NamingRuleType *
+static UA_INLINE UA_NamingRuleType *
 UA_NamingRuleType_new(void) {
     return (UA_NamingRuleType*)UA_new(&UA_TYPES[UA_TYPES_NAMINGRULETYPE]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_NamingRuleType_copy(const UA_NamingRuleType *src, UA_NamingRuleType *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_NAMINGRULETYPE]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_NamingRuleType_deleteMembers(UA_NamingRuleType *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_NAMINGRULETYPE]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_NamingRuleType_clear(UA_NamingRuleType *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_NAMINGRULETYPE]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_NamingRuleType_delete(UA_NamingRuleType *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_NAMINGRULETYPE]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_NamingRuleType_equal(const UA_NamingRuleType *p1, const UA_NamingRuleType *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_NAMINGRULETYPE]) == UA_ORDER_EQ);
 }
@@ -28870,35 +28962,35 @@ UA_NamingRuleType_equal(const UA_NamingRuleType *p1, const UA_NamingRuleType *p2
 
 
 /* Enumeration */
-UA_EXPORT void
+static UA_INLINE void
 UA_Enumeration_init(UA_Enumeration *p) {
     memset(p, 0, sizeof(UA_Enumeration));
 }
 
-UA_EXPORT UA_Enumeration *
+static UA_INLINE UA_Enumeration *
 UA_Enumeration_new(void) {
     return (UA_Enumeration*)UA_new(&UA_TYPES[UA_TYPES_ENUMERATION]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_Enumeration_copy(const UA_Enumeration *src, UA_Enumeration *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_ENUMERATION]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_Enumeration_deleteMembers(UA_Enumeration *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_ENUMERATION]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_Enumeration_clear(UA_Enumeration *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_ENUMERATION]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_Enumeration_delete(UA_Enumeration *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_ENUMERATION]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_Enumeration_equal(const UA_Enumeration *p1, const UA_Enumeration *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_ENUMERATION]) == UA_ORDER_EQ);
 }
@@ -28906,35 +28998,35 @@ UA_Enumeration_equal(const UA_Enumeration *p1, const UA_Enumeration *p2) {
 
 
 /* ImageBMP */
-UA_EXPORT void
+static UA_INLINE void
 UA_ImageBMP_init(UA_ImageBMP *p) {
     memset(p, 0, sizeof(UA_ImageBMP));
 }
 
-UA_EXPORT UA_ImageBMP *
+static UA_INLINE UA_ImageBMP *
 UA_ImageBMP_new(void) {
     return (UA_ImageBMP*)UA_new(&UA_TYPES[UA_TYPES_IMAGEBMP]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_ImageBMP_copy(const UA_ImageBMP *src, UA_ImageBMP *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_IMAGEBMP]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_ImageBMP_deleteMembers(UA_ImageBMP *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_IMAGEBMP]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_ImageBMP_clear(UA_ImageBMP *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_IMAGEBMP]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_ImageBMP_delete(UA_ImageBMP *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_IMAGEBMP]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_ImageBMP_equal(const UA_ImageBMP *p1, const UA_ImageBMP *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_IMAGEBMP]) == UA_ORDER_EQ);
 }
@@ -28942,35 +29034,35 @@ UA_ImageBMP_equal(const UA_ImageBMP *p1, const UA_ImageBMP *p2) {
 
 
 /* ImageGIF */
-UA_EXPORT void
+static UA_INLINE void
 UA_ImageGIF_init(UA_ImageGIF *p) {
     memset(p, 0, sizeof(UA_ImageGIF));
 }
 
-UA_EXPORT UA_ImageGIF *
+static UA_INLINE UA_ImageGIF *
 UA_ImageGIF_new(void) {
     return (UA_ImageGIF*)UA_new(&UA_TYPES[UA_TYPES_IMAGEGIF]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_ImageGIF_copy(const UA_ImageGIF *src, UA_ImageGIF *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_IMAGEGIF]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_ImageGIF_deleteMembers(UA_ImageGIF *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_IMAGEGIF]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_ImageGIF_clear(UA_ImageGIF *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_IMAGEGIF]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_ImageGIF_delete(UA_ImageGIF *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_IMAGEGIF]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_ImageGIF_equal(const UA_ImageGIF *p1, const UA_ImageGIF *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_IMAGEGIF]) == UA_ORDER_EQ);
 }
@@ -28978,35 +29070,35 @@ UA_ImageGIF_equal(const UA_ImageGIF *p1, const UA_ImageGIF *p2) {
 
 
 /* ImageJPG */
-UA_EXPORT void
+static UA_INLINE void
 UA_ImageJPG_init(UA_ImageJPG *p) {
     memset(p, 0, sizeof(UA_ImageJPG));
 }
 
-UA_EXPORT UA_ImageJPG *
+static UA_INLINE UA_ImageJPG *
 UA_ImageJPG_new(void) {
     return (UA_ImageJPG*)UA_new(&UA_TYPES[UA_TYPES_IMAGEJPG]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_ImageJPG_copy(const UA_ImageJPG *src, UA_ImageJPG *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_IMAGEJPG]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_ImageJPG_deleteMembers(UA_ImageJPG *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_IMAGEJPG]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_ImageJPG_clear(UA_ImageJPG *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_IMAGEJPG]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_ImageJPG_delete(UA_ImageJPG *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_IMAGEJPG]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_ImageJPG_equal(const UA_ImageJPG *p1, const UA_ImageJPG *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_IMAGEJPG]) == UA_ORDER_EQ);
 }
@@ -29014,35 +29106,35 @@ UA_ImageJPG_equal(const UA_ImageJPG *p1, const UA_ImageJPG *p2) {
 
 
 /* ImagePNG */
-UA_EXPORT void
+static UA_INLINE void
 UA_ImagePNG_init(UA_ImagePNG *p) {
     memset(p, 0, sizeof(UA_ImagePNG));
 }
 
-UA_EXPORT UA_ImagePNG *
+static UA_INLINE UA_ImagePNG *
 UA_ImagePNG_new(void) {
     return (UA_ImagePNG*)UA_new(&UA_TYPES[UA_TYPES_IMAGEPNG]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_ImagePNG_copy(const UA_ImagePNG *src, UA_ImagePNG *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_IMAGEPNG]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_ImagePNG_deleteMembers(UA_ImagePNG *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_IMAGEPNG]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_ImagePNG_clear(UA_ImagePNG *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_IMAGEPNG]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_ImagePNG_delete(UA_ImagePNG *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_IMAGEPNG]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_ImagePNG_equal(const UA_ImagePNG *p1, const UA_ImagePNG *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_IMAGEPNG]) == UA_ORDER_EQ);
 }
@@ -29050,35 +29142,35 @@ UA_ImagePNG_equal(const UA_ImagePNG *p1, const UA_ImagePNG *p2) {
 
 
 /* AudioDataType */
-UA_EXPORT void
+static UA_INLINE void
 UA_AudioDataType_init(UA_AudioDataType *p) {
     memset(p, 0, sizeof(UA_AudioDataType));
 }
 
-UA_EXPORT UA_AudioDataType *
+static UA_INLINE UA_AudioDataType *
 UA_AudioDataType_new(void) {
     return (UA_AudioDataType*)UA_new(&UA_TYPES[UA_TYPES_AUDIODATATYPE]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_AudioDataType_copy(const UA_AudioDataType *src, UA_AudioDataType *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_AUDIODATATYPE]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_AudioDataType_deleteMembers(UA_AudioDataType *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_AUDIODATATYPE]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_AudioDataType_clear(UA_AudioDataType *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_AUDIODATATYPE]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_AudioDataType_delete(UA_AudioDataType *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_AUDIODATATYPE]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_AudioDataType_equal(const UA_AudioDataType *p1, const UA_AudioDataType *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_AUDIODATATYPE]) == UA_ORDER_EQ);
 }
@@ -29086,35 +29178,35 @@ UA_AudioDataType_equal(const UA_AudioDataType *p1, const UA_AudioDataType *p2) {
 
 
 /* UriString */
-UA_EXPORT void
+static UA_INLINE void
 UA_UriString_init(UA_UriString *p) {
     memset(p, 0, sizeof(UA_UriString));
 }
 
-UA_EXPORT UA_UriString *
+static UA_INLINE UA_UriString *
 UA_UriString_new(void) {
     return (UA_UriString*)UA_new(&UA_TYPES[UA_TYPES_URISTRING]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_UriString_copy(const UA_UriString *src, UA_UriString *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_URISTRING]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_UriString_deleteMembers(UA_UriString *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_URISTRING]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_UriString_clear(UA_UriString *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_URISTRING]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_UriString_delete(UA_UriString *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_URISTRING]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_UriString_equal(const UA_UriString *p1, const UA_UriString *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_URISTRING]) == UA_ORDER_EQ);
 }
@@ -29122,35 +29214,35 @@ UA_UriString_equal(const UA_UriString *p1, const UA_UriString *p2) {
 
 
 /* BitFieldMaskDataType */
-UA_EXPORT void
+static UA_INLINE void
 UA_BitFieldMaskDataType_init(UA_BitFieldMaskDataType *p) {
     memset(p, 0, sizeof(UA_BitFieldMaskDataType));
 }
 
-UA_EXPORT UA_BitFieldMaskDataType *
+static UA_INLINE UA_BitFieldMaskDataType *
 UA_BitFieldMaskDataType_new(void) {
     return (UA_BitFieldMaskDataType*)UA_new(&UA_TYPES[UA_TYPES_BITFIELDMASKDATATYPE]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_BitFieldMaskDataType_copy(const UA_BitFieldMaskDataType *src, UA_BitFieldMaskDataType *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_BITFIELDMASKDATATYPE]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_BitFieldMaskDataType_deleteMembers(UA_BitFieldMaskDataType *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_BITFIELDMASKDATATYPE]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_BitFieldMaskDataType_clear(UA_BitFieldMaskDataType *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_BITFIELDMASKDATATYPE]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_BitFieldMaskDataType_delete(UA_BitFieldMaskDataType *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_BITFIELDMASKDATATYPE]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_BitFieldMaskDataType_equal(const UA_BitFieldMaskDataType *p1, const UA_BitFieldMaskDataType *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_BITFIELDMASKDATATYPE]) == UA_ORDER_EQ);
 }
@@ -29158,35 +29250,35 @@ UA_BitFieldMaskDataType_equal(const UA_BitFieldMaskDataType *p1, const UA_BitFie
 
 
 /* SemanticVersionString */
-UA_EXPORT void
+static UA_INLINE void
 UA_SemanticVersionString_init(UA_SemanticVersionString *p) {
     memset(p, 0, sizeof(UA_SemanticVersionString));
 }
 
-UA_EXPORT UA_SemanticVersionString *
+static UA_INLINE UA_SemanticVersionString *
 UA_SemanticVersionString_new(void) {
     return (UA_SemanticVersionString*)UA_new(&UA_TYPES[UA_TYPES_SEMANTICVERSIONSTRING]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_SemanticVersionString_copy(const UA_SemanticVersionString *src, UA_SemanticVersionString *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_SEMANTICVERSIONSTRING]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_SemanticVersionString_deleteMembers(UA_SemanticVersionString *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_SEMANTICVERSIONSTRING]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_SemanticVersionString_clear(UA_SemanticVersionString *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_SEMANTICVERSIONSTRING]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_SemanticVersionString_delete(UA_SemanticVersionString *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_SEMANTICVERSIONSTRING]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_SemanticVersionString_equal(const UA_SemanticVersionString *p1, const UA_SemanticVersionString *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_SEMANTICVERSIONSTRING]) == UA_ORDER_EQ);
 }
@@ -29194,35 +29286,35 @@ UA_SemanticVersionString_equal(const UA_SemanticVersionString *p1, const UA_Sema
 
 
 /* KeyValuePair */
-UA_EXPORT void
+static UA_INLINE void
 UA_KeyValuePair_init(UA_KeyValuePair *p) {
     memset(p, 0, sizeof(UA_KeyValuePair));
 }
 
-UA_EXPORT UA_KeyValuePair *
+static UA_INLINE UA_KeyValuePair *
 UA_KeyValuePair_new(void) {
     return (UA_KeyValuePair*)UA_new(&UA_TYPES[UA_TYPES_KEYVALUEPAIR]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_KeyValuePair_copy(const UA_KeyValuePair *src, UA_KeyValuePair *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_KEYVALUEPAIR]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_KeyValuePair_deleteMembers(UA_KeyValuePair *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_KEYVALUEPAIR]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_KeyValuePair_clear(UA_KeyValuePair *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_KEYVALUEPAIR]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_KeyValuePair_delete(UA_KeyValuePair *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_KEYVALUEPAIR]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_KeyValuePair_equal(const UA_KeyValuePair *p1, const UA_KeyValuePair *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_KEYVALUEPAIR]) == UA_ORDER_EQ);
 }
@@ -29230,35 +29322,35 @@ UA_KeyValuePair_equal(const UA_KeyValuePair *p1, const UA_KeyValuePair *p2) {
 
 
 /* AdditionalParametersType */
-UA_EXPORT void
+static UA_INLINE void
 UA_AdditionalParametersType_init(UA_AdditionalParametersType *p) {
     memset(p, 0, sizeof(UA_AdditionalParametersType));
 }
 
-UA_EXPORT UA_AdditionalParametersType *
+static UA_INLINE UA_AdditionalParametersType *
 UA_AdditionalParametersType_new(void) {
     return (UA_AdditionalParametersType*)UA_new(&UA_TYPES[UA_TYPES_ADDITIONALPARAMETERSTYPE]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_AdditionalParametersType_copy(const UA_AdditionalParametersType *src, UA_AdditionalParametersType *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_ADDITIONALPARAMETERSTYPE]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_AdditionalParametersType_deleteMembers(UA_AdditionalParametersType *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_ADDITIONALPARAMETERSTYPE]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_AdditionalParametersType_clear(UA_AdditionalParametersType *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_ADDITIONALPARAMETERSTYPE]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_AdditionalParametersType_delete(UA_AdditionalParametersType *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_ADDITIONALPARAMETERSTYPE]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_AdditionalParametersType_equal(const UA_AdditionalParametersType *p1, const UA_AdditionalParametersType *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_ADDITIONALPARAMETERSTYPE]) == UA_ORDER_EQ);
 }
@@ -29266,71 +29358,143 @@ UA_AdditionalParametersType_equal(const UA_AdditionalParametersType *p1, const U
 
 
 /* EphemeralKeyType */
-UA_EXPORT void
+static UA_INLINE void
 UA_EphemeralKeyType_init(UA_EphemeralKeyType *p) {
     memset(p, 0, sizeof(UA_EphemeralKeyType));
 }
 
-UA_EXPORT UA_EphemeralKeyType *
+static UA_INLINE UA_EphemeralKeyType *
 UA_EphemeralKeyType_new(void) {
     return (UA_EphemeralKeyType*)UA_new(&UA_TYPES[UA_TYPES_EPHEMERALKEYTYPE]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_EphemeralKeyType_copy(const UA_EphemeralKeyType *src, UA_EphemeralKeyType *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_EPHEMERALKEYTYPE]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_EphemeralKeyType_deleteMembers(UA_EphemeralKeyType *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_EPHEMERALKEYTYPE]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_EphemeralKeyType_clear(UA_EphemeralKeyType *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_EPHEMERALKEYTYPE]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_EphemeralKeyType_delete(UA_EphemeralKeyType *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_EPHEMERALKEYTYPE]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_EphemeralKeyType_equal(const UA_EphemeralKeyType *p1, const UA_EphemeralKeyType *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_EPHEMERALKEYTYPE]) == UA_ORDER_EQ);
 }
 
 
 
+/* Handle */
+static UA_INLINE void
+UA_Handle_init(UA_Handle *p) {
+    memset(p, 0, sizeof(UA_Handle));
+}
+
+static UA_INLINE UA_Handle *
+UA_Handle_new(void) {
+    return (UA_Handle*)UA_new(&UA_TYPES[UA_TYPES_HANDLE]);
+}
+
+static UA_INLINE UA_StatusCode
+UA_Handle_copy(const UA_Handle *src, UA_Handle *dst) {
+    return UA_copy(src, dst, &UA_TYPES[UA_TYPES_HANDLE]);
+}
+
+UA_DEPRECATED static UA_INLINE void
+UA_Handle_deleteMembers(UA_Handle *p) {
+    UA_clear(p, &UA_TYPES[UA_TYPES_HANDLE]);
+}
+
+static UA_INLINE void
+UA_Handle_clear(UA_Handle *p) {
+    UA_clear(p, &UA_TYPES[UA_TYPES_HANDLE]);
+}
+
+static UA_INLINE void
+UA_Handle_delete(UA_Handle *p) {
+    UA_delete(p, &UA_TYPES[UA_TYPES_HANDLE]);
+}static UA_INLINE UA_Boolean
+UA_Handle_equal(const UA_Handle *p1, const UA_Handle *p2) {
+    return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_HANDLE]) == UA_ORDER_EQ);
+}
+
+
+
+/* TrimmedString */
+static UA_INLINE void
+UA_TrimmedString_init(UA_TrimmedString *p) {
+    memset(p, 0, sizeof(UA_TrimmedString));
+}
+
+static UA_INLINE UA_TrimmedString *
+UA_TrimmedString_new(void) {
+    return (UA_TrimmedString*)UA_new(&UA_TYPES[UA_TYPES_TRIMMEDSTRING]);
+}
+
+static UA_INLINE UA_StatusCode
+UA_TrimmedString_copy(const UA_TrimmedString *src, UA_TrimmedString *dst) {
+    return UA_copy(src, dst, &UA_TYPES[UA_TYPES_TRIMMEDSTRING]);
+}
+
+UA_DEPRECATED static UA_INLINE void
+UA_TrimmedString_deleteMembers(UA_TrimmedString *p) {
+    UA_clear(p, &UA_TYPES[UA_TYPES_TRIMMEDSTRING]);
+}
+
+static UA_INLINE void
+UA_TrimmedString_clear(UA_TrimmedString *p) {
+    UA_clear(p, &UA_TYPES[UA_TYPES_TRIMMEDSTRING]);
+}
+
+static UA_INLINE void
+UA_TrimmedString_delete(UA_TrimmedString *p) {
+    UA_delete(p, &UA_TYPES[UA_TYPES_TRIMMEDSTRING]);
+}static UA_INLINE UA_Boolean
+UA_TrimmedString_equal(const UA_TrimmedString *p1, const UA_TrimmedString *p2) {
+    return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_TRIMMEDSTRING]) == UA_ORDER_EQ);
+}
+
+
+
 /* RationalNumber */
-UA_EXPORT void
+static UA_INLINE void
 UA_RationalNumber_init(UA_RationalNumber *p) {
     memset(p, 0, sizeof(UA_RationalNumber));
 }
 
-UA_EXPORT UA_RationalNumber *
+static UA_INLINE UA_RationalNumber *
 UA_RationalNumber_new(void) {
     return (UA_RationalNumber*)UA_new(&UA_TYPES[UA_TYPES_RATIONALNUMBER]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_RationalNumber_copy(const UA_RationalNumber *src, UA_RationalNumber *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_RATIONALNUMBER]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_RationalNumber_deleteMembers(UA_RationalNumber *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_RATIONALNUMBER]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_RationalNumber_clear(UA_RationalNumber *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_RATIONALNUMBER]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_RationalNumber_delete(UA_RationalNumber *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_RATIONALNUMBER]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_RationalNumber_equal(const UA_RationalNumber *p1, const UA_RationalNumber *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_RATIONALNUMBER]) == UA_ORDER_EQ);
 }
@@ -29338,35 +29502,35 @@ UA_RationalNumber_equal(const UA_RationalNumber *p1, const UA_RationalNumber *p2
 
 
 /* ThreeDVector */
-UA_EXPORT void
+static UA_INLINE void
 UA_ThreeDVector_init(UA_ThreeDVector *p) {
     memset(p, 0, sizeof(UA_ThreeDVector));
 }
 
-UA_EXPORT UA_ThreeDVector *
+static UA_INLINE UA_ThreeDVector *
 UA_ThreeDVector_new(void) {
     return (UA_ThreeDVector*)UA_new(&UA_TYPES[UA_TYPES_THREEDVECTOR]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_ThreeDVector_copy(const UA_ThreeDVector *src, UA_ThreeDVector *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_THREEDVECTOR]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_ThreeDVector_deleteMembers(UA_ThreeDVector *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_THREEDVECTOR]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_ThreeDVector_clear(UA_ThreeDVector *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_THREEDVECTOR]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_ThreeDVector_delete(UA_ThreeDVector *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_THREEDVECTOR]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_ThreeDVector_equal(const UA_ThreeDVector *p1, const UA_ThreeDVector *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_THREEDVECTOR]) == UA_ORDER_EQ);
 }
@@ -29374,35 +29538,35 @@ UA_ThreeDVector_equal(const UA_ThreeDVector *p1, const UA_ThreeDVector *p2) {
 
 
 /* ThreeDCartesianCoordinates */
-UA_EXPORT void
+static UA_INLINE void
 UA_ThreeDCartesianCoordinates_init(UA_ThreeDCartesianCoordinates *p) {
     memset(p, 0, sizeof(UA_ThreeDCartesianCoordinates));
 }
 
-UA_EXPORT UA_ThreeDCartesianCoordinates *
+static UA_INLINE UA_ThreeDCartesianCoordinates *
 UA_ThreeDCartesianCoordinates_new(void) {
     return (UA_ThreeDCartesianCoordinates*)UA_new(&UA_TYPES[UA_TYPES_THREEDCARTESIANCOORDINATES]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_ThreeDCartesianCoordinates_copy(const UA_ThreeDCartesianCoordinates *src, UA_ThreeDCartesianCoordinates *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_THREEDCARTESIANCOORDINATES]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_ThreeDCartesianCoordinates_deleteMembers(UA_ThreeDCartesianCoordinates *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_THREEDCARTESIANCOORDINATES]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_ThreeDCartesianCoordinates_clear(UA_ThreeDCartesianCoordinates *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_THREEDCARTESIANCOORDINATES]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_ThreeDCartesianCoordinates_delete(UA_ThreeDCartesianCoordinates *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_THREEDCARTESIANCOORDINATES]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_ThreeDCartesianCoordinates_equal(const UA_ThreeDCartesianCoordinates *p1, const UA_ThreeDCartesianCoordinates *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_THREEDCARTESIANCOORDINATES]) == UA_ORDER_EQ);
 }
@@ -29410,35 +29574,35 @@ UA_ThreeDCartesianCoordinates_equal(const UA_ThreeDCartesianCoordinates *p1, con
 
 
 /* ThreeDOrientation */
-UA_EXPORT void
+static UA_INLINE void
 UA_ThreeDOrientation_init(UA_ThreeDOrientation *p) {
     memset(p, 0, sizeof(UA_ThreeDOrientation));
 }
 
-UA_EXPORT UA_ThreeDOrientation *
+static UA_INLINE UA_ThreeDOrientation *
 UA_ThreeDOrientation_new(void) {
     return (UA_ThreeDOrientation*)UA_new(&UA_TYPES[UA_TYPES_THREEDORIENTATION]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_ThreeDOrientation_copy(const UA_ThreeDOrientation *src, UA_ThreeDOrientation *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_THREEDORIENTATION]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_ThreeDOrientation_deleteMembers(UA_ThreeDOrientation *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_THREEDORIENTATION]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_ThreeDOrientation_clear(UA_ThreeDOrientation *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_THREEDORIENTATION]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_ThreeDOrientation_delete(UA_ThreeDOrientation *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_THREEDORIENTATION]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_ThreeDOrientation_equal(const UA_ThreeDOrientation *p1, const UA_ThreeDOrientation *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_THREEDORIENTATION]) == UA_ORDER_EQ);
 }
@@ -29446,35 +29610,35 @@ UA_ThreeDOrientation_equal(const UA_ThreeDOrientation *p1, const UA_ThreeDOrient
 
 
 /* ThreeDFrame */
-UA_EXPORT void
+static UA_INLINE void
 UA_ThreeDFrame_init(UA_ThreeDFrame *p) {
     memset(p, 0, sizeof(UA_ThreeDFrame));
 }
 
-UA_EXPORT UA_ThreeDFrame *
+static UA_INLINE UA_ThreeDFrame *
 UA_ThreeDFrame_new(void) {
     return (UA_ThreeDFrame*)UA_new(&UA_TYPES[UA_TYPES_THREEDFRAME]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_ThreeDFrame_copy(const UA_ThreeDFrame *src, UA_ThreeDFrame *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_THREEDFRAME]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_ThreeDFrame_deleteMembers(UA_ThreeDFrame *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_THREEDFRAME]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_ThreeDFrame_clear(UA_ThreeDFrame *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_THREEDFRAME]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_ThreeDFrame_delete(UA_ThreeDFrame *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_THREEDFRAME]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_ThreeDFrame_equal(const UA_ThreeDFrame *p1, const UA_ThreeDFrame *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_THREEDFRAME]) == UA_ORDER_EQ);
 }
@@ -29482,35 +29646,35 @@ UA_ThreeDFrame_equal(const UA_ThreeDFrame *p1, const UA_ThreeDFrame *p2) {
 
 
 /* OpenFileMode */
-UA_EXPORT void
+static UA_INLINE void
 UA_OpenFileMode_init(UA_OpenFileMode *p) {
     memset(p, 0, sizeof(UA_OpenFileMode));
 }
 
-UA_EXPORT UA_OpenFileMode *
+static UA_INLINE UA_OpenFileMode *
 UA_OpenFileMode_new(void) {
     return (UA_OpenFileMode*)UA_new(&UA_TYPES[UA_TYPES_OPENFILEMODE]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_OpenFileMode_copy(const UA_OpenFileMode *src, UA_OpenFileMode *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_OPENFILEMODE]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_OpenFileMode_deleteMembers(UA_OpenFileMode *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_OPENFILEMODE]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_OpenFileMode_clear(UA_OpenFileMode *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_OPENFILEMODE]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_OpenFileMode_delete(UA_OpenFileMode *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_OPENFILEMODE]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_OpenFileMode_equal(const UA_OpenFileMode *p1, const UA_OpenFileMode *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_OPENFILEMODE]) == UA_ORDER_EQ);
 }
@@ -29518,35 +29682,35 @@ UA_OpenFileMode_equal(const UA_OpenFileMode *p1, const UA_OpenFileMode *p2) {
 
 
 /* IdentityCriteriaType */
-UA_EXPORT void
+static UA_INLINE void
 UA_IdentityCriteriaType_init(UA_IdentityCriteriaType *p) {
     memset(p, 0, sizeof(UA_IdentityCriteriaType));
 }
 
-UA_EXPORT UA_IdentityCriteriaType *
+static UA_INLINE UA_IdentityCriteriaType *
 UA_IdentityCriteriaType_new(void) {
     return (UA_IdentityCriteriaType*)UA_new(&UA_TYPES[UA_TYPES_IDENTITYCRITERIATYPE]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_IdentityCriteriaType_copy(const UA_IdentityCriteriaType *src, UA_IdentityCriteriaType *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_IDENTITYCRITERIATYPE]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_IdentityCriteriaType_deleteMembers(UA_IdentityCriteriaType *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_IDENTITYCRITERIATYPE]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_IdentityCriteriaType_clear(UA_IdentityCriteriaType *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_IDENTITYCRITERIATYPE]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_IdentityCriteriaType_delete(UA_IdentityCriteriaType *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_IDENTITYCRITERIATYPE]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_IdentityCriteriaType_equal(const UA_IdentityCriteriaType *p1, const UA_IdentityCriteriaType *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_IDENTITYCRITERIATYPE]) == UA_ORDER_EQ);
 }
@@ -29554,35 +29718,35 @@ UA_IdentityCriteriaType_equal(const UA_IdentityCriteriaType *p1, const UA_Identi
 
 
 /* IdentityMappingRuleType */
-UA_EXPORT void
+static UA_INLINE void
 UA_IdentityMappingRuleType_init(UA_IdentityMappingRuleType *p) {
     memset(p, 0, sizeof(UA_IdentityMappingRuleType));
 }
 
-UA_EXPORT UA_IdentityMappingRuleType *
+static UA_INLINE UA_IdentityMappingRuleType *
 UA_IdentityMappingRuleType_new(void) {
     return (UA_IdentityMappingRuleType*)UA_new(&UA_TYPES[UA_TYPES_IDENTITYMAPPINGRULETYPE]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_IdentityMappingRuleType_copy(const UA_IdentityMappingRuleType *src, UA_IdentityMappingRuleType *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_IDENTITYMAPPINGRULETYPE]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_IdentityMappingRuleType_deleteMembers(UA_IdentityMappingRuleType *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_IDENTITYMAPPINGRULETYPE]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_IdentityMappingRuleType_clear(UA_IdentityMappingRuleType *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_IDENTITYMAPPINGRULETYPE]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_IdentityMappingRuleType_delete(UA_IdentityMappingRuleType *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_IDENTITYMAPPINGRULETYPE]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_IdentityMappingRuleType_equal(const UA_IdentityMappingRuleType *p1, const UA_IdentityMappingRuleType *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_IDENTITYMAPPINGRULETYPE]) == UA_ORDER_EQ);
 }
@@ -29590,71 +29754,143 @@ UA_IdentityMappingRuleType_equal(const UA_IdentityMappingRuleType *p1, const UA_
 
 
 /* CurrencyUnitType */
-UA_EXPORT void
+static UA_INLINE void
 UA_CurrencyUnitType_init(UA_CurrencyUnitType *p) {
     memset(p, 0, sizeof(UA_CurrencyUnitType));
 }
 
-UA_EXPORT UA_CurrencyUnitType *
+static UA_INLINE UA_CurrencyUnitType *
 UA_CurrencyUnitType_new(void) {
     return (UA_CurrencyUnitType*)UA_new(&UA_TYPES[UA_TYPES_CURRENCYUNITTYPE]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_CurrencyUnitType_copy(const UA_CurrencyUnitType *src, UA_CurrencyUnitType *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_CURRENCYUNITTYPE]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_CurrencyUnitType_deleteMembers(UA_CurrencyUnitType *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_CURRENCYUNITTYPE]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_CurrencyUnitType_clear(UA_CurrencyUnitType *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_CURRENCYUNITTYPE]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_CurrencyUnitType_delete(UA_CurrencyUnitType *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_CURRENCYUNITTYPE]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_CurrencyUnitType_equal(const UA_CurrencyUnitType *p1, const UA_CurrencyUnitType *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_CURRENCYUNITTYPE]) == UA_ORDER_EQ);
 }
 
 
 
+/* AlarmMask */
+static UA_INLINE void
+UA_AlarmMask_init(UA_AlarmMask *p) {
+    memset(p, 0, sizeof(UA_AlarmMask));
+}
+
+static UA_INLINE UA_AlarmMask *
+UA_AlarmMask_new(void) {
+    return (UA_AlarmMask*)UA_new(&UA_TYPES[UA_TYPES_ALARMMASK]);
+}
+
+static UA_INLINE UA_StatusCode
+UA_AlarmMask_copy(const UA_AlarmMask *src, UA_AlarmMask *dst) {
+    return UA_copy(src, dst, &UA_TYPES[UA_TYPES_ALARMMASK]);
+}
+
+UA_DEPRECATED static UA_INLINE void
+UA_AlarmMask_deleteMembers(UA_AlarmMask *p) {
+    UA_clear(p, &UA_TYPES[UA_TYPES_ALARMMASK]);
+}
+
+static UA_INLINE void
+UA_AlarmMask_clear(UA_AlarmMask *p) {
+    UA_clear(p, &UA_TYPES[UA_TYPES_ALARMMASK]);
+}
+
+static UA_INLINE void
+UA_AlarmMask_delete(UA_AlarmMask *p) {
+    UA_delete(p, &UA_TYPES[UA_TYPES_ALARMMASK]);
+}static UA_INLINE UA_Boolean
+UA_AlarmMask_equal(const UA_AlarmMask *p1, const UA_AlarmMask *p2) {
+    return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_ALARMMASK]) == UA_ORDER_EQ);
+}
+
+
+
+/* TrustListValidationOptions */
+static UA_INLINE void
+UA_TrustListValidationOptions_init(UA_TrustListValidationOptions *p) {
+    memset(p, 0, sizeof(UA_TrustListValidationOptions));
+}
+
+static UA_INLINE UA_TrustListValidationOptions *
+UA_TrustListValidationOptions_new(void) {
+    return (UA_TrustListValidationOptions*)UA_new(&UA_TYPES[UA_TYPES_TRUSTLISTVALIDATIONOPTIONS]);
+}
+
+static UA_INLINE UA_StatusCode
+UA_TrustListValidationOptions_copy(const UA_TrustListValidationOptions *src, UA_TrustListValidationOptions *dst) {
+    return UA_copy(src, dst, &UA_TYPES[UA_TYPES_TRUSTLISTVALIDATIONOPTIONS]);
+}
+
+UA_DEPRECATED static UA_INLINE void
+UA_TrustListValidationOptions_deleteMembers(UA_TrustListValidationOptions *p) {
+    UA_clear(p, &UA_TYPES[UA_TYPES_TRUSTLISTVALIDATIONOPTIONS]);
+}
+
+static UA_INLINE void
+UA_TrustListValidationOptions_clear(UA_TrustListValidationOptions *p) {
+    UA_clear(p, &UA_TYPES[UA_TYPES_TRUSTLISTVALIDATIONOPTIONS]);
+}
+
+static UA_INLINE void
+UA_TrustListValidationOptions_delete(UA_TrustListValidationOptions *p) {
+    UA_delete(p, &UA_TYPES[UA_TYPES_TRUSTLISTVALIDATIONOPTIONS]);
+}static UA_INLINE UA_Boolean
+UA_TrustListValidationOptions_equal(const UA_TrustListValidationOptions *p1, const UA_TrustListValidationOptions *p2) {
+    return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_TRUSTLISTVALIDATIONOPTIONS]) == UA_ORDER_EQ);
+}
+
+
+
 /* TrustListMasks */
-UA_EXPORT void
+static UA_INLINE void
 UA_TrustListMasks_init(UA_TrustListMasks *p) {
     memset(p, 0, sizeof(UA_TrustListMasks));
 }
 
-UA_EXPORT UA_TrustListMasks *
+static UA_INLINE UA_TrustListMasks *
 UA_TrustListMasks_new(void) {
     return (UA_TrustListMasks*)UA_new(&UA_TYPES[UA_TYPES_TRUSTLISTMASKS]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_TrustListMasks_copy(const UA_TrustListMasks *src, UA_TrustListMasks *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_TRUSTLISTMASKS]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_TrustListMasks_deleteMembers(UA_TrustListMasks *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_TRUSTLISTMASKS]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_TrustListMasks_clear(UA_TrustListMasks *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_TRUSTLISTMASKS]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_TrustListMasks_delete(UA_TrustListMasks *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_TRUSTLISTMASKS]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_TrustListMasks_equal(const UA_TrustListMasks *p1, const UA_TrustListMasks *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_TRUSTLISTMASKS]) == UA_ORDER_EQ);
 }
@@ -29662,107 +29898,107 @@ UA_TrustListMasks_equal(const UA_TrustListMasks *p1, const UA_TrustListMasks *p2
 
 
 /* TrustListDataType */
-UA_EXPORT void
+static UA_INLINE void
 UA_TrustListDataType_init(UA_TrustListDataType *p) {
     memset(p, 0, sizeof(UA_TrustListDataType));
 }
 
-UA_EXPORT UA_TrustListDataType *
+static UA_INLINE UA_TrustListDataType *
 UA_TrustListDataType_new(void) {
     return (UA_TrustListDataType*)UA_new(&UA_TYPES[UA_TYPES_TRUSTLISTDATATYPE]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_TrustListDataType_copy(const UA_TrustListDataType *src, UA_TrustListDataType *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_TRUSTLISTDATATYPE]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_TrustListDataType_deleteMembers(UA_TrustListDataType *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_TRUSTLISTDATATYPE]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_TrustListDataType_clear(UA_TrustListDataType *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_TRUSTLISTDATATYPE]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_TrustListDataType_delete(UA_TrustListDataType *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_TRUSTLISTDATATYPE]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_TrustListDataType_equal(const UA_TrustListDataType *p1, const UA_TrustListDataType *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_TRUSTLISTDATATYPE]) == UA_ORDER_EQ);
 }
 
 
 
-/* DecimalDataType */
-UA_EXPORT void
-UA_DecimalDataType_init(UA_DecimalDataType *p) {
-    memset(p, 0, sizeof(UA_DecimalDataType));
+/* TransactionErrorType */
+static UA_INLINE void
+UA_TransactionErrorType_init(UA_TransactionErrorType *p) {
+    memset(p, 0, sizeof(UA_TransactionErrorType));
 }
 
-UA_EXPORT UA_DecimalDataType *
-UA_DecimalDataType_new(void) {
-    return (UA_DecimalDataType*)UA_new(&UA_TYPES[UA_TYPES_DECIMALDATATYPE]);
+static UA_INLINE UA_TransactionErrorType *
+UA_TransactionErrorType_new(void) {
+    return (UA_TransactionErrorType*)UA_new(&UA_TYPES[UA_TYPES_TRANSACTIONERRORTYPE]);
 }
 
-UA_EXPORT UA_StatusCode
-UA_DecimalDataType_copy(const UA_DecimalDataType *src, UA_DecimalDataType *dst) {
-    return UA_copy(src, dst, &UA_TYPES[UA_TYPES_DECIMALDATATYPE]);
+static UA_INLINE UA_StatusCode
+UA_TransactionErrorType_copy(const UA_TransactionErrorType *src, UA_TransactionErrorType *dst) {
+    return UA_copy(src, dst, &UA_TYPES[UA_TYPES_TRANSACTIONERRORTYPE]);
 }
 
-UA_DEPRECATED UA_EXPORT void
-UA_DecimalDataType_deleteMembers(UA_DecimalDataType *p) {
-    UA_clear(p, &UA_TYPES[UA_TYPES_DECIMALDATATYPE]);
+UA_DEPRECATED static UA_INLINE void
+UA_TransactionErrorType_deleteMembers(UA_TransactionErrorType *p) {
+    UA_clear(p, &UA_TYPES[UA_TYPES_TRANSACTIONERRORTYPE]);
 }
 
-UA_EXPORT void
-UA_DecimalDataType_clear(UA_DecimalDataType *p) {
-    UA_clear(p, &UA_TYPES[UA_TYPES_DECIMALDATATYPE]);
+static UA_INLINE void
+UA_TransactionErrorType_clear(UA_TransactionErrorType *p) {
+    UA_clear(p, &UA_TYPES[UA_TYPES_TRANSACTIONERRORTYPE]);
 }
 
-UA_EXPORT void
-UA_DecimalDataType_delete(UA_DecimalDataType *p) {
-    UA_delete(p, &UA_TYPES[UA_TYPES_DECIMALDATATYPE]);
-}UA_EXPORT UA_Boolean
-UA_DecimalDataType_equal(const UA_DecimalDataType *p1, const UA_DecimalDataType *p2) {
-    return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_DECIMALDATATYPE]) == UA_ORDER_EQ);
+static UA_INLINE void
+UA_TransactionErrorType_delete(UA_TransactionErrorType *p) {
+    UA_delete(p, &UA_TYPES[UA_TYPES_TRANSACTIONERRORTYPE]);
+}static UA_INLINE UA_Boolean
+UA_TransactionErrorType_equal(const UA_TransactionErrorType *p1, const UA_TransactionErrorType *p2) {
+    return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_TRANSACTIONERRORTYPE]) == UA_ORDER_EQ);
 }
 
 
 
 /* DataTypeDescription */
-UA_EXPORT void
+static UA_INLINE void
 UA_DataTypeDescription_init(UA_DataTypeDescription *p) {
     memset(p, 0, sizeof(UA_DataTypeDescription));
 }
 
-UA_EXPORT UA_DataTypeDescription *
+static UA_INLINE UA_DataTypeDescription *
 UA_DataTypeDescription_new(void) {
     return (UA_DataTypeDescription*)UA_new(&UA_TYPES[UA_TYPES_DATATYPEDESCRIPTION]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_DataTypeDescription_copy(const UA_DataTypeDescription *src, UA_DataTypeDescription *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_DATATYPEDESCRIPTION]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_DataTypeDescription_deleteMembers(UA_DataTypeDescription *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_DATATYPEDESCRIPTION]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_DataTypeDescription_clear(UA_DataTypeDescription *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_DATATYPEDESCRIPTION]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_DataTypeDescription_delete(UA_DataTypeDescription *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_DATATYPEDESCRIPTION]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_DataTypeDescription_equal(const UA_DataTypeDescription *p1, const UA_DataTypeDescription *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_DATATYPEDESCRIPTION]) == UA_ORDER_EQ);
 }
@@ -29770,35 +30006,35 @@ UA_DataTypeDescription_equal(const UA_DataTypeDescription *p1, const UA_DataType
 
 
 /* SimpleTypeDescription */
-UA_EXPORT void
+static UA_INLINE void
 UA_SimpleTypeDescription_init(UA_SimpleTypeDescription *p) {
     memset(p, 0, sizeof(UA_SimpleTypeDescription));
 }
 
-UA_EXPORT UA_SimpleTypeDescription *
+static UA_INLINE UA_SimpleTypeDescription *
 UA_SimpleTypeDescription_new(void) {
     return (UA_SimpleTypeDescription*)UA_new(&UA_TYPES[UA_TYPES_SIMPLETYPEDESCRIPTION]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_SimpleTypeDescription_copy(const UA_SimpleTypeDescription *src, UA_SimpleTypeDescription *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_SIMPLETYPEDESCRIPTION]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_SimpleTypeDescription_deleteMembers(UA_SimpleTypeDescription *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_SIMPLETYPEDESCRIPTION]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_SimpleTypeDescription_clear(UA_SimpleTypeDescription *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_SIMPLETYPEDESCRIPTION]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_SimpleTypeDescription_delete(UA_SimpleTypeDescription *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_SIMPLETYPEDESCRIPTION]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_SimpleTypeDescription_equal(const UA_SimpleTypeDescription *p1, const UA_SimpleTypeDescription *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_SIMPLETYPEDESCRIPTION]) == UA_ORDER_EQ);
 }
@@ -29806,35 +30042,35 @@ UA_SimpleTypeDescription_equal(const UA_SimpleTypeDescription *p1, const UA_Simp
 
 
 /* PortableQualifiedName */
-UA_EXPORT void
+static UA_INLINE void
 UA_PortableQualifiedName_init(UA_PortableQualifiedName *p) {
     memset(p, 0, sizeof(UA_PortableQualifiedName));
 }
 
-UA_EXPORT UA_PortableQualifiedName *
+static UA_INLINE UA_PortableQualifiedName *
 UA_PortableQualifiedName_new(void) {
     return (UA_PortableQualifiedName*)UA_new(&UA_TYPES[UA_TYPES_PORTABLEQUALIFIEDNAME]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_PortableQualifiedName_copy(const UA_PortableQualifiedName *src, UA_PortableQualifiedName *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_PORTABLEQUALIFIEDNAME]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_PortableQualifiedName_deleteMembers(UA_PortableQualifiedName *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_PORTABLEQUALIFIEDNAME]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_PortableQualifiedName_clear(UA_PortableQualifiedName *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_PORTABLEQUALIFIEDNAME]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_PortableQualifiedName_delete(UA_PortableQualifiedName *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_PORTABLEQUALIFIEDNAME]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_PortableQualifiedName_equal(const UA_PortableQualifiedName *p1, const UA_PortableQualifiedName *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_PORTABLEQUALIFIEDNAME]) == UA_ORDER_EQ);
 }
@@ -29842,35 +30078,35 @@ UA_PortableQualifiedName_equal(const UA_PortableQualifiedName *p1, const UA_Port
 
 
 /* PortableNodeId */
-UA_EXPORT void
+static UA_INLINE void
 UA_PortableNodeId_init(UA_PortableNodeId *p) {
     memset(p, 0, sizeof(UA_PortableNodeId));
 }
 
-UA_EXPORT UA_PortableNodeId *
+static UA_INLINE UA_PortableNodeId *
 UA_PortableNodeId_new(void) {
     return (UA_PortableNodeId*)UA_new(&UA_TYPES[UA_TYPES_PORTABLENODEID]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_PortableNodeId_copy(const UA_PortableNodeId *src, UA_PortableNodeId *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_PORTABLENODEID]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_PortableNodeId_deleteMembers(UA_PortableNodeId *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_PORTABLENODEID]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_PortableNodeId_clear(UA_PortableNodeId *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_PORTABLENODEID]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_PortableNodeId_delete(UA_PortableNodeId *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_PORTABLENODEID]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_PortableNodeId_equal(const UA_PortableNodeId *p1, const UA_PortableNodeId *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_PORTABLENODEID]) == UA_ORDER_EQ);
 }
@@ -29878,35 +30114,35 @@ UA_PortableNodeId_equal(const UA_PortableNodeId *p1, const UA_PortableNodeId *p2
 
 
 /* UnsignedRationalNumber */
-UA_EXPORT void
+static UA_INLINE void
 UA_UnsignedRationalNumber_init(UA_UnsignedRationalNumber *p) {
     memset(p, 0, sizeof(UA_UnsignedRationalNumber));
 }
 
-UA_EXPORT UA_UnsignedRationalNumber *
+static UA_INLINE UA_UnsignedRationalNumber *
 UA_UnsignedRationalNumber_new(void) {
     return (UA_UnsignedRationalNumber*)UA_new(&UA_TYPES[UA_TYPES_UNSIGNEDRATIONALNUMBER]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_UnsignedRationalNumber_copy(const UA_UnsignedRationalNumber *src, UA_UnsignedRationalNumber *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_UNSIGNEDRATIONALNUMBER]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_UnsignedRationalNumber_deleteMembers(UA_UnsignedRationalNumber *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_UNSIGNEDRATIONALNUMBER]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_UnsignedRationalNumber_clear(UA_UnsignedRationalNumber *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_UNSIGNEDRATIONALNUMBER]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_UnsignedRationalNumber_delete(UA_UnsignedRationalNumber *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_UNSIGNEDRATIONALNUMBER]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_UnsignedRationalNumber_equal(const UA_UnsignedRationalNumber *p1, const UA_UnsignedRationalNumber *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_UNSIGNEDRATIONALNUMBER]) == UA_ORDER_EQ);
 }
@@ -29914,35 +30150,35 @@ UA_UnsignedRationalNumber_equal(const UA_UnsignedRationalNumber *p1, const UA_Un
 
 
 /* PubSubState */
-UA_EXPORT void
+static UA_INLINE void
 UA_PubSubState_init(UA_PubSubState *p) {
     memset(p, 0, sizeof(UA_PubSubState));
 }
 
-UA_EXPORT UA_PubSubState *
+static UA_INLINE UA_PubSubState *
 UA_PubSubState_new(void) {
     return (UA_PubSubState*)UA_new(&UA_TYPES[UA_TYPES_PUBSUBSTATE]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_PubSubState_copy(const UA_PubSubState *src, UA_PubSubState *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_PUBSUBSTATE]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_PubSubState_deleteMembers(UA_PubSubState *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_PUBSUBSTATE]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_PubSubState_clear(UA_PubSubState *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_PUBSUBSTATE]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_PubSubState_delete(UA_PubSubState *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_PUBSUBSTATE]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_PubSubState_equal(const UA_PubSubState *p1, const UA_PubSubState *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_PUBSUBSTATE]) == UA_ORDER_EQ);
 }
@@ -29950,35 +30186,35 @@ UA_PubSubState_equal(const UA_PubSubState *p1, const UA_PubSubState *p2) {
 
 
 /* DataSetFieldFlags */
-UA_EXPORT void
+static UA_INLINE void
 UA_DataSetFieldFlags_init(UA_DataSetFieldFlags *p) {
     memset(p, 0, sizeof(UA_DataSetFieldFlags));
 }
 
-UA_EXPORT UA_DataSetFieldFlags *
+static UA_INLINE UA_DataSetFieldFlags *
 UA_DataSetFieldFlags_new(void) {
     return (UA_DataSetFieldFlags*)UA_new(&UA_TYPES[UA_TYPES_DATASETFIELDFLAGS]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_DataSetFieldFlags_copy(const UA_DataSetFieldFlags *src, UA_DataSetFieldFlags *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_DATASETFIELDFLAGS]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_DataSetFieldFlags_deleteMembers(UA_DataSetFieldFlags *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_DATASETFIELDFLAGS]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_DataSetFieldFlags_clear(UA_DataSetFieldFlags *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_DATASETFIELDFLAGS]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_DataSetFieldFlags_delete(UA_DataSetFieldFlags *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_DATASETFIELDFLAGS]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_DataSetFieldFlags_equal(const UA_DataSetFieldFlags *p1, const UA_DataSetFieldFlags *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_DATASETFIELDFLAGS]) == UA_ORDER_EQ);
 }
@@ -29986,35 +30222,35 @@ UA_DataSetFieldFlags_equal(const UA_DataSetFieldFlags *p1, const UA_DataSetField
 
 
 /* ConfigurationVersionDataType */
-UA_EXPORT void
+static UA_INLINE void
 UA_ConfigurationVersionDataType_init(UA_ConfigurationVersionDataType *p) {
     memset(p, 0, sizeof(UA_ConfigurationVersionDataType));
 }
 
-UA_EXPORT UA_ConfigurationVersionDataType *
+static UA_INLINE UA_ConfigurationVersionDataType *
 UA_ConfigurationVersionDataType_new(void) {
     return (UA_ConfigurationVersionDataType*)UA_new(&UA_TYPES[UA_TYPES_CONFIGURATIONVERSIONDATATYPE]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_ConfigurationVersionDataType_copy(const UA_ConfigurationVersionDataType *src, UA_ConfigurationVersionDataType *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_CONFIGURATIONVERSIONDATATYPE]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_ConfigurationVersionDataType_deleteMembers(UA_ConfigurationVersionDataType *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_CONFIGURATIONVERSIONDATATYPE]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_ConfigurationVersionDataType_clear(UA_ConfigurationVersionDataType *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_CONFIGURATIONVERSIONDATATYPE]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_ConfigurationVersionDataType_delete(UA_ConfigurationVersionDataType *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_CONFIGURATIONVERSIONDATATYPE]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_ConfigurationVersionDataType_equal(const UA_ConfigurationVersionDataType *p1, const UA_ConfigurationVersionDataType *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_CONFIGURATIONVERSIONDATATYPE]) == UA_ORDER_EQ);
 }
@@ -30022,35 +30258,35 @@ UA_ConfigurationVersionDataType_equal(const UA_ConfigurationVersionDataType *p1,
 
 
 /* PublishedVariableDataType */
-UA_EXPORT void
+static UA_INLINE void
 UA_PublishedVariableDataType_init(UA_PublishedVariableDataType *p) {
     memset(p, 0, sizeof(UA_PublishedVariableDataType));
 }
 
-UA_EXPORT UA_PublishedVariableDataType *
+static UA_INLINE UA_PublishedVariableDataType *
 UA_PublishedVariableDataType_new(void) {
     return (UA_PublishedVariableDataType*)UA_new(&UA_TYPES[UA_TYPES_PUBLISHEDVARIABLEDATATYPE]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_PublishedVariableDataType_copy(const UA_PublishedVariableDataType *src, UA_PublishedVariableDataType *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_PUBLISHEDVARIABLEDATATYPE]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_PublishedVariableDataType_deleteMembers(UA_PublishedVariableDataType *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_PUBLISHEDVARIABLEDATATYPE]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_PublishedVariableDataType_clear(UA_PublishedVariableDataType *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_PUBLISHEDVARIABLEDATATYPE]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_PublishedVariableDataType_delete(UA_PublishedVariableDataType *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_PUBLISHEDVARIABLEDATATYPE]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_PublishedVariableDataType_equal(const UA_PublishedVariableDataType *p1, const UA_PublishedVariableDataType *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_PUBLISHEDVARIABLEDATATYPE]) == UA_ORDER_EQ);
 }
@@ -30058,35 +30294,35 @@ UA_PublishedVariableDataType_equal(const UA_PublishedVariableDataType *p1, const
 
 
 /* PublishedDataItemsDataType */
-UA_EXPORT void
+static UA_INLINE void
 UA_PublishedDataItemsDataType_init(UA_PublishedDataItemsDataType *p) {
     memset(p, 0, sizeof(UA_PublishedDataItemsDataType));
 }
 
-UA_EXPORT UA_PublishedDataItemsDataType *
+static UA_INLINE UA_PublishedDataItemsDataType *
 UA_PublishedDataItemsDataType_new(void) {
     return (UA_PublishedDataItemsDataType*)UA_new(&UA_TYPES[UA_TYPES_PUBLISHEDDATAITEMSDATATYPE]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_PublishedDataItemsDataType_copy(const UA_PublishedDataItemsDataType *src, UA_PublishedDataItemsDataType *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_PUBLISHEDDATAITEMSDATATYPE]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_PublishedDataItemsDataType_deleteMembers(UA_PublishedDataItemsDataType *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_PUBLISHEDDATAITEMSDATATYPE]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_PublishedDataItemsDataType_clear(UA_PublishedDataItemsDataType *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_PUBLISHEDDATAITEMSDATATYPE]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_PublishedDataItemsDataType_delete(UA_PublishedDataItemsDataType *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_PUBLISHEDDATAITEMSDATATYPE]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_PublishedDataItemsDataType_equal(const UA_PublishedDataItemsDataType *p1, const UA_PublishedDataItemsDataType *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_PUBLISHEDDATAITEMSDATATYPE]) == UA_ORDER_EQ);
 }
@@ -30094,35 +30330,35 @@ UA_PublishedDataItemsDataType_equal(const UA_PublishedDataItemsDataType *p1, con
 
 
 /* PublishedDataSetCustomSourceDataType */
-UA_EXPORT void
+static UA_INLINE void
 UA_PublishedDataSetCustomSourceDataType_init(UA_PublishedDataSetCustomSourceDataType *p) {
     memset(p, 0, sizeof(UA_PublishedDataSetCustomSourceDataType));
 }
 
-UA_EXPORT UA_PublishedDataSetCustomSourceDataType *
+static UA_INLINE UA_PublishedDataSetCustomSourceDataType *
 UA_PublishedDataSetCustomSourceDataType_new(void) {
     return (UA_PublishedDataSetCustomSourceDataType*)UA_new(&UA_TYPES[UA_TYPES_PUBLISHEDDATASETCUSTOMSOURCEDATATYPE]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_PublishedDataSetCustomSourceDataType_copy(const UA_PublishedDataSetCustomSourceDataType *src, UA_PublishedDataSetCustomSourceDataType *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_PUBLISHEDDATASETCUSTOMSOURCEDATATYPE]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_PublishedDataSetCustomSourceDataType_deleteMembers(UA_PublishedDataSetCustomSourceDataType *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_PUBLISHEDDATASETCUSTOMSOURCEDATATYPE]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_PublishedDataSetCustomSourceDataType_clear(UA_PublishedDataSetCustomSourceDataType *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_PUBLISHEDDATASETCUSTOMSOURCEDATATYPE]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_PublishedDataSetCustomSourceDataType_delete(UA_PublishedDataSetCustomSourceDataType *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_PUBLISHEDDATASETCUSTOMSOURCEDATATYPE]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_PublishedDataSetCustomSourceDataType_equal(const UA_PublishedDataSetCustomSourceDataType *p1, const UA_PublishedDataSetCustomSourceDataType *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_PUBLISHEDDATASETCUSTOMSOURCEDATATYPE]) == UA_ORDER_EQ);
 }
@@ -30130,35 +30366,35 @@ UA_PublishedDataSetCustomSourceDataType_equal(const UA_PublishedDataSetCustomSou
 
 
 /* DataSetFieldContentMask */
-UA_EXPORT void
+static UA_INLINE void
 UA_DataSetFieldContentMask_init(UA_DataSetFieldContentMask *p) {
     memset(p, 0, sizeof(UA_DataSetFieldContentMask));
 }
 
-UA_EXPORT UA_DataSetFieldContentMask *
+static UA_INLINE UA_DataSetFieldContentMask *
 UA_DataSetFieldContentMask_new(void) {
     return (UA_DataSetFieldContentMask*)UA_new(&UA_TYPES[UA_TYPES_DATASETFIELDCONTENTMASK]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_DataSetFieldContentMask_copy(const UA_DataSetFieldContentMask *src, UA_DataSetFieldContentMask *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_DATASETFIELDCONTENTMASK]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_DataSetFieldContentMask_deleteMembers(UA_DataSetFieldContentMask *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_DATASETFIELDCONTENTMASK]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_DataSetFieldContentMask_clear(UA_DataSetFieldContentMask *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_DATASETFIELDCONTENTMASK]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_DataSetFieldContentMask_delete(UA_DataSetFieldContentMask *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_DATASETFIELDCONTENTMASK]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_DataSetFieldContentMask_equal(const UA_DataSetFieldContentMask *p1, const UA_DataSetFieldContentMask *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_DATASETFIELDCONTENTMASK]) == UA_ORDER_EQ);
 }
@@ -30166,35 +30402,35 @@ UA_DataSetFieldContentMask_equal(const UA_DataSetFieldContentMask *p1, const UA_
 
 
 /* DataSetWriterDataType */
-UA_EXPORT void
+static UA_INLINE void
 UA_DataSetWriterDataType_init(UA_DataSetWriterDataType *p) {
     memset(p, 0, sizeof(UA_DataSetWriterDataType));
 }
 
-UA_EXPORT UA_DataSetWriterDataType *
+static UA_INLINE UA_DataSetWriterDataType *
 UA_DataSetWriterDataType_new(void) {
     return (UA_DataSetWriterDataType*)UA_new(&UA_TYPES[UA_TYPES_DATASETWRITERDATATYPE]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_DataSetWriterDataType_copy(const UA_DataSetWriterDataType *src, UA_DataSetWriterDataType *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_DATASETWRITERDATATYPE]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_DataSetWriterDataType_deleteMembers(UA_DataSetWriterDataType *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_DATASETWRITERDATATYPE]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_DataSetWriterDataType_clear(UA_DataSetWriterDataType *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_DATASETWRITERDATATYPE]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_DataSetWriterDataType_delete(UA_DataSetWriterDataType *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_DATASETWRITERDATATYPE]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_DataSetWriterDataType_equal(const UA_DataSetWriterDataType *p1, const UA_DataSetWriterDataType *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_DATASETWRITERDATATYPE]) == UA_ORDER_EQ);
 }
@@ -30202,35 +30438,35 @@ UA_DataSetWriterDataType_equal(const UA_DataSetWriterDataType *p1, const UA_Data
 
 
 /* NetworkAddressDataType */
-UA_EXPORT void
+static UA_INLINE void
 UA_NetworkAddressDataType_init(UA_NetworkAddressDataType *p) {
     memset(p, 0, sizeof(UA_NetworkAddressDataType));
 }
 
-UA_EXPORT UA_NetworkAddressDataType *
+static UA_INLINE UA_NetworkAddressDataType *
 UA_NetworkAddressDataType_new(void) {
     return (UA_NetworkAddressDataType*)UA_new(&UA_TYPES[UA_TYPES_NETWORKADDRESSDATATYPE]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_NetworkAddressDataType_copy(const UA_NetworkAddressDataType *src, UA_NetworkAddressDataType *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_NETWORKADDRESSDATATYPE]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_NetworkAddressDataType_deleteMembers(UA_NetworkAddressDataType *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_NETWORKADDRESSDATATYPE]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_NetworkAddressDataType_clear(UA_NetworkAddressDataType *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_NETWORKADDRESSDATATYPE]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_NetworkAddressDataType_delete(UA_NetworkAddressDataType *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_NETWORKADDRESSDATATYPE]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_NetworkAddressDataType_equal(const UA_NetworkAddressDataType *p1, const UA_NetworkAddressDataType *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_NETWORKADDRESSDATATYPE]) == UA_ORDER_EQ);
 }
@@ -30238,35 +30474,35 @@ UA_NetworkAddressDataType_equal(const UA_NetworkAddressDataType *p1, const UA_Ne
 
 
 /* NetworkAddressUrlDataType */
-UA_EXPORT void
+static UA_INLINE void
 UA_NetworkAddressUrlDataType_init(UA_NetworkAddressUrlDataType *p) {
     memset(p, 0, sizeof(UA_NetworkAddressUrlDataType));
 }
 
-UA_EXPORT UA_NetworkAddressUrlDataType *
+static UA_INLINE UA_NetworkAddressUrlDataType *
 UA_NetworkAddressUrlDataType_new(void) {
     return (UA_NetworkAddressUrlDataType*)UA_new(&UA_TYPES[UA_TYPES_NETWORKADDRESSURLDATATYPE]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_NetworkAddressUrlDataType_copy(const UA_NetworkAddressUrlDataType *src, UA_NetworkAddressUrlDataType *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_NETWORKADDRESSURLDATATYPE]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_NetworkAddressUrlDataType_deleteMembers(UA_NetworkAddressUrlDataType *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_NETWORKADDRESSURLDATATYPE]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_NetworkAddressUrlDataType_clear(UA_NetworkAddressUrlDataType *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_NETWORKADDRESSURLDATATYPE]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_NetworkAddressUrlDataType_delete(UA_NetworkAddressUrlDataType *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_NETWORKADDRESSURLDATATYPE]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_NetworkAddressUrlDataType_equal(const UA_NetworkAddressUrlDataType *p1, const UA_NetworkAddressUrlDataType *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_NETWORKADDRESSURLDATATYPE]) == UA_ORDER_EQ);
 }
@@ -30274,35 +30510,35 @@ UA_NetworkAddressUrlDataType_equal(const UA_NetworkAddressUrlDataType *p1, const
 
 
 /* OverrideValueHandling */
-UA_EXPORT void
+static UA_INLINE void
 UA_OverrideValueHandling_init(UA_OverrideValueHandling *p) {
     memset(p, 0, sizeof(UA_OverrideValueHandling));
 }
 
-UA_EXPORT UA_OverrideValueHandling *
+static UA_INLINE UA_OverrideValueHandling *
 UA_OverrideValueHandling_new(void) {
     return (UA_OverrideValueHandling*)UA_new(&UA_TYPES[UA_TYPES_OVERRIDEVALUEHANDLING]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_OverrideValueHandling_copy(const UA_OverrideValueHandling *src, UA_OverrideValueHandling *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_OVERRIDEVALUEHANDLING]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_OverrideValueHandling_deleteMembers(UA_OverrideValueHandling *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_OVERRIDEVALUEHANDLING]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_OverrideValueHandling_clear(UA_OverrideValueHandling *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_OVERRIDEVALUEHANDLING]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_OverrideValueHandling_delete(UA_OverrideValueHandling *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_OVERRIDEVALUEHANDLING]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_OverrideValueHandling_equal(const UA_OverrideValueHandling *p1, const UA_OverrideValueHandling *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_OVERRIDEVALUEHANDLING]) == UA_ORDER_EQ);
 }
@@ -30310,35 +30546,35 @@ UA_OverrideValueHandling_equal(const UA_OverrideValueHandling *p1, const UA_Over
 
 
 /* StandaloneSubscribedDataSetRefDataType */
-UA_EXPORT void
+static UA_INLINE void
 UA_StandaloneSubscribedDataSetRefDataType_init(UA_StandaloneSubscribedDataSetRefDataType *p) {
     memset(p, 0, sizeof(UA_StandaloneSubscribedDataSetRefDataType));
 }
 
-UA_EXPORT UA_StandaloneSubscribedDataSetRefDataType *
+static UA_INLINE UA_StandaloneSubscribedDataSetRefDataType *
 UA_StandaloneSubscribedDataSetRefDataType_new(void) {
     return (UA_StandaloneSubscribedDataSetRefDataType*)UA_new(&UA_TYPES[UA_TYPES_STANDALONESUBSCRIBEDDATASETREFDATATYPE]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_StandaloneSubscribedDataSetRefDataType_copy(const UA_StandaloneSubscribedDataSetRefDataType *src, UA_StandaloneSubscribedDataSetRefDataType *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_STANDALONESUBSCRIBEDDATASETREFDATATYPE]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_StandaloneSubscribedDataSetRefDataType_deleteMembers(UA_StandaloneSubscribedDataSetRefDataType *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_STANDALONESUBSCRIBEDDATASETREFDATATYPE]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_StandaloneSubscribedDataSetRefDataType_clear(UA_StandaloneSubscribedDataSetRefDataType *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_STANDALONESUBSCRIBEDDATASETREFDATATYPE]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_StandaloneSubscribedDataSetRefDataType_delete(UA_StandaloneSubscribedDataSetRefDataType *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_STANDALONESUBSCRIBEDDATASETREFDATATYPE]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_StandaloneSubscribedDataSetRefDataType_equal(const UA_StandaloneSubscribedDataSetRefDataType *p1, const UA_StandaloneSubscribedDataSetRefDataType *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_STANDALONESUBSCRIBEDDATASETREFDATATYPE]) == UA_ORDER_EQ);
 }
@@ -30346,35 +30582,35 @@ UA_StandaloneSubscribedDataSetRefDataType_equal(const UA_StandaloneSubscribedDat
 
 
 /* DataSetOrderingType */
-UA_EXPORT void
+static UA_INLINE void
 UA_DataSetOrderingType_init(UA_DataSetOrderingType *p) {
     memset(p, 0, sizeof(UA_DataSetOrderingType));
 }
 
-UA_EXPORT UA_DataSetOrderingType *
+static UA_INLINE UA_DataSetOrderingType *
 UA_DataSetOrderingType_new(void) {
     return (UA_DataSetOrderingType*)UA_new(&UA_TYPES[UA_TYPES_DATASETORDERINGTYPE]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_DataSetOrderingType_copy(const UA_DataSetOrderingType *src, UA_DataSetOrderingType *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_DATASETORDERINGTYPE]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_DataSetOrderingType_deleteMembers(UA_DataSetOrderingType *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_DATASETORDERINGTYPE]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_DataSetOrderingType_clear(UA_DataSetOrderingType *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_DATASETORDERINGTYPE]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_DataSetOrderingType_delete(UA_DataSetOrderingType *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_DATASETORDERINGTYPE]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_DataSetOrderingType_equal(const UA_DataSetOrderingType *p1, const UA_DataSetOrderingType *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_DATASETORDERINGTYPE]) == UA_ORDER_EQ);
 }
@@ -30382,35 +30618,35 @@ UA_DataSetOrderingType_equal(const UA_DataSetOrderingType *p1, const UA_DataSetO
 
 
 /* UadpNetworkMessageContentMask */
-UA_EXPORT void
+static UA_INLINE void
 UA_UadpNetworkMessageContentMask_init(UA_UadpNetworkMessageContentMask *p) {
     memset(p, 0, sizeof(UA_UadpNetworkMessageContentMask));
 }
 
-UA_EXPORT UA_UadpNetworkMessageContentMask *
+static UA_INLINE UA_UadpNetworkMessageContentMask *
 UA_UadpNetworkMessageContentMask_new(void) {
     return (UA_UadpNetworkMessageContentMask*)UA_new(&UA_TYPES[UA_TYPES_UADPNETWORKMESSAGECONTENTMASK]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_UadpNetworkMessageContentMask_copy(const UA_UadpNetworkMessageContentMask *src, UA_UadpNetworkMessageContentMask *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_UADPNETWORKMESSAGECONTENTMASK]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_UadpNetworkMessageContentMask_deleteMembers(UA_UadpNetworkMessageContentMask *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_UADPNETWORKMESSAGECONTENTMASK]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_UadpNetworkMessageContentMask_clear(UA_UadpNetworkMessageContentMask *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_UADPNETWORKMESSAGECONTENTMASK]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_UadpNetworkMessageContentMask_delete(UA_UadpNetworkMessageContentMask *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_UADPNETWORKMESSAGECONTENTMASK]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_UadpNetworkMessageContentMask_equal(const UA_UadpNetworkMessageContentMask *p1, const UA_UadpNetworkMessageContentMask *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_UADPNETWORKMESSAGECONTENTMASK]) == UA_ORDER_EQ);
 }
@@ -30418,35 +30654,35 @@ UA_UadpNetworkMessageContentMask_equal(const UA_UadpNetworkMessageContentMask *p
 
 
 /* UadpWriterGroupMessageDataType */
-UA_EXPORT void
+static UA_INLINE void
 UA_UadpWriterGroupMessageDataType_init(UA_UadpWriterGroupMessageDataType *p) {
     memset(p, 0, sizeof(UA_UadpWriterGroupMessageDataType));
 }
 
-UA_EXPORT UA_UadpWriterGroupMessageDataType *
+static UA_INLINE UA_UadpWriterGroupMessageDataType *
 UA_UadpWriterGroupMessageDataType_new(void) {
     return (UA_UadpWriterGroupMessageDataType*)UA_new(&UA_TYPES[UA_TYPES_UADPWRITERGROUPMESSAGEDATATYPE]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_UadpWriterGroupMessageDataType_copy(const UA_UadpWriterGroupMessageDataType *src, UA_UadpWriterGroupMessageDataType *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_UADPWRITERGROUPMESSAGEDATATYPE]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_UadpWriterGroupMessageDataType_deleteMembers(UA_UadpWriterGroupMessageDataType *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_UADPWRITERGROUPMESSAGEDATATYPE]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_UadpWriterGroupMessageDataType_clear(UA_UadpWriterGroupMessageDataType *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_UADPWRITERGROUPMESSAGEDATATYPE]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_UadpWriterGroupMessageDataType_delete(UA_UadpWriterGroupMessageDataType *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_UADPWRITERGROUPMESSAGEDATATYPE]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_UadpWriterGroupMessageDataType_equal(const UA_UadpWriterGroupMessageDataType *p1, const UA_UadpWriterGroupMessageDataType *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_UADPWRITERGROUPMESSAGEDATATYPE]) == UA_ORDER_EQ);
 }
@@ -30454,35 +30690,35 @@ UA_UadpWriterGroupMessageDataType_equal(const UA_UadpWriterGroupMessageDataType 
 
 
 /* UadpDataSetMessageContentMask */
-UA_EXPORT void
+static UA_INLINE void
 UA_UadpDataSetMessageContentMask_init(UA_UadpDataSetMessageContentMask *p) {
     memset(p, 0, sizeof(UA_UadpDataSetMessageContentMask));
 }
 
-UA_EXPORT UA_UadpDataSetMessageContentMask *
+static UA_INLINE UA_UadpDataSetMessageContentMask *
 UA_UadpDataSetMessageContentMask_new(void) {
     return (UA_UadpDataSetMessageContentMask*)UA_new(&UA_TYPES[UA_TYPES_UADPDATASETMESSAGECONTENTMASK]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_UadpDataSetMessageContentMask_copy(const UA_UadpDataSetMessageContentMask *src, UA_UadpDataSetMessageContentMask *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_UADPDATASETMESSAGECONTENTMASK]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_UadpDataSetMessageContentMask_deleteMembers(UA_UadpDataSetMessageContentMask *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_UADPDATASETMESSAGECONTENTMASK]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_UadpDataSetMessageContentMask_clear(UA_UadpDataSetMessageContentMask *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_UADPDATASETMESSAGECONTENTMASK]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_UadpDataSetMessageContentMask_delete(UA_UadpDataSetMessageContentMask *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_UADPDATASETMESSAGECONTENTMASK]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_UadpDataSetMessageContentMask_equal(const UA_UadpDataSetMessageContentMask *p1, const UA_UadpDataSetMessageContentMask *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_UADPDATASETMESSAGECONTENTMASK]) == UA_ORDER_EQ);
 }
@@ -30490,35 +30726,35 @@ UA_UadpDataSetMessageContentMask_equal(const UA_UadpDataSetMessageContentMask *p
 
 
 /* UadpDataSetWriterMessageDataType */
-UA_EXPORT void
+static UA_INLINE void
 UA_UadpDataSetWriterMessageDataType_init(UA_UadpDataSetWriterMessageDataType *p) {
     memset(p, 0, sizeof(UA_UadpDataSetWriterMessageDataType));
 }
 
-UA_EXPORT UA_UadpDataSetWriterMessageDataType *
+static UA_INLINE UA_UadpDataSetWriterMessageDataType *
 UA_UadpDataSetWriterMessageDataType_new(void) {
     return (UA_UadpDataSetWriterMessageDataType*)UA_new(&UA_TYPES[UA_TYPES_UADPDATASETWRITERMESSAGEDATATYPE]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_UadpDataSetWriterMessageDataType_copy(const UA_UadpDataSetWriterMessageDataType *src, UA_UadpDataSetWriterMessageDataType *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_UADPDATASETWRITERMESSAGEDATATYPE]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_UadpDataSetWriterMessageDataType_deleteMembers(UA_UadpDataSetWriterMessageDataType *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_UADPDATASETWRITERMESSAGEDATATYPE]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_UadpDataSetWriterMessageDataType_clear(UA_UadpDataSetWriterMessageDataType *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_UADPDATASETWRITERMESSAGEDATATYPE]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_UadpDataSetWriterMessageDataType_delete(UA_UadpDataSetWriterMessageDataType *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_UADPDATASETWRITERMESSAGEDATATYPE]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_UadpDataSetWriterMessageDataType_equal(const UA_UadpDataSetWriterMessageDataType *p1, const UA_UadpDataSetWriterMessageDataType *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_UADPDATASETWRITERMESSAGEDATATYPE]) == UA_ORDER_EQ);
 }
@@ -30526,35 +30762,35 @@ UA_UadpDataSetWriterMessageDataType_equal(const UA_UadpDataSetWriterMessageDataT
 
 
 /* UadpDataSetReaderMessageDataType */
-UA_EXPORT void
+static UA_INLINE void
 UA_UadpDataSetReaderMessageDataType_init(UA_UadpDataSetReaderMessageDataType *p) {
     memset(p, 0, sizeof(UA_UadpDataSetReaderMessageDataType));
 }
 
-UA_EXPORT UA_UadpDataSetReaderMessageDataType *
+static UA_INLINE UA_UadpDataSetReaderMessageDataType *
 UA_UadpDataSetReaderMessageDataType_new(void) {
     return (UA_UadpDataSetReaderMessageDataType*)UA_new(&UA_TYPES[UA_TYPES_UADPDATASETREADERMESSAGEDATATYPE]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_UadpDataSetReaderMessageDataType_copy(const UA_UadpDataSetReaderMessageDataType *src, UA_UadpDataSetReaderMessageDataType *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_UADPDATASETREADERMESSAGEDATATYPE]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_UadpDataSetReaderMessageDataType_deleteMembers(UA_UadpDataSetReaderMessageDataType *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_UADPDATASETREADERMESSAGEDATATYPE]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_UadpDataSetReaderMessageDataType_clear(UA_UadpDataSetReaderMessageDataType *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_UADPDATASETREADERMESSAGEDATATYPE]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_UadpDataSetReaderMessageDataType_delete(UA_UadpDataSetReaderMessageDataType *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_UADPDATASETREADERMESSAGEDATATYPE]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_UadpDataSetReaderMessageDataType_equal(const UA_UadpDataSetReaderMessageDataType *p1, const UA_UadpDataSetReaderMessageDataType *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_UADPDATASETREADERMESSAGEDATATYPE]) == UA_ORDER_EQ);
 }
@@ -30562,35 +30798,35 @@ UA_UadpDataSetReaderMessageDataType_equal(const UA_UadpDataSetReaderMessageDataT
 
 
 /* JsonNetworkMessageContentMask */
-UA_EXPORT void
+static UA_INLINE void
 UA_JsonNetworkMessageContentMask_init(UA_JsonNetworkMessageContentMask *p) {
     memset(p, 0, sizeof(UA_JsonNetworkMessageContentMask));
 }
 
-UA_EXPORT UA_JsonNetworkMessageContentMask *
+static UA_INLINE UA_JsonNetworkMessageContentMask *
 UA_JsonNetworkMessageContentMask_new(void) {
     return (UA_JsonNetworkMessageContentMask*)UA_new(&UA_TYPES[UA_TYPES_JSONNETWORKMESSAGECONTENTMASK]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_JsonNetworkMessageContentMask_copy(const UA_JsonNetworkMessageContentMask *src, UA_JsonNetworkMessageContentMask *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_JSONNETWORKMESSAGECONTENTMASK]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_JsonNetworkMessageContentMask_deleteMembers(UA_JsonNetworkMessageContentMask *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_JSONNETWORKMESSAGECONTENTMASK]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_JsonNetworkMessageContentMask_clear(UA_JsonNetworkMessageContentMask *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_JSONNETWORKMESSAGECONTENTMASK]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_JsonNetworkMessageContentMask_delete(UA_JsonNetworkMessageContentMask *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_JSONNETWORKMESSAGECONTENTMASK]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_JsonNetworkMessageContentMask_equal(const UA_JsonNetworkMessageContentMask *p1, const UA_JsonNetworkMessageContentMask *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_JSONNETWORKMESSAGECONTENTMASK]) == UA_ORDER_EQ);
 }
@@ -30598,35 +30834,35 @@ UA_JsonNetworkMessageContentMask_equal(const UA_JsonNetworkMessageContentMask *p
 
 
 /* JsonWriterGroupMessageDataType */
-UA_EXPORT void
+static UA_INLINE void
 UA_JsonWriterGroupMessageDataType_init(UA_JsonWriterGroupMessageDataType *p) {
     memset(p, 0, sizeof(UA_JsonWriterGroupMessageDataType));
 }
 
-UA_EXPORT UA_JsonWriterGroupMessageDataType *
+static UA_INLINE UA_JsonWriterGroupMessageDataType *
 UA_JsonWriterGroupMessageDataType_new(void) {
     return (UA_JsonWriterGroupMessageDataType*)UA_new(&UA_TYPES[UA_TYPES_JSONWRITERGROUPMESSAGEDATATYPE]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_JsonWriterGroupMessageDataType_copy(const UA_JsonWriterGroupMessageDataType *src, UA_JsonWriterGroupMessageDataType *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_JSONWRITERGROUPMESSAGEDATATYPE]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_JsonWriterGroupMessageDataType_deleteMembers(UA_JsonWriterGroupMessageDataType *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_JSONWRITERGROUPMESSAGEDATATYPE]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_JsonWriterGroupMessageDataType_clear(UA_JsonWriterGroupMessageDataType *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_JSONWRITERGROUPMESSAGEDATATYPE]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_JsonWriterGroupMessageDataType_delete(UA_JsonWriterGroupMessageDataType *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_JSONWRITERGROUPMESSAGEDATATYPE]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_JsonWriterGroupMessageDataType_equal(const UA_JsonWriterGroupMessageDataType *p1, const UA_JsonWriterGroupMessageDataType *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_JSONWRITERGROUPMESSAGEDATATYPE]) == UA_ORDER_EQ);
 }
@@ -30634,35 +30870,35 @@ UA_JsonWriterGroupMessageDataType_equal(const UA_JsonWriterGroupMessageDataType 
 
 
 /* JsonDataSetMessageContentMask */
-UA_EXPORT void
+static UA_INLINE void
 UA_JsonDataSetMessageContentMask_init(UA_JsonDataSetMessageContentMask *p) {
     memset(p, 0, sizeof(UA_JsonDataSetMessageContentMask));
 }
 
-UA_EXPORT UA_JsonDataSetMessageContentMask *
+static UA_INLINE UA_JsonDataSetMessageContentMask *
 UA_JsonDataSetMessageContentMask_new(void) {
     return (UA_JsonDataSetMessageContentMask*)UA_new(&UA_TYPES[UA_TYPES_JSONDATASETMESSAGECONTENTMASK]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_JsonDataSetMessageContentMask_copy(const UA_JsonDataSetMessageContentMask *src, UA_JsonDataSetMessageContentMask *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_JSONDATASETMESSAGECONTENTMASK]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_JsonDataSetMessageContentMask_deleteMembers(UA_JsonDataSetMessageContentMask *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_JSONDATASETMESSAGECONTENTMASK]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_JsonDataSetMessageContentMask_clear(UA_JsonDataSetMessageContentMask *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_JSONDATASETMESSAGECONTENTMASK]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_JsonDataSetMessageContentMask_delete(UA_JsonDataSetMessageContentMask *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_JSONDATASETMESSAGECONTENTMASK]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_JsonDataSetMessageContentMask_equal(const UA_JsonDataSetMessageContentMask *p1, const UA_JsonDataSetMessageContentMask *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_JSONDATASETMESSAGECONTENTMASK]) == UA_ORDER_EQ);
 }
@@ -30670,35 +30906,35 @@ UA_JsonDataSetMessageContentMask_equal(const UA_JsonDataSetMessageContentMask *p
 
 
 /* JsonDataSetWriterMessageDataType */
-UA_EXPORT void
+static UA_INLINE void
 UA_JsonDataSetWriterMessageDataType_init(UA_JsonDataSetWriterMessageDataType *p) {
     memset(p, 0, sizeof(UA_JsonDataSetWriterMessageDataType));
 }
 
-UA_EXPORT UA_JsonDataSetWriterMessageDataType *
+static UA_INLINE UA_JsonDataSetWriterMessageDataType *
 UA_JsonDataSetWriterMessageDataType_new(void) {
     return (UA_JsonDataSetWriterMessageDataType*)UA_new(&UA_TYPES[UA_TYPES_JSONDATASETWRITERMESSAGEDATATYPE]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_JsonDataSetWriterMessageDataType_copy(const UA_JsonDataSetWriterMessageDataType *src, UA_JsonDataSetWriterMessageDataType *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_JSONDATASETWRITERMESSAGEDATATYPE]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_JsonDataSetWriterMessageDataType_deleteMembers(UA_JsonDataSetWriterMessageDataType *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_JSONDATASETWRITERMESSAGEDATATYPE]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_JsonDataSetWriterMessageDataType_clear(UA_JsonDataSetWriterMessageDataType *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_JSONDATASETWRITERMESSAGEDATATYPE]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_JsonDataSetWriterMessageDataType_delete(UA_JsonDataSetWriterMessageDataType *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_JSONDATASETWRITERMESSAGEDATATYPE]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_JsonDataSetWriterMessageDataType_equal(const UA_JsonDataSetWriterMessageDataType *p1, const UA_JsonDataSetWriterMessageDataType *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_JSONDATASETWRITERMESSAGEDATATYPE]) == UA_ORDER_EQ);
 }
@@ -30706,35 +30942,35 @@ UA_JsonDataSetWriterMessageDataType_equal(const UA_JsonDataSetWriterMessageDataT
 
 
 /* JsonDataSetReaderMessageDataType */
-UA_EXPORT void
+static UA_INLINE void
 UA_JsonDataSetReaderMessageDataType_init(UA_JsonDataSetReaderMessageDataType *p) {
     memset(p, 0, sizeof(UA_JsonDataSetReaderMessageDataType));
 }
 
-UA_EXPORT UA_JsonDataSetReaderMessageDataType *
+static UA_INLINE UA_JsonDataSetReaderMessageDataType *
 UA_JsonDataSetReaderMessageDataType_new(void) {
     return (UA_JsonDataSetReaderMessageDataType*)UA_new(&UA_TYPES[UA_TYPES_JSONDATASETREADERMESSAGEDATATYPE]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_JsonDataSetReaderMessageDataType_copy(const UA_JsonDataSetReaderMessageDataType *src, UA_JsonDataSetReaderMessageDataType *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_JSONDATASETREADERMESSAGEDATATYPE]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_JsonDataSetReaderMessageDataType_deleteMembers(UA_JsonDataSetReaderMessageDataType *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_JSONDATASETREADERMESSAGEDATATYPE]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_JsonDataSetReaderMessageDataType_clear(UA_JsonDataSetReaderMessageDataType *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_JSONDATASETREADERMESSAGEDATATYPE]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_JsonDataSetReaderMessageDataType_delete(UA_JsonDataSetReaderMessageDataType *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_JSONDATASETREADERMESSAGEDATATYPE]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_JsonDataSetReaderMessageDataType_equal(const UA_JsonDataSetReaderMessageDataType *p1, const UA_JsonDataSetReaderMessageDataType *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_JSONDATASETREADERMESSAGEDATATYPE]) == UA_ORDER_EQ);
 }
@@ -30742,35 +30978,35 @@ UA_JsonDataSetReaderMessageDataType_equal(const UA_JsonDataSetReaderMessageDataT
 
 
 /* TransmitQosPriorityDataType */
-UA_EXPORT void
+static UA_INLINE void
 UA_TransmitQosPriorityDataType_init(UA_TransmitQosPriorityDataType *p) {
     memset(p, 0, sizeof(UA_TransmitQosPriorityDataType));
 }
 
-UA_EXPORT UA_TransmitQosPriorityDataType *
+static UA_INLINE UA_TransmitQosPriorityDataType *
 UA_TransmitQosPriorityDataType_new(void) {
     return (UA_TransmitQosPriorityDataType*)UA_new(&UA_TYPES[UA_TYPES_TRANSMITQOSPRIORITYDATATYPE]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_TransmitQosPriorityDataType_copy(const UA_TransmitQosPriorityDataType *src, UA_TransmitQosPriorityDataType *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_TRANSMITQOSPRIORITYDATATYPE]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_TransmitQosPriorityDataType_deleteMembers(UA_TransmitQosPriorityDataType *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_TRANSMITQOSPRIORITYDATATYPE]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_TransmitQosPriorityDataType_clear(UA_TransmitQosPriorityDataType *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_TRANSMITQOSPRIORITYDATATYPE]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_TransmitQosPriorityDataType_delete(UA_TransmitQosPriorityDataType *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_TRANSMITQOSPRIORITYDATATYPE]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_TransmitQosPriorityDataType_equal(const UA_TransmitQosPriorityDataType *p1, const UA_TransmitQosPriorityDataType *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_TRANSMITQOSPRIORITYDATATYPE]) == UA_ORDER_EQ);
 }
@@ -30778,35 +31014,35 @@ UA_TransmitQosPriorityDataType_equal(const UA_TransmitQosPriorityDataType *p1, c
 
 
 /* ReceiveQosPriorityDataType */
-UA_EXPORT void
+static UA_INLINE void
 UA_ReceiveQosPriorityDataType_init(UA_ReceiveQosPriorityDataType *p) {
     memset(p, 0, sizeof(UA_ReceiveQosPriorityDataType));
 }
 
-UA_EXPORT UA_ReceiveQosPriorityDataType *
+static UA_INLINE UA_ReceiveQosPriorityDataType *
 UA_ReceiveQosPriorityDataType_new(void) {
     return (UA_ReceiveQosPriorityDataType*)UA_new(&UA_TYPES[UA_TYPES_RECEIVEQOSPRIORITYDATATYPE]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_ReceiveQosPriorityDataType_copy(const UA_ReceiveQosPriorityDataType *src, UA_ReceiveQosPriorityDataType *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_RECEIVEQOSPRIORITYDATATYPE]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_ReceiveQosPriorityDataType_deleteMembers(UA_ReceiveQosPriorityDataType *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_RECEIVEQOSPRIORITYDATATYPE]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_ReceiveQosPriorityDataType_clear(UA_ReceiveQosPriorityDataType *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_RECEIVEQOSPRIORITYDATATYPE]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_ReceiveQosPriorityDataType_delete(UA_ReceiveQosPriorityDataType *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_RECEIVEQOSPRIORITYDATATYPE]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_ReceiveQosPriorityDataType_equal(const UA_ReceiveQosPriorityDataType *p1, const UA_ReceiveQosPriorityDataType *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_RECEIVEQOSPRIORITYDATATYPE]) == UA_ORDER_EQ);
 }
@@ -30814,35 +31050,35 @@ UA_ReceiveQosPriorityDataType_equal(const UA_ReceiveQosPriorityDataType *p1, con
 
 
 /* DatagramConnectionTransportDataType */
-UA_EXPORT void
+static UA_INLINE void
 UA_DatagramConnectionTransportDataType_init(UA_DatagramConnectionTransportDataType *p) {
     memset(p, 0, sizeof(UA_DatagramConnectionTransportDataType));
 }
 
-UA_EXPORT UA_DatagramConnectionTransportDataType *
+static UA_INLINE UA_DatagramConnectionTransportDataType *
 UA_DatagramConnectionTransportDataType_new(void) {
     return (UA_DatagramConnectionTransportDataType*)UA_new(&UA_TYPES[UA_TYPES_DATAGRAMCONNECTIONTRANSPORTDATATYPE]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_DatagramConnectionTransportDataType_copy(const UA_DatagramConnectionTransportDataType *src, UA_DatagramConnectionTransportDataType *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_DATAGRAMCONNECTIONTRANSPORTDATATYPE]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_DatagramConnectionTransportDataType_deleteMembers(UA_DatagramConnectionTransportDataType *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_DATAGRAMCONNECTIONTRANSPORTDATATYPE]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_DatagramConnectionTransportDataType_clear(UA_DatagramConnectionTransportDataType *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_DATAGRAMCONNECTIONTRANSPORTDATATYPE]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_DatagramConnectionTransportDataType_delete(UA_DatagramConnectionTransportDataType *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_DATAGRAMCONNECTIONTRANSPORTDATATYPE]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_DatagramConnectionTransportDataType_equal(const UA_DatagramConnectionTransportDataType *p1, const UA_DatagramConnectionTransportDataType *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_DATAGRAMCONNECTIONTRANSPORTDATATYPE]) == UA_ORDER_EQ);
 }
@@ -30850,35 +31086,35 @@ UA_DatagramConnectionTransportDataType_equal(const UA_DatagramConnectionTranspor
 
 
 /* DatagramConnectionTransport2DataType */
-UA_EXPORT void
+static UA_INLINE void
 UA_DatagramConnectionTransport2DataType_init(UA_DatagramConnectionTransport2DataType *p) {
     memset(p, 0, sizeof(UA_DatagramConnectionTransport2DataType));
 }
 
-UA_EXPORT UA_DatagramConnectionTransport2DataType *
+static UA_INLINE UA_DatagramConnectionTransport2DataType *
 UA_DatagramConnectionTransport2DataType_new(void) {
     return (UA_DatagramConnectionTransport2DataType*)UA_new(&UA_TYPES[UA_TYPES_DATAGRAMCONNECTIONTRANSPORT2DATATYPE]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_DatagramConnectionTransport2DataType_copy(const UA_DatagramConnectionTransport2DataType *src, UA_DatagramConnectionTransport2DataType *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_DATAGRAMCONNECTIONTRANSPORT2DATATYPE]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_DatagramConnectionTransport2DataType_deleteMembers(UA_DatagramConnectionTransport2DataType *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_DATAGRAMCONNECTIONTRANSPORT2DATATYPE]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_DatagramConnectionTransport2DataType_clear(UA_DatagramConnectionTransport2DataType *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_DATAGRAMCONNECTIONTRANSPORT2DATATYPE]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_DatagramConnectionTransport2DataType_delete(UA_DatagramConnectionTransport2DataType *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_DATAGRAMCONNECTIONTRANSPORT2DATATYPE]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_DatagramConnectionTransport2DataType_equal(const UA_DatagramConnectionTransport2DataType *p1, const UA_DatagramConnectionTransport2DataType *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_DATAGRAMCONNECTIONTRANSPORT2DATATYPE]) == UA_ORDER_EQ);
 }
@@ -30886,35 +31122,35 @@ UA_DatagramConnectionTransport2DataType_equal(const UA_DatagramConnectionTranspo
 
 
 /* DatagramWriterGroupTransportDataType */
-UA_EXPORT void
+static UA_INLINE void
 UA_DatagramWriterGroupTransportDataType_init(UA_DatagramWriterGroupTransportDataType *p) {
     memset(p, 0, sizeof(UA_DatagramWriterGroupTransportDataType));
 }
 
-UA_EXPORT UA_DatagramWriterGroupTransportDataType *
+static UA_INLINE UA_DatagramWriterGroupTransportDataType *
 UA_DatagramWriterGroupTransportDataType_new(void) {
     return (UA_DatagramWriterGroupTransportDataType*)UA_new(&UA_TYPES[UA_TYPES_DATAGRAMWRITERGROUPTRANSPORTDATATYPE]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_DatagramWriterGroupTransportDataType_copy(const UA_DatagramWriterGroupTransportDataType *src, UA_DatagramWriterGroupTransportDataType *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_DATAGRAMWRITERGROUPTRANSPORTDATATYPE]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_DatagramWriterGroupTransportDataType_deleteMembers(UA_DatagramWriterGroupTransportDataType *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_DATAGRAMWRITERGROUPTRANSPORTDATATYPE]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_DatagramWriterGroupTransportDataType_clear(UA_DatagramWriterGroupTransportDataType *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_DATAGRAMWRITERGROUPTRANSPORTDATATYPE]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_DatagramWriterGroupTransportDataType_delete(UA_DatagramWriterGroupTransportDataType *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_DATAGRAMWRITERGROUPTRANSPORTDATATYPE]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_DatagramWriterGroupTransportDataType_equal(const UA_DatagramWriterGroupTransportDataType *p1, const UA_DatagramWriterGroupTransportDataType *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_DATAGRAMWRITERGROUPTRANSPORTDATATYPE]) == UA_ORDER_EQ);
 }
@@ -30922,35 +31158,35 @@ UA_DatagramWriterGroupTransportDataType_equal(const UA_DatagramWriterGroupTransp
 
 
 /* DatagramWriterGroupTransport2DataType */
-UA_EXPORT void
+static UA_INLINE void
 UA_DatagramWriterGroupTransport2DataType_init(UA_DatagramWriterGroupTransport2DataType *p) {
     memset(p, 0, sizeof(UA_DatagramWriterGroupTransport2DataType));
 }
 
-UA_EXPORT UA_DatagramWriterGroupTransport2DataType *
+static UA_INLINE UA_DatagramWriterGroupTransport2DataType *
 UA_DatagramWriterGroupTransport2DataType_new(void) {
     return (UA_DatagramWriterGroupTransport2DataType*)UA_new(&UA_TYPES[UA_TYPES_DATAGRAMWRITERGROUPTRANSPORT2DATATYPE]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_DatagramWriterGroupTransport2DataType_copy(const UA_DatagramWriterGroupTransport2DataType *src, UA_DatagramWriterGroupTransport2DataType *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_DATAGRAMWRITERGROUPTRANSPORT2DATATYPE]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_DatagramWriterGroupTransport2DataType_deleteMembers(UA_DatagramWriterGroupTransport2DataType *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_DATAGRAMWRITERGROUPTRANSPORT2DATATYPE]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_DatagramWriterGroupTransport2DataType_clear(UA_DatagramWriterGroupTransport2DataType *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_DATAGRAMWRITERGROUPTRANSPORT2DATATYPE]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_DatagramWriterGroupTransport2DataType_delete(UA_DatagramWriterGroupTransport2DataType *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_DATAGRAMWRITERGROUPTRANSPORT2DATATYPE]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_DatagramWriterGroupTransport2DataType_equal(const UA_DatagramWriterGroupTransport2DataType *p1, const UA_DatagramWriterGroupTransport2DataType *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_DATAGRAMWRITERGROUPTRANSPORT2DATATYPE]) == UA_ORDER_EQ);
 }
@@ -30958,35 +31194,35 @@ UA_DatagramWriterGroupTransport2DataType_equal(const UA_DatagramWriterGroupTrans
 
 
 /* DatagramDataSetReaderTransportDataType */
-UA_EXPORT void
+static UA_INLINE void
 UA_DatagramDataSetReaderTransportDataType_init(UA_DatagramDataSetReaderTransportDataType *p) {
     memset(p, 0, sizeof(UA_DatagramDataSetReaderTransportDataType));
 }
 
-UA_EXPORT UA_DatagramDataSetReaderTransportDataType *
+static UA_INLINE UA_DatagramDataSetReaderTransportDataType *
 UA_DatagramDataSetReaderTransportDataType_new(void) {
     return (UA_DatagramDataSetReaderTransportDataType*)UA_new(&UA_TYPES[UA_TYPES_DATAGRAMDATASETREADERTRANSPORTDATATYPE]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_DatagramDataSetReaderTransportDataType_copy(const UA_DatagramDataSetReaderTransportDataType *src, UA_DatagramDataSetReaderTransportDataType *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_DATAGRAMDATASETREADERTRANSPORTDATATYPE]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_DatagramDataSetReaderTransportDataType_deleteMembers(UA_DatagramDataSetReaderTransportDataType *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_DATAGRAMDATASETREADERTRANSPORTDATATYPE]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_DatagramDataSetReaderTransportDataType_clear(UA_DatagramDataSetReaderTransportDataType *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_DATAGRAMDATASETREADERTRANSPORTDATATYPE]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_DatagramDataSetReaderTransportDataType_delete(UA_DatagramDataSetReaderTransportDataType *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_DATAGRAMDATASETREADERTRANSPORTDATATYPE]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_DatagramDataSetReaderTransportDataType_equal(const UA_DatagramDataSetReaderTransportDataType *p1, const UA_DatagramDataSetReaderTransportDataType *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_DATAGRAMDATASETREADERTRANSPORTDATATYPE]) == UA_ORDER_EQ);
 }
@@ -30994,35 +31230,35 @@ UA_DatagramDataSetReaderTransportDataType_equal(const UA_DatagramDataSetReaderTr
 
 
 /* BrokerConnectionTransportDataType */
-UA_EXPORT void
+static UA_INLINE void
 UA_BrokerConnectionTransportDataType_init(UA_BrokerConnectionTransportDataType *p) {
     memset(p, 0, sizeof(UA_BrokerConnectionTransportDataType));
 }
 
-UA_EXPORT UA_BrokerConnectionTransportDataType *
+static UA_INLINE UA_BrokerConnectionTransportDataType *
 UA_BrokerConnectionTransportDataType_new(void) {
     return (UA_BrokerConnectionTransportDataType*)UA_new(&UA_TYPES[UA_TYPES_BROKERCONNECTIONTRANSPORTDATATYPE]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_BrokerConnectionTransportDataType_copy(const UA_BrokerConnectionTransportDataType *src, UA_BrokerConnectionTransportDataType *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_BROKERCONNECTIONTRANSPORTDATATYPE]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_BrokerConnectionTransportDataType_deleteMembers(UA_BrokerConnectionTransportDataType *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_BROKERCONNECTIONTRANSPORTDATATYPE]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_BrokerConnectionTransportDataType_clear(UA_BrokerConnectionTransportDataType *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_BROKERCONNECTIONTRANSPORTDATATYPE]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_BrokerConnectionTransportDataType_delete(UA_BrokerConnectionTransportDataType *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_BROKERCONNECTIONTRANSPORTDATATYPE]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_BrokerConnectionTransportDataType_equal(const UA_BrokerConnectionTransportDataType *p1, const UA_BrokerConnectionTransportDataType *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_BROKERCONNECTIONTRANSPORTDATATYPE]) == UA_ORDER_EQ);
 }
@@ -31030,35 +31266,35 @@ UA_BrokerConnectionTransportDataType_equal(const UA_BrokerConnectionTransportDat
 
 
 /* BrokerTransportQualityOfService */
-UA_EXPORT void
+static UA_INLINE void
 UA_BrokerTransportQualityOfService_init(UA_BrokerTransportQualityOfService *p) {
     memset(p, 0, sizeof(UA_BrokerTransportQualityOfService));
 }
 
-UA_EXPORT UA_BrokerTransportQualityOfService *
+static UA_INLINE UA_BrokerTransportQualityOfService *
 UA_BrokerTransportQualityOfService_new(void) {
     return (UA_BrokerTransportQualityOfService*)UA_new(&UA_TYPES[UA_TYPES_BROKERTRANSPORTQUALITYOFSERVICE]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_BrokerTransportQualityOfService_copy(const UA_BrokerTransportQualityOfService *src, UA_BrokerTransportQualityOfService *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_BROKERTRANSPORTQUALITYOFSERVICE]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_BrokerTransportQualityOfService_deleteMembers(UA_BrokerTransportQualityOfService *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_BROKERTRANSPORTQUALITYOFSERVICE]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_BrokerTransportQualityOfService_clear(UA_BrokerTransportQualityOfService *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_BROKERTRANSPORTQUALITYOFSERVICE]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_BrokerTransportQualityOfService_delete(UA_BrokerTransportQualityOfService *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_BROKERTRANSPORTQUALITYOFSERVICE]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_BrokerTransportQualityOfService_equal(const UA_BrokerTransportQualityOfService *p1, const UA_BrokerTransportQualityOfService *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_BROKERTRANSPORTQUALITYOFSERVICE]) == UA_ORDER_EQ);
 }
@@ -31066,35 +31302,35 @@ UA_BrokerTransportQualityOfService_equal(const UA_BrokerTransportQualityOfServic
 
 
 /* BrokerWriterGroupTransportDataType */
-UA_EXPORT void
+static UA_INLINE void
 UA_BrokerWriterGroupTransportDataType_init(UA_BrokerWriterGroupTransportDataType *p) {
     memset(p, 0, sizeof(UA_BrokerWriterGroupTransportDataType));
 }
 
-UA_EXPORT UA_BrokerWriterGroupTransportDataType *
+static UA_INLINE UA_BrokerWriterGroupTransportDataType *
 UA_BrokerWriterGroupTransportDataType_new(void) {
     return (UA_BrokerWriterGroupTransportDataType*)UA_new(&UA_TYPES[UA_TYPES_BROKERWRITERGROUPTRANSPORTDATATYPE]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_BrokerWriterGroupTransportDataType_copy(const UA_BrokerWriterGroupTransportDataType *src, UA_BrokerWriterGroupTransportDataType *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_BROKERWRITERGROUPTRANSPORTDATATYPE]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_BrokerWriterGroupTransportDataType_deleteMembers(UA_BrokerWriterGroupTransportDataType *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_BROKERWRITERGROUPTRANSPORTDATATYPE]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_BrokerWriterGroupTransportDataType_clear(UA_BrokerWriterGroupTransportDataType *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_BROKERWRITERGROUPTRANSPORTDATATYPE]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_BrokerWriterGroupTransportDataType_delete(UA_BrokerWriterGroupTransportDataType *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_BROKERWRITERGROUPTRANSPORTDATATYPE]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_BrokerWriterGroupTransportDataType_equal(const UA_BrokerWriterGroupTransportDataType *p1, const UA_BrokerWriterGroupTransportDataType *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_BROKERWRITERGROUPTRANSPORTDATATYPE]) == UA_ORDER_EQ);
 }
@@ -31102,35 +31338,35 @@ UA_BrokerWriterGroupTransportDataType_equal(const UA_BrokerWriterGroupTransportD
 
 
 /* BrokerDataSetWriterTransportDataType */
-UA_EXPORT void
+static UA_INLINE void
 UA_BrokerDataSetWriterTransportDataType_init(UA_BrokerDataSetWriterTransportDataType *p) {
     memset(p, 0, sizeof(UA_BrokerDataSetWriterTransportDataType));
 }
 
-UA_EXPORT UA_BrokerDataSetWriterTransportDataType *
+static UA_INLINE UA_BrokerDataSetWriterTransportDataType *
 UA_BrokerDataSetWriterTransportDataType_new(void) {
     return (UA_BrokerDataSetWriterTransportDataType*)UA_new(&UA_TYPES[UA_TYPES_BROKERDATASETWRITERTRANSPORTDATATYPE]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_BrokerDataSetWriterTransportDataType_copy(const UA_BrokerDataSetWriterTransportDataType *src, UA_BrokerDataSetWriterTransportDataType *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_BROKERDATASETWRITERTRANSPORTDATATYPE]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_BrokerDataSetWriterTransportDataType_deleteMembers(UA_BrokerDataSetWriterTransportDataType *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_BROKERDATASETWRITERTRANSPORTDATATYPE]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_BrokerDataSetWriterTransportDataType_clear(UA_BrokerDataSetWriterTransportDataType *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_BROKERDATASETWRITERTRANSPORTDATATYPE]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_BrokerDataSetWriterTransportDataType_delete(UA_BrokerDataSetWriterTransportDataType *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_BROKERDATASETWRITERTRANSPORTDATATYPE]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_BrokerDataSetWriterTransportDataType_equal(const UA_BrokerDataSetWriterTransportDataType *p1, const UA_BrokerDataSetWriterTransportDataType *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_BROKERDATASETWRITERTRANSPORTDATATYPE]) == UA_ORDER_EQ);
 }
@@ -31138,35 +31374,35 @@ UA_BrokerDataSetWriterTransportDataType_equal(const UA_BrokerDataSetWriterTransp
 
 
 /* BrokerDataSetReaderTransportDataType */
-UA_EXPORT void
+static UA_INLINE void
 UA_BrokerDataSetReaderTransportDataType_init(UA_BrokerDataSetReaderTransportDataType *p) {
     memset(p, 0, sizeof(UA_BrokerDataSetReaderTransportDataType));
 }
 
-UA_EXPORT UA_BrokerDataSetReaderTransportDataType *
+static UA_INLINE UA_BrokerDataSetReaderTransportDataType *
 UA_BrokerDataSetReaderTransportDataType_new(void) {
     return (UA_BrokerDataSetReaderTransportDataType*)UA_new(&UA_TYPES[UA_TYPES_BROKERDATASETREADERTRANSPORTDATATYPE]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_BrokerDataSetReaderTransportDataType_copy(const UA_BrokerDataSetReaderTransportDataType *src, UA_BrokerDataSetReaderTransportDataType *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_BROKERDATASETREADERTRANSPORTDATATYPE]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_BrokerDataSetReaderTransportDataType_deleteMembers(UA_BrokerDataSetReaderTransportDataType *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_BROKERDATASETREADERTRANSPORTDATATYPE]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_BrokerDataSetReaderTransportDataType_clear(UA_BrokerDataSetReaderTransportDataType *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_BROKERDATASETREADERTRANSPORTDATATYPE]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_BrokerDataSetReaderTransportDataType_delete(UA_BrokerDataSetReaderTransportDataType *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_BROKERDATASETREADERTRANSPORTDATATYPE]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_BrokerDataSetReaderTransportDataType_equal(const UA_BrokerDataSetReaderTransportDataType *p1, const UA_BrokerDataSetReaderTransportDataType *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_BROKERDATASETREADERTRANSPORTDATATYPE]) == UA_ORDER_EQ);
 }
@@ -31174,35 +31410,35 @@ UA_BrokerDataSetReaderTransportDataType_equal(const UA_BrokerDataSetReaderTransp
 
 
 /* PubSubConfigurationRefMask */
-UA_EXPORT void
+static UA_INLINE void
 UA_PubSubConfigurationRefMask_init(UA_PubSubConfigurationRefMask *p) {
     memset(p, 0, sizeof(UA_PubSubConfigurationRefMask));
 }
 
-UA_EXPORT UA_PubSubConfigurationRefMask *
+static UA_INLINE UA_PubSubConfigurationRefMask *
 UA_PubSubConfigurationRefMask_new(void) {
     return (UA_PubSubConfigurationRefMask*)UA_new(&UA_TYPES[UA_TYPES_PUBSUBCONFIGURATIONREFMASK]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_PubSubConfigurationRefMask_copy(const UA_PubSubConfigurationRefMask *src, UA_PubSubConfigurationRefMask *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_PUBSUBCONFIGURATIONREFMASK]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_PubSubConfigurationRefMask_deleteMembers(UA_PubSubConfigurationRefMask *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_PUBSUBCONFIGURATIONREFMASK]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_PubSubConfigurationRefMask_clear(UA_PubSubConfigurationRefMask *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_PUBSUBCONFIGURATIONREFMASK]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_PubSubConfigurationRefMask_delete(UA_PubSubConfigurationRefMask *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_PUBSUBCONFIGURATIONREFMASK]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_PubSubConfigurationRefMask_equal(const UA_PubSubConfigurationRefMask *p1, const UA_PubSubConfigurationRefMask *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_PUBSUBCONFIGURATIONREFMASK]) == UA_ORDER_EQ);
 }
@@ -31210,35 +31446,35 @@ UA_PubSubConfigurationRefMask_equal(const UA_PubSubConfigurationRefMask *p1, con
 
 
 /* PubSubConfigurationRefDataType */
-UA_EXPORT void
+static UA_INLINE void
 UA_PubSubConfigurationRefDataType_init(UA_PubSubConfigurationRefDataType *p) {
     memset(p, 0, sizeof(UA_PubSubConfigurationRefDataType));
 }
 
-UA_EXPORT UA_PubSubConfigurationRefDataType *
+static UA_INLINE UA_PubSubConfigurationRefDataType *
 UA_PubSubConfigurationRefDataType_new(void) {
     return (UA_PubSubConfigurationRefDataType*)UA_new(&UA_TYPES[UA_TYPES_PUBSUBCONFIGURATIONREFDATATYPE]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_PubSubConfigurationRefDataType_copy(const UA_PubSubConfigurationRefDataType *src, UA_PubSubConfigurationRefDataType *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_PUBSUBCONFIGURATIONREFDATATYPE]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_PubSubConfigurationRefDataType_deleteMembers(UA_PubSubConfigurationRefDataType *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_PUBSUBCONFIGURATIONREFDATATYPE]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_PubSubConfigurationRefDataType_clear(UA_PubSubConfigurationRefDataType *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_PUBSUBCONFIGURATIONREFDATATYPE]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_PubSubConfigurationRefDataType_delete(UA_PubSubConfigurationRefDataType *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_PUBSUBCONFIGURATIONREFDATATYPE]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_PubSubConfigurationRefDataType_equal(const UA_PubSubConfigurationRefDataType *p1, const UA_PubSubConfigurationRefDataType *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_PUBSUBCONFIGURATIONREFDATATYPE]) == UA_ORDER_EQ);
 }
@@ -31246,35 +31482,35 @@ UA_PubSubConfigurationRefDataType_equal(const UA_PubSubConfigurationRefDataType 
 
 
 /* PubSubConfigurationValueDataType */
-UA_EXPORT void
+static UA_INLINE void
 UA_PubSubConfigurationValueDataType_init(UA_PubSubConfigurationValueDataType *p) {
     memset(p, 0, sizeof(UA_PubSubConfigurationValueDataType));
 }
 
-UA_EXPORT UA_PubSubConfigurationValueDataType *
+static UA_INLINE UA_PubSubConfigurationValueDataType *
 UA_PubSubConfigurationValueDataType_new(void) {
     return (UA_PubSubConfigurationValueDataType*)UA_new(&UA_TYPES[UA_TYPES_PUBSUBCONFIGURATIONVALUEDATATYPE]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_PubSubConfigurationValueDataType_copy(const UA_PubSubConfigurationValueDataType *src, UA_PubSubConfigurationValueDataType *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_PUBSUBCONFIGURATIONVALUEDATATYPE]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_PubSubConfigurationValueDataType_deleteMembers(UA_PubSubConfigurationValueDataType *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_PUBSUBCONFIGURATIONVALUEDATATYPE]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_PubSubConfigurationValueDataType_clear(UA_PubSubConfigurationValueDataType *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_PUBSUBCONFIGURATIONVALUEDATATYPE]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_PubSubConfigurationValueDataType_delete(UA_PubSubConfigurationValueDataType *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_PUBSUBCONFIGURATIONVALUEDATATYPE]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_PubSubConfigurationValueDataType_equal(const UA_PubSubConfigurationValueDataType *p1, const UA_PubSubConfigurationValueDataType *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_PUBSUBCONFIGURATIONVALUEDATATYPE]) == UA_ORDER_EQ);
 }
@@ -31282,35 +31518,35 @@ UA_PubSubConfigurationValueDataType_equal(const UA_PubSubConfigurationValueDataT
 
 
 /* DiagnosticsLevel */
-UA_EXPORT void
+static UA_INLINE void
 UA_DiagnosticsLevel_init(UA_DiagnosticsLevel *p) {
     memset(p, 0, sizeof(UA_DiagnosticsLevel));
 }
 
-UA_EXPORT UA_DiagnosticsLevel *
+static UA_INLINE UA_DiagnosticsLevel *
 UA_DiagnosticsLevel_new(void) {
     return (UA_DiagnosticsLevel*)UA_new(&UA_TYPES[UA_TYPES_DIAGNOSTICSLEVEL]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_DiagnosticsLevel_copy(const UA_DiagnosticsLevel *src, UA_DiagnosticsLevel *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_DIAGNOSTICSLEVEL]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_DiagnosticsLevel_deleteMembers(UA_DiagnosticsLevel *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_DIAGNOSTICSLEVEL]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_DiagnosticsLevel_clear(UA_DiagnosticsLevel *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_DIAGNOSTICSLEVEL]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_DiagnosticsLevel_delete(UA_DiagnosticsLevel *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_DIAGNOSTICSLEVEL]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_DiagnosticsLevel_equal(const UA_DiagnosticsLevel *p1, const UA_DiagnosticsLevel *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_DIAGNOSTICSLEVEL]) == UA_ORDER_EQ);
 }
@@ -31318,35 +31554,35 @@ UA_DiagnosticsLevel_equal(const UA_DiagnosticsLevel *p1, const UA_DiagnosticsLev
 
 
 /* PubSubDiagnosticsCounterClassification */
-UA_EXPORT void
+static UA_INLINE void
 UA_PubSubDiagnosticsCounterClassification_init(UA_PubSubDiagnosticsCounterClassification *p) {
     memset(p, 0, sizeof(UA_PubSubDiagnosticsCounterClassification));
 }
 
-UA_EXPORT UA_PubSubDiagnosticsCounterClassification *
+static UA_INLINE UA_PubSubDiagnosticsCounterClassification *
 UA_PubSubDiagnosticsCounterClassification_new(void) {
     return (UA_PubSubDiagnosticsCounterClassification*)UA_new(&UA_TYPES[UA_TYPES_PUBSUBDIAGNOSTICSCOUNTERCLASSIFICATION]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_PubSubDiagnosticsCounterClassification_copy(const UA_PubSubDiagnosticsCounterClassification *src, UA_PubSubDiagnosticsCounterClassification *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_PUBSUBDIAGNOSTICSCOUNTERCLASSIFICATION]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_PubSubDiagnosticsCounterClassification_deleteMembers(UA_PubSubDiagnosticsCounterClassification *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_PUBSUBDIAGNOSTICSCOUNTERCLASSIFICATION]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_PubSubDiagnosticsCounterClassification_clear(UA_PubSubDiagnosticsCounterClassification *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_PUBSUBDIAGNOSTICSCOUNTERCLASSIFICATION]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_PubSubDiagnosticsCounterClassification_delete(UA_PubSubDiagnosticsCounterClassification *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_PUBSUBDIAGNOSTICSCOUNTERCLASSIFICATION]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_PubSubDiagnosticsCounterClassification_equal(const UA_PubSubDiagnosticsCounterClassification *p1, const UA_PubSubDiagnosticsCounterClassification *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_PUBSUBDIAGNOSTICSCOUNTERCLASSIFICATION]) == UA_ORDER_EQ);
 }
@@ -31354,35 +31590,35 @@ UA_PubSubDiagnosticsCounterClassification_equal(const UA_PubSubDiagnosticsCounte
 
 
 /* AliasNameDataType */
-UA_EXPORT void
+static UA_INLINE void
 UA_AliasNameDataType_init(UA_AliasNameDataType *p) {
     memset(p, 0, sizeof(UA_AliasNameDataType));
 }
 
-UA_EXPORT UA_AliasNameDataType *
+static UA_INLINE UA_AliasNameDataType *
 UA_AliasNameDataType_new(void) {
     return (UA_AliasNameDataType*)UA_new(&UA_TYPES[UA_TYPES_ALIASNAMEDATATYPE]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_AliasNameDataType_copy(const UA_AliasNameDataType *src, UA_AliasNameDataType *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_ALIASNAMEDATATYPE]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_AliasNameDataType_deleteMembers(UA_AliasNameDataType *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_ALIASNAMEDATATYPE]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_AliasNameDataType_clear(UA_AliasNameDataType *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_ALIASNAMEDATATYPE]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_AliasNameDataType_delete(UA_AliasNameDataType *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_ALIASNAMEDATATYPE]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_AliasNameDataType_equal(const UA_AliasNameDataType *p1, const UA_AliasNameDataType *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_ALIASNAMEDATATYPE]) == UA_ORDER_EQ);
 }
@@ -31390,35 +31626,35 @@ UA_AliasNameDataType_equal(const UA_AliasNameDataType *p1, const UA_AliasNameDat
 
 
 /* PasswordOptionsMask */
-UA_EXPORT void
+static UA_INLINE void
 UA_PasswordOptionsMask_init(UA_PasswordOptionsMask *p) {
     memset(p, 0, sizeof(UA_PasswordOptionsMask));
 }
 
-UA_EXPORT UA_PasswordOptionsMask *
+static UA_INLINE UA_PasswordOptionsMask *
 UA_PasswordOptionsMask_new(void) {
     return (UA_PasswordOptionsMask*)UA_new(&UA_TYPES[UA_TYPES_PASSWORDOPTIONSMASK]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_PasswordOptionsMask_copy(const UA_PasswordOptionsMask *src, UA_PasswordOptionsMask *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_PASSWORDOPTIONSMASK]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_PasswordOptionsMask_deleteMembers(UA_PasswordOptionsMask *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_PASSWORDOPTIONSMASK]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_PasswordOptionsMask_clear(UA_PasswordOptionsMask *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_PASSWORDOPTIONSMASK]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_PasswordOptionsMask_delete(UA_PasswordOptionsMask *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_PASSWORDOPTIONSMASK]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_PasswordOptionsMask_equal(const UA_PasswordOptionsMask *p1, const UA_PasswordOptionsMask *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_PASSWORDOPTIONSMASK]) == UA_ORDER_EQ);
 }
@@ -31426,35 +31662,35 @@ UA_PasswordOptionsMask_equal(const UA_PasswordOptionsMask *p1, const UA_Password
 
 
 /* UserConfigurationMask */
-UA_EXPORT void
+static UA_INLINE void
 UA_UserConfigurationMask_init(UA_UserConfigurationMask *p) {
     memset(p, 0, sizeof(UA_UserConfigurationMask));
 }
 
-UA_EXPORT UA_UserConfigurationMask *
+static UA_INLINE UA_UserConfigurationMask *
 UA_UserConfigurationMask_new(void) {
     return (UA_UserConfigurationMask*)UA_new(&UA_TYPES[UA_TYPES_USERCONFIGURATIONMASK]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_UserConfigurationMask_copy(const UA_UserConfigurationMask *src, UA_UserConfigurationMask *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_USERCONFIGURATIONMASK]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_UserConfigurationMask_deleteMembers(UA_UserConfigurationMask *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_USERCONFIGURATIONMASK]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_UserConfigurationMask_clear(UA_UserConfigurationMask *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_USERCONFIGURATIONMASK]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_UserConfigurationMask_delete(UA_UserConfigurationMask *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_USERCONFIGURATIONMASK]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_UserConfigurationMask_equal(const UA_UserConfigurationMask *p1, const UA_UserConfigurationMask *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_USERCONFIGURATIONMASK]) == UA_ORDER_EQ);
 }
@@ -31462,71 +31698,107 @@ UA_UserConfigurationMask_equal(const UA_UserConfigurationMask *p1, const UA_User
 
 
 /* UserManagementDataType */
-UA_EXPORT void
+static UA_INLINE void
 UA_UserManagementDataType_init(UA_UserManagementDataType *p) {
     memset(p, 0, sizeof(UA_UserManagementDataType));
 }
 
-UA_EXPORT UA_UserManagementDataType *
+static UA_INLINE UA_UserManagementDataType *
 UA_UserManagementDataType_new(void) {
     return (UA_UserManagementDataType*)UA_new(&UA_TYPES[UA_TYPES_USERMANAGEMENTDATATYPE]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_UserManagementDataType_copy(const UA_UserManagementDataType *src, UA_UserManagementDataType *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_USERMANAGEMENTDATATYPE]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_UserManagementDataType_deleteMembers(UA_UserManagementDataType *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_USERMANAGEMENTDATATYPE]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_UserManagementDataType_clear(UA_UserManagementDataType *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_USERMANAGEMENTDATATYPE]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_UserManagementDataType_delete(UA_UserManagementDataType *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_USERMANAGEMENTDATATYPE]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_UserManagementDataType_equal(const UA_UserManagementDataType *p1, const UA_UserManagementDataType *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_USERMANAGEMENTDATATYPE]) == UA_ORDER_EQ);
 }
 
 
 
+/* EncodedTicket */
+static UA_INLINE void
+UA_EncodedTicket_init(UA_EncodedTicket *p) {
+    memset(p, 0, sizeof(UA_EncodedTicket));
+}
+
+static UA_INLINE UA_EncodedTicket *
+UA_EncodedTicket_new(void) {
+    return (UA_EncodedTicket*)UA_new(&UA_TYPES[UA_TYPES_ENCODEDTICKET]);
+}
+
+static UA_INLINE UA_StatusCode
+UA_EncodedTicket_copy(const UA_EncodedTicket *src, UA_EncodedTicket *dst) {
+    return UA_copy(src, dst, &UA_TYPES[UA_TYPES_ENCODEDTICKET]);
+}
+
+UA_DEPRECATED static UA_INLINE void
+UA_EncodedTicket_deleteMembers(UA_EncodedTicket *p) {
+    UA_clear(p, &UA_TYPES[UA_TYPES_ENCODEDTICKET]);
+}
+
+static UA_INLINE void
+UA_EncodedTicket_clear(UA_EncodedTicket *p) {
+    UA_clear(p, &UA_TYPES[UA_TYPES_ENCODEDTICKET]);
+}
+
+static UA_INLINE void
+UA_EncodedTicket_delete(UA_EncodedTicket *p) {
+    UA_delete(p, &UA_TYPES[UA_TYPES_ENCODEDTICKET]);
+}static UA_INLINE UA_Boolean
+UA_EncodedTicket_equal(const UA_EncodedTicket *p1, const UA_EncodedTicket *p2) {
+    return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_ENCODEDTICKET]) == UA_ORDER_EQ);
+}
+
+
+
 /* Duplex */
-UA_EXPORT void
+static UA_INLINE void
 UA_Duplex_init(UA_Duplex *p) {
     memset(p, 0, sizeof(UA_Duplex));
 }
 
-UA_EXPORT UA_Duplex *
+static UA_INLINE UA_Duplex *
 UA_Duplex_new(void) {
     return (UA_Duplex*)UA_new(&UA_TYPES[UA_TYPES_DUPLEX]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_Duplex_copy(const UA_Duplex *src, UA_Duplex *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_DUPLEX]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_Duplex_deleteMembers(UA_Duplex *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_DUPLEX]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_Duplex_clear(UA_Duplex *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_DUPLEX]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_Duplex_delete(UA_Duplex *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_DUPLEX]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_Duplex_equal(const UA_Duplex *p1, const UA_Duplex *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_DUPLEX]) == UA_ORDER_EQ);
 }
@@ -31534,35 +31806,35 @@ UA_Duplex_equal(const UA_Duplex *p1, const UA_Duplex *p2) {
 
 
 /* InterfaceAdminStatus */
-UA_EXPORT void
+static UA_INLINE void
 UA_InterfaceAdminStatus_init(UA_InterfaceAdminStatus *p) {
     memset(p, 0, sizeof(UA_InterfaceAdminStatus));
 }
 
-UA_EXPORT UA_InterfaceAdminStatus *
+static UA_INLINE UA_InterfaceAdminStatus *
 UA_InterfaceAdminStatus_new(void) {
     return (UA_InterfaceAdminStatus*)UA_new(&UA_TYPES[UA_TYPES_INTERFACEADMINSTATUS]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_InterfaceAdminStatus_copy(const UA_InterfaceAdminStatus *src, UA_InterfaceAdminStatus *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_INTERFACEADMINSTATUS]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_InterfaceAdminStatus_deleteMembers(UA_InterfaceAdminStatus *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_INTERFACEADMINSTATUS]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_InterfaceAdminStatus_clear(UA_InterfaceAdminStatus *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_INTERFACEADMINSTATUS]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_InterfaceAdminStatus_delete(UA_InterfaceAdminStatus *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_INTERFACEADMINSTATUS]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_InterfaceAdminStatus_equal(const UA_InterfaceAdminStatus *p1, const UA_InterfaceAdminStatus *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_INTERFACEADMINSTATUS]) == UA_ORDER_EQ);
 }
@@ -31570,35 +31842,35 @@ UA_InterfaceAdminStatus_equal(const UA_InterfaceAdminStatus *p1, const UA_Interf
 
 
 /* InterfaceOperStatus */
-UA_EXPORT void
+static UA_INLINE void
 UA_InterfaceOperStatus_init(UA_InterfaceOperStatus *p) {
     memset(p, 0, sizeof(UA_InterfaceOperStatus));
 }
 
-UA_EXPORT UA_InterfaceOperStatus *
+static UA_INLINE UA_InterfaceOperStatus *
 UA_InterfaceOperStatus_new(void) {
     return (UA_InterfaceOperStatus*)UA_new(&UA_TYPES[UA_TYPES_INTERFACEOPERSTATUS]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_InterfaceOperStatus_copy(const UA_InterfaceOperStatus *src, UA_InterfaceOperStatus *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_INTERFACEOPERSTATUS]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_InterfaceOperStatus_deleteMembers(UA_InterfaceOperStatus *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_INTERFACEOPERSTATUS]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_InterfaceOperStatus_clear(UA_InterfaceOperStatus *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_INTERFACEOPERSTATUS]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_InterfaceOperStatus_delete(UA_InterfaceOperStatus *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_INTERFACEOPERSTATUS]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_InterfaceOperStatus_equal(const UA_InterfaceOperStatus *p1, const UA_InterfaceOperStatus *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_INTERFACEOPERSTATUS]) == UA_ORDER_EQ);
 }
@@ -31606,35 +31878,35 @@ UA_InterfaceOperStatus_equal(const UA_InterfaceOperStatus *p1, const UA_Interfac
 
 
 /* NegotiationStatus */
-UA_EXPORT void
+static UA_INLINE void
 UA_NegotiationStatus_init(UA_NegotiationStatus *p) {
     memset(p, 0, sizeof(UA_NegotiationStatus));
 }
 
-UA_EXPORT UA_NegotiationStatus *
+static UA_INLINE UA_NegotiationStatus *
 UA_NegotiationStatus_new(void) {
     return (UA_NegotiationStatus*)UA_new(&UA_TYPES[UA_TYPES_NEGOTIATIONSTATUS]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_NegotiationStatus_copy(const UA_NegotiationStatus *src, UA_NegotiationStatus *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_NEGOTIATIONSTATUS]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_NegotiationStatus_deleteMembers(UA_NegotiationStatus *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_NEGOTIATIONSTATUS]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_NegotiationStatus_clear(UA_NegotiationStatus *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_NEGOTIATIONSTATUS]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_NegotiationStatus_delete(UA_NegotiationStatus *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_NEGOTIATIONSTATUS]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_NegotiationStatus_equal(const UA_NegotiationStatus *p1, const UA_NegotiationStatus *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_NEGOTIATIONSTATUS]) == UA_ORDER_EQ);
 }
@@ -31642,35 +31914,35 @@ UA_NegotiationStatus_equal(const UA_NegotiationStatus *p1, const UA_NegotiationS
 
 
 /* TsnFailureCode */
-UA_EXPORT void
+static UA_INLINE void
 UA_TsnFailureCode_init(UA_TsnFailureCode *p) {
     memset(p, 0, sizeof(UA_TsnFailureCode));
 }
 
-UA_EXPORT UA_TsnFailureCode *
+static UA_INLINE UA_TsnFailureCode *
 UA_TsnFailureCode_new(void) {
     return (UA_TsnFailureCode*)UA_new(&UA_TYPES[UA_TYPES_TSNFAILURECODE]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_TsnFailureCode_copy(const UA_TsnFailureCode *src, UA_TsnFailureCode *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_TSNFAILURECODE]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_TsnFailureCode_deleteMembers(UA_TsnFailureCode *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_TSNFAILURECODE]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_TsnFailureCode_clear(UA_TsnFailureCode *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_TSNFAILURECODE]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_TsnFailureCode_delete(UA_TsnFailureCode *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_TSNFAILURECODE]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_TsnFailureCode_equal(const UA_TsnFailureCode *p1, const UA_TsnFailureCode *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_TSNFAILURECODE]) == UA_ORDER_EQ);
 }
@@ -31678,35 +31950,35 @@ UA_TsnFailureCode_equal(const UA_TsnFailureCode *p1, const UA_TsnFailureCode *p2
 
 
 /* TsnStreamState */
-UA_EXPORT void
+static UA_INLINE void
 UA_TsnStreamState_init(UA_TsnStreamState *p) {
     memset(p, 0, sizeof(UA_TsnStreamState));
 }
 
-UA_EXPORT UA_TsnStreamState *
+static UA_INLINE UA_TsnStreamState *
 UA_TsnStreamState_new(void) {
     return (UA_TsnStreamState*)UA_new(&UA_TYPES[UA_TYPES_TSNSTREAMSTATE]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_TsnStreamState_copy(const UA_TsnStreamState *src, UA_TsnStreamState *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_TSNSTREAMSTATE]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_TsnStreamState_deleteMembers(UA_TsnStreamState *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_TSNSTREAMSTATE]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_TsnStreamState_clear(UA_TsnStreamState *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_TSNSTREAMSTATE]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_TsnStreamState_delete(UA_TsnStreamState *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_TSNSTREAMSTATE]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_TsnStreamState_equal(const UA_TsnStreamState *p1, const UA_TsnStreamState *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_TSNSTREAMSTATE]) == UA_ORDER_EQ);
 }
@@ -31714,35 +31986,35 @@ UA_TsnStreamState_equal(const UA_TsnStreamState *p1, const UA_TsnStreamState *p2
 
 
 /* TsnTalkerStatus */
-UA_EXPORT void
+static UA_INLINE void
 UA_TsnTalkerStatus_init(UA_TsnTalkerStatus *p) {
     memset(p, 0, sizeof(UA_TsnTalkerStatus));
 }
 
-UA_EXPORT UA_TsnTalkerStatus *
+static UA_INLINE UA_TsnTalkerStatus *
 UA_TsnTalkerStatus_new(void) {
     return (UA_TsnTalkerStatus*)UA_new(&UA_TYPES[UA_TYPES_TSNTALKERSTATUS]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_TsnTalkerStatus_copy(const UA_TsnTalkerStatus *src, UA_TsnTalkerStatus *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_TSNTALKERSTATUS]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_TsnTalkerStatus_deleteMembers(UA_TsnTalkerStatus *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_TSNTALKERSTATUS]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_TsnTalkerStatus_clear(UA_TsnTalkerStatus *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_TSNTALKERSTATUS]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_TsnTalkerStatus_delete(UA_TsnTalkerStatus *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_TSNTALKERSTATUS]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_TsnTalkerStatus_equal(const UA_TsnTalkerStatus *p1, const UA_TsnTalkerStatus *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_TSNTALKERSTATUS]) == UA_ORDER_EQ);
 }
@@ -31750,35 +32022,35 @@ UA_TsnTalkerStatus_equal(const UA_TsnTalkerStatus *p1, const UA_TsnTalkerStatus 
 
 
 /* TsnListenerStatus */
-UA_EXPORT void
+static UA_INLINE void
 UA_TsnListenerStatus_init(UA_TsnListenerStatus *p) {
     memset(p, 0, sizeof(UA_TsnListenerStatus));
 }
 
-UA_EXPORT UA_TsnListenerStatus *
+static UA_INLINE UA_TsnListenerStatus *
 UA_TsnListenerStatus_new(void) {
     return (UA_TsnListenerStatus*)UA_new(&UA_TYPES[UA_TYPES_TSNLISTENERSTATUS]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_TsnListenerStatus_copy(const UA_TsnListenerStatus *src, UA_TsnListenerStatus *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_TSNLISTENERSTATUS]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_TsnListenerStatus_deleteMembers(UA_TsnListenerStatus *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_TSNLISTENERSTATUS]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_TsnListenerStatus_clear(UA_TsnListenerStatus *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_TSNLISTENERSTATUS]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_TsnListenerStatus_delete(UA_TsnListenerStatus *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_TSNLISTENERSTATUS]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_TsnListenerStatus_equal(const UA_TsnListenerStatus *p1, const UA_TsnListenerStatus *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_TSNLISTENERSTATUS]) == UA_ORDER_EQ);
 }
@@ -31786,71 +32058,143 @@ UA_TsnListenerStatus_equal(const UA_TsnListenerStatus *p1, const UA_TsnListenerS
 
 
 /* PriorityMappingEntryType */
-UA_EXPORT void
+static UA_INLINE void
 UA_PriorityMappingEntryType_init(UA_PriorityMappingEntryType *p) {
     memset(p, 0, sizeof(UA_PriorityMappingEntryType));
 }
 
-UA_EXPORT UA_PriorityMappingEntryType *
+static UA_INLINE UA_PriorityMappingEntryType *
 UA_PriorityMappingEntryType_new(void) {
     return (UA_PriorityMappingEntryType*)UA_new(&UA_TYPES[UA_TYPES_PRIORITYMAPPINGENTRYTYPE]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_PriorityMappingEntryType_copy(const UA_PriorityMappingEntryType *src, UA_PriorityMappingEntryType *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_PRIORITYMAPPINGENTRYTYPE]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_PriorityMappingEntryType_deleteMembers(UA_PriorityMappingEntryType *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_PRIORITYMAPPINGENTRYTYPE]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_PriorityMappingEntryType_clear(UA_PriorityMappingEntryType *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_PRIORITYMAPPINGENTRYTYPE]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_PriorityMappingEntryType_delete(UA_PriorityMappingEntryType *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_PRIORITYMAPPINGENTRYTYPE]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_PriorityMappingEntryType_equal(const UA_PriorityMappingEntryType *p1, const UA_PriorityMappingEntryType *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_PRIORITYMAPPINGENTRYTYPE]) == UA_ORDER_EQ);
 }
 
 
 
+/* ReferenceDescriptionDataType */
+static UA_INLINE void
+UA_ReferenceDescriptionDataType_init(UA_ReferenceDescriptionDataType *p) {
+    memset(p, 0, sizeof(UA_ReferenceDescriptionDataType));
+}
+
+static UA_INLINE UA_ReferenceDescriptionDataType *
+UA_ReferenceDescriptionDataType_new(void) {
+    return (UA_ReferenceDescriptionDataType*)UA_new(&UA_TYPES[UA_TYPES_REFERENCEDESCRIPTIONDATATYPE]);
+}
+
+static UA_INLINE UA_StatusCode
+UA_ReferenceDescriptionDataType_copy(const UA_ReferenceDescriptionDataType *src, UA_ReferenceDescriptionDataType *dst) {
+    return UA_copy(src, dst, &UA_TYPES[UA_TYPES_REFERENCEDESCRIPTIONDATATYPE]);
+}
+
+UA_DEPRECATED static UA_INLINE void
+UA_ReferenceDescriptionDataType_deleteMembers(UA_ReferenceDescriptionDataType *p) {
+    UA_clear(p, &UA_TYPES[UA_TYPES_REFERENCEDESCRIPTIONDATATYPE]);
+}
+
+static UA_INLINE void
+UA_ReferenceDescriptionDataType_clear(UA_ReferenceDescriptionDataType *p) {
+    UA_clear(p, &UA_TYPES[UA_TYPES_REFERENCEDESCRIPTIONDATATYPE]);
+}
+
+static UA_INLINE void
+UA_ReferenceDescriptionDataType_delete(UA_ReferenceDescriptionDataType *p) {
+    UA_delete(p, &UA_TYPES[UA_TYPES_REFERENCEDESCRIPTIONDATATYPE]);
+}static UA_INLINE UA_Boolean
+UA_ReferenceDescriptionDataType_equal(const UA_ReferenceDescriptionDataType *p1, const UA_ReferenceDescriptionDataType *p2) {
+    return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_REFERENCEDESCRIPTIONDATATYPE]) == UA_ORDER_EQ);
+}
+
+
+
+/* ReferenceListEntryDataType */
+static UA_INLINE void
+UA_ReferenceListEntryDataType_init(UA_ReferenceListEntryDataType *p) {
+    memset(p, 0, sizeof(UA_ReferenceListEntryDataType));
+}
+
+static UA_INLINE UA_ReferenceListEntryDataType *
+UA_ReferenceListEntryDataType_new(void) {
+    return (UA_ReferenceListEntryDataType*)UA_new(&UA_TYPES[UA_TYPES_REFERENCELISTENTRYDATATYPE]);
+}
+
+static UA_INLINE UA_StatusCode
+UA_ReferenceListEntryDataType_copy(const UA_ReferenceListEntryDataType *src, UA_ReferenceListEntryDataType *dst) {
+    return UA_copy(src, dst, &UA_TYPES[UA_TYPES_REFERENCELISTENTRYDATATYPE]);
+}
+
+UA_DEPRECATED static UA_INLINE void
+UA_ReferenceListEntryDataType_deleteMembers(UA_ReferenceListEntryDataType *p) {
+    UA_clear(p, &UA_TYPES[UA_TYPES_REFERENCELISTENTRYDATATYPE]);
+}
+
+static UA_INLINE void
+UA_ReferenceListEntryDataType_clear(UA_ReferenceListEntryDataType *p) {
+    UA_clear(p, &UA_TYPES[UA_TYPES_REFERENCELISTENTRYDATATYPE]);
+}
+
+static UA_INLINE void
+UA_ReferenceListEntryDataType_delete(UA_ReferenceListEntryDataType *p) {
+    UA_delete(p, &UA_TYPES[UA_TYPES_REFERENCELISTENTRYDATATYPE]);
+}static UA_INLINE UA_Boolean
+UA_ReferenceListEntryDataType_equal(const UA_ReferenceListEntryDataType *p1, const UA_ReferenceListEntryDataType *p2) {
+    return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_REFERENCELISTENTRYDATATYPE]) == UA_ORDER_EQ);
+}
+
+
+
 /* IdType */
-UA_EXPORT void
+static UA_INLINE void
 UA_IdType_init(UA_IdType *p) {
     memset(p, 0, sizeof(UA_IdType));
 }
 
-UA_EXPORT UA_IdType *
+static UA_INLINE UA_IdType *
 UA_IdType_new(void) {
     return (UA_IdType*)UA_new(&UA_TYPES[UA_TYPES_IDTYPE]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_IdType_copy(const UA_IdType *src, UA_IdType *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_IDTYPE]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_IdType_deleteMembers(UA_IdType *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_IDTYPE]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_IdType_clear(UA_IdType *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_IDTYPE]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_IdType_delete(UA_IdType *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_IDTYPE]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_IdType_equal(const UA_IdType *p1, const UA_IdType *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_IDTYPE]) == UA_ORDER_EQ);
 }
@@ -31858,35 +32202,35 @@ UA_IdType_equal(const UA_IdType *p1, const UA_IdType *p2) {
 
 
 /* NodeClass */
-UA_EXPORT void
+static UA_INLINE void
 UA_NodeClass_init(UA_NodeClass *p) {
     memset(p, 0, sizeof(UA_NodeClass));
 }
 
-UA_EXPORT UA_NodeClass *
+static UA_INLINE UA_NodeClass *
 UA_NodeClass_new(void) {
     return (UA_NodeClass*)UA_new(&UA_TYPES[UA_TYPES_NODECLASS]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_NodeClass_copy(const UA_NodeClass *src, UA_NodeClass *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_NODECLASS]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_NodeClass_deleteMembers(UA_NodeClass *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_NODECLASS]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_NodeClass_clear(UA_NodeClass *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_NODECLASS]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_NodeClass_delete(UA_NodeClass *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_NODECLASS]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_NodeClass_equal(const UA_NodeClass *p1, const UA_NodeClass *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_NODECLASS]) == UA_ORDER_EQ);
 }
@@ -31894,35 +32238,35 @@ UA_NodeClass_equal(const UA_NodeClass *p1, const UA_NodeClass *p2) {
 
 
 /* PermissionType */
-UA_EXPORT void
+static UA_INLINE void
 UA_PermissionType_init(UA_PermissionType *p) {
     memset(p, 0, sizeof(UA_PermissionType));
 }
 
-UA_EXPORT UA_PermissionType *
+static UA_INLINE UA_PermissionType *
 UA_PermissionType_new(void) {
     return (UA_PermissionType*)UA_new(&UA_TYPES[UA_TYPES_PERMISSIONTYPE]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_PermissionType_copy(const UA_PermissionType *src, UA_PermissionType *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_PERMISSIONTYPE]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_PermissionType_deleteMembers(UA_PermissionType *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_PERMISSIONTYPE]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_PermissionType_clear(UA_PermissionType *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_PERMISSIONTYPE]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_PermissionType_delete(UA_PermissionType *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_PERMISSIONTYPE]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_PermissionType_equal(const UA_PermissionType *p1, const UA_PermissionType *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_PERMISSIONTYPE]) == UA_ORDER_EQ);
 }
@@ -31930,35 +32274,35 @@ UA_PermissionType_equal(const UA_PermissionType *p1, const UA_PermissionType *p2
 
 
 /* AccessLevelType */
-UA_EXPORT void
+static UA_INLINE void
 UA_AccessLevelType_init(UA_AccessLevelType *p) {
     memset(p, 0, sizeof(UA_AccessLevelType));
 }
 
-UA_EXPORT UA_AccessLevelType *
+static UA_INLINE UA_AccessLevelType *
 UA_AccessLevelType_new(void) {
     return (UA_AccessLevelType*)UA_new(&UA_TYPES[UA_TYPES_ACCESSLEVELTYPE]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_AccessLevelType_copy(const UA_AccessLevelType *src, UA_AccessLevelType *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_ACCESSLEVELTYPE]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_AccessLevelType_deleteMembers(UA_AccessLevelType *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_ACCESSLEVELTYPE]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_AccessLevelType_clear(UA_AccessLevelType *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_ACCESSLEVELTYPE]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_AccessLevelType_delete(UA_AccessLevelType *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_ACCESSLEVELTYPE]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_AccessLevelType_equal(const UA_AccessLevelType *p1, const UA_AccessLevelType *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_ACCESSLEVELTYPE]) == UA_ORDER_EQ);
 }
@@ -31966,35 +32310,35 @@ UA_AccessLevelType_equal(const UA_AccessLevelType *p1, const UA_AccessLevelType 
 
 
 /* AccessLevelExType */
-UA_EXPORT void
+static UA_INLINE void
 UA_AccessLevelExType_init(UA_AccessLevelExType *p) {
     memset(p, 0, sizeof(UA_AccessLevelExType));
 }
 
-UA_EXPORT UA_AccessLevelExType *
+static UA_INLINE UA_AccessLevelExType *
 UA_AccessLevelExType_new(void) {
     return (UA_AccessLevelExType*)UA_new(&UA_TYPES[UA_TYPES_ACCESSLEVELEXTYPE]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_AccessLevelExType_copy(const UA_AccessLevelExType *src, UA_AccessLevelExType *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_ACCESSLEVELEXTYPE]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_AccessLevelExType_deleteMembers(UA_AccessLevelExType *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_ACCESSLEVELEXTYPE]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_AccessLevelExType_clear(UA_AccessLevelExType *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_ACCESSLEVELEXTYPE]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_AccessLevelExType_delete(UA_AccessLevelExType *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_ACCESSLEVELEXTYPE]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_AccessLevelExType_equal(const UA_AccessLevelExType *p1, const UA_AccessLevelExType *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_ACCESSLEVELEXTYPE]) == UA_ORDER_EQ);
 }
@@ -32002,35 +32346,35 @@ UA_AccessLevelExType_equal(const UA_AccessLevelExType *p1, const UA_AccessLevelE
 
 
 /* EventNotifierType */
-UA_EXPORT void
+static UA_INLINE void
 UA_EventNotifierType_init(UA_EventNotifierType *p) {
     memset(p, 0, sizeof(UA_EventNotifierType));
 }
 
-UA_EXPORT UA_EventNotifierType *
+static UA_INLINE UA_EventNotifierType *
 UA_EventNotifierType_new(void) {
     return (UA_EventNotifierType*)UA_new(&UA_TYPES[UA_TYPES_EVENTNOTIFIERTYPE]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_EventNotifierType_copy(const UA_EventNotifierType *src, UA_EventNotifierType *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_EVENTNOTIFIERTYPE]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_EventNotifierType_deleteMembers(UA_EventNotifierType *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_EVENTNOTIFIERTYPE]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_EventNotifierType_clear(UA_EventNotifierType *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_EVENTNOTIFIERTYPE]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_EventNotifierType_delete(UA_EventNotifierType *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_EVENTNOTIFIERTYPE]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_EventNotifierType_equal(const UA_EventNotifierType *p1, const UA_EventNotifierType *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_EVENTNOTIFIERTYPE]) == UA_ORDER_EQ);
 }
@@ -32038,35 +32382,35 @@ UA_EventNotifierType_equal(const UA_EventNotifierType *p1, const UA_EventNotifie
 
 
 /* AccessRestrictionType */
-UA_EXPORT void
+static UA_INLINE void
 UA_AccessRestrictionType_init(UA_AccessRestrictionType *p) {
     memset(p, 0, sizeof(UA_AccessRestrictionType));
 }
 
-UA_EXPORT UA_AccessRestrictionType *
+static UA_INLINE UA_AccessRestrictionType *
 UA_AccessRestrictionType_new(void) {
     return (UA_AccessRestrictionType*)UA_new(&UA_TYPES[UA_TYPES_ACCESSRESTRICTIONTYPE]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_AccessRestrictionType_copy(const UA_AccessRestrictionType *src, UA_AccessRestrictionType *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_ACCESSRESTRICTIONTYPE]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_AccessRestrictionType_deleteMembers(UA_AccessRestrictionType *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_ACCESSRESTRICTIONTYPE]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_AccessRestrictionType_clear(UA_AccessRestrictionType *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_ACCESSRESTRICTIONTYPE]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_AccessRestrictionType_delete(UA_AccessRestrictionType *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_ACCESSRESTRICTIONTYPE]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_AccessRestrictionType_equal(const UA_AccessRestrictionType *p1, const UA_AccessRestrictionType *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_ACCESSRESTRICTIONTYPE]) == UA_ORDER_EQ);
 }
@@ -32074,35 +32418,35 @@ UA_AccessRestrictionType_equal(const UA_AccessRestrictionType *p1, const UA_Acce
 
 
 /* RolePermissionType */
-UA_EXPORT void
+static UA_INLINE void
 UA_RolePermissionType_init(UA_RolePermissionType *p) {
     memset(p, 0, sizeof(UA_RolePermissionType));
 }
 
-UA_EXPORT UA_RolePermissionType *
+static UA_INLINE UA_RolePermissionType *
 UA_RolePermissionType_new(void) {
     return (UA_RolePermissionType*)UA_new(&UA_TYPES[UA_TYPES_ROLEPERMISSIONTYPE]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_RolePermissionType_copy(const UA_RolePermissionType *src, UA_RolePermissionType *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_ROLEPERMISSIONTYPE]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_RolePermissionType_deleteMembers(UA_RolePermissionType *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_ROLEPERMISSIONTYPE]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_RolePermissionType_clear(UA_RolePermissionType *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_ROLEPERMISSIONTYPE]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_RolePermissionType_delete(UA_RolePermissionType *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_ROLEPERMISSIONTYPE]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_RolePermissionType_equal(const UA_RolePermissionType *p1, const UA_RolePermissionType *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_ROLEPERMISSIONTYPE]) == UA_ORDER_EQ);
 }
@@ -32110,35 +32454,35 @@ UA_RolePermissionType_equal(const UA_RolePermissionType *p1, const UA_RolePermis
 
 
 /* StructureType */
-UA_EXPORT void
+static UA_INLINE void
 UA_StructureType_init(UA_StructureType *p) {
     memset(p, 0, sizeof(UA_StructureType));
 }
 
-UA_EXPORT UA_StructureType *
+static UA_INLINE UA_StructureType *
 UA_StructureType_new(void) {
     return (UA_StructureType*)UA_new(&UA_TYPES[UA_TYPES_STRUCTURETYPE]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_StructureType_copy(const UA_StructureType *src, UA_StructureType *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_STRUCTURETYPE]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_StructureType_deleteMembers(UA_StructureType *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_STRUCTURETYPE]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_StructureType_clear(UA_StructureType *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_STRUCTURETYPE]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_StructureType_delete(UA_StructureType *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_STRUCTURETYPE]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_StructureType_equal(const UA_StructureType *p1, const UA_StructureType *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_STRUCTURETYPE]) == UA_ORDER_EQ);
 }
@@ -32146,35 +32490,35 @@ UA_StructureType_equal(const UA_StructureType *p1, const UA_StructureType *p2) {
 
 
 /* StructureField */
-UA_EXPORT void
+static UA_INLINE void
 UA_StructureField_init(UA_StructureField *p) {
     memset(p, 0, sizeof(UA_StructureField));
 }
 
-UA_EXPORT UA_StructureField *
+static UA_INLINE UA_StructureField *
 UA_StructureField_new(void) {
     return (UA_StructureField*)UA_new(&UA_TYPES[UA_TYPES_STRUCTUREFIELD]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_StructureField_copy(const UA_StructureField *src, UA_StructureField *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_STRUCTUREFIELD]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_StructureField_deleteMembers(UA_StructureField *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_STRUCTUREFIELD]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_StructureField_clear(UA_StructureField *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_STRUCTUREFIELD]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_StructureField_delete(UA_StructureField *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_STRUCTUREFIELD]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_StructureField_equal(const UA_StructureField *p1, const UA_StructureField *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_STRUCTUREFIELD]) == UA_ORDER_EQ);
 }
@@ -32182,107 +32526,71 @@ UA_StructureField_equal(const UA_StructureField *p1, const UA_StructureField *p2
 
 
 /* StructureDefinition */
-UA_EXPORT void
+static UA_INLINE void
 UA_StructureDefinition_init(UA_StructureDefinition *p) {
     memset(p, 0, sizeof(UA_StructureDefinition));
 }
 
-UA_EXPORT UA_StructureDefinition *
+static UA_INLINE UA_StructureDefinition *
 UA_StructureDefinition_new(void) {
     return (UA_StructureDefinition*)UA_new(&UA_TYPES[UA_TYPES_STRUCTUREDEFINITION]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_StructureDefinition_copy(const UA_StructureDefinition *src, UA_StructureDefinition *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_STRUCTUREDEFINITION]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_StructureDefinition_deleteMembers(UA_StructureDefinition *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_STRUCTUREDEFINITION]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_StructureDefinition_clear(UA_StructureDefinition *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_STRUCTUREDEFINITION]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_StructureDefinition_delete(UA_StructureDefinition *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_STRUCTUREDEFINITION]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_StructureDefinition_equal(const UA_StructureDefinition *p1, const UA_StructureDefinition *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_STRUCTUREDEFINITION]) == UA_ORDER_EQ);
 }
 
 
 
-/* ReferenceNode */
-UA_EXPORT void
-UA_ReferenceNode_init(UA_ReferenceNode *p) {
-    memset(p, 0, sizeof(UA_ReferenceNode));
-}
-
-UA_EXPORT UA_ReferenceNode *
-UA_ReferenceNode_new(void) {
-    return (UA_ReferenceNode*)UA_new(&UA_TYPES[UA_TYPES_REFERENCENODE]);
-}
-
-UA_EXPORT UA_StatusCode
-UA_ReferenceNode_copy(const UA_ReferenceNode *src, UA_ReferenceNode *dst) {
-    return UA_copy(src, dst, &UA_TYPES[UA_TYPES_REFERENCENODE]);
-}
-
-UA_DEPRECATED UA_EXPORT void
-UA_ReferenceNode_deleteMembers(UA_ReferenceNode *p) {
-    UA_clear(p, &UA_TYPES[UA_TYPES_REFERENCENODE]);
-}
-
-UA_EXPORT void
-UA_ReferenceNode_clear(UA_ReferenceNode *p) {
-    UA_clear(p, &UA_TYPES[UA_TYPES_REFERENCENODE]);
-}
-
-UA_EXPORT void
-UA_ReferenceNode_delete(UA_ReferenceNode *p) {
-    UA_delete(p, &UA_TYPES[UA_TYPES_REFERENCENODE]);
-}UA_EXPORT UA_Boolean
-UA_ReferenceNode_equal(const UA_ReferenceNode *p1, const UA_ReferenceNode *p2) {
-    return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_REFERENCENODE]) == UA_ORDER_EQ);
-}
-
-
-
 /* Argument */
-UA_EXPORT void
+static UA_INLINE void
 UA_Argument_init(UA_Argument *p) {
     memset(p, 0, sizeof(UA_Argument));
 }
 
-UA_EXPORT UA_Argument *
+static UA_INLINE UA_Argument *
 UA_Argument_new(void) {
     return (UA_Argument*)UA_new(&UA_TYPES[UA_TYPES_ARGUMENT]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_Argument_copy(const UA_Argument *src, UA_Argument *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_ARGUMENT]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_Argument_deleteMembers(UA_Argument *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_ARGUMENT]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_Argument_clear(UA_Argument *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_ARGUMENT]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_Argument_delete(UA_Argument *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_ARGUMENT]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_Argument_equal(const UA_Argument *p1, const UA_Argument *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_ARGUMENT]) == UA_ORDER_EQ);
 }
@@ -32290,35 +32598,35 @@ UA_Argument_equal(const UA_Argument *p1, const UA_Argument *p2) {
 
 
 /* EnumValueType */
-UA_EXPORT void
+static UA_INLINE void
 UA_EnumValueType_init(UA_EnumValueType *p) {
     memset(p, 0, sizeof(UA_EnumValueType));
 }
 
-UA_EXPORT UA_EnumValueType *
+static UA_INLINE UA_EnumValueType *
 UA_EnumValueType_new(void) {
     return (UA_EnumValueType*)UA_new(&UA_TYPES[UA_TYPES_ENUMVALUETYPE]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_EnumValueType_copy(const UA_EnumValueType *src, UA_EnumValueType *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_ENUMVALUETYPE]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_EnumValueType_deleteMembers(UA_EnumValueType *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_ENUMVALUETYPE]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_EnumValueType_clear(UA_EnumValueType *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_ENUMVALUETYPE]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_EnumValueType_delete(UA_EnumValueType *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_ENUMVALUETYPE]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_EnumValueType_equal(const UA_EnumValueType *p1, const UA_EnumValueType *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_ENUMVALUETYPE]) == UA_ORDER_EQ);
 }
@@ -32326,35 +32634,35 @@ UA_EnumValueType_equal(const UA_EnumValueType *p1, const UA_EnumValueType *p2) {
 
 
 /* EnumField */
-UA_EXPORT void
+static UA_INLINE void
 UA_EnumField_init(UA_EnumField *p) {
     memset(p, 0, sizeof(UA_EnumField));
 }
 
-UA_EXPORT UA_EnumField *
+static UA_INLINE UA_EnumField *
 UA_EnumField_new(void) {
     return (UA_EnumField*)UA_new(&UA_TYPES[UA_TYPES_ENUMFIELD]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_EnumField_copy(const UA_EnumField *src, UA_EnumField *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_ENUMFIELD]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_EnumField_deleteMembers(UA_EnumField *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_ENUMFIELD]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_EnumField_clear(UA_EnumField *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_ENUMFIELD]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_EnumField_delete(UA_EnumField *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_ENUMFIELD]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_EnumField_equal(const UA_EnumField *p1, const UA_EnumField *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_ENUMFIELD]) == UA_ORDER_EQ);
 }
@@ -32362,35 +32670,35 @@ UA_EnumField_equal(const UA_EnumField *p1, const UA_EnumField *p2) {
 
 
 /* OptionSet */
-UA_EXPORT void
+static UA_INLINE void
 UA_OptionSet_init(UA_OptionSet *p) {
     memset(p, 0, sizeof(UA_OptionSet));
 }
 
-UA_EXPORT UA_OptionSet *
+static UA_INLINE UA_OptionSet *
 UA_OptionSet_new(void) {
     return (UA_OptionSet*)UA_new(&UA_TYPES[UA_TYPES_OPTIONSET]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_OptionSet_copy(const UA_OptionSet *src, UA_OptionSet *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_OPTIONSET]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_OptionSet_deleteMembers(UA_OptionSet *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_OPTIONSET]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_OptionSet_clear(UA_OptionSet *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_OPTIONSET]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_OptionSet_delete(UA_OptionSet *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_OPTIONSET]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_OptionSet_equal(const UA_OptionSet *p1, const UA_OptionSet *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_OPTIONSET]) == UA_ORDER_EQ);
 }
@@ -32398,35 +32706,35 @@ UA_OptionSet_equal(const UA_OptionSet *p1, const UA_OptionSet *p2) {
 
 
 /* NormalizedString */
-UA_EXPORT void
+static UA_INLINE void
 UA_NormalizedString_init(UA_NormalizedString *p) {
     memset(p, 0, sizeof(UA_NormalizedString));
 }
 
-UA_EXPORT UA_NormalizedString *
+static UA_INLINE UA_NormalizedString *
 UA_NormalizedString_new(void) {
     return (UA_NormalizedString*)UA_new(&UA_TYPES[UA_TYPES_NORMALIZEDSTRING]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_NormalizedString_copy(const UA_NormalizedString *src, UA_NormalizedString *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_NORMALIZEDSTRING]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_NormalizedString_deleteMembers(UA_NormalizedString *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_NORMALIZEDSTRING]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_NormalizedString_clear(UA_NormalizedString *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_NORMALIZEDSTRING]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_NormalizedString_delete(UA_NormalizedString *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_NORMALIZEDSTRING]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_NormalizedString_equal(const UA_NormalizedString *p1, const UA_NormalizedString *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_NORMALIZEDSTRING]) == UA_ORDER_EQ);
 }
@@ -32434,35 +32742,35 @@ UA_NormalizedString_equal(const UA_NormalizedString *p1, const UA_NormalizedStri
 
 
 /* DecimalString */
-UA_EXPORT void
+static UA_INLINE void
 UA_DecimalString_init(UA_DecimalString *p) {
     memset(p, 0, sizeof(UA_DecimalString));
 }
 
-UA_EXPORT UA_DecimalString *
+static UA_INLINE UA_DecimalString *
 UA_DecimalString_new(void) {
     return (UA_DecimalString*)UA_new(&UA_TYPES[UA_TYPES_DECIMALSTRING]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_DecimalString_copy(const UA_DecimalString *src, UA_DecimalString *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_DECIMALSTRING]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_DecimalString_deleteMembers(UA_DecimalString *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_DECIMALSTRING]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_DecimalString_clear(UA_DecimalString *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_DECIMALSTRING]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_DecimalString_delete(UA_DecimalString *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_DECIMALSTRING]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_DecimalString_equal(const UA_DecimalString *p1, const UA_DecimalString *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_DECIMALSTRING]) == UA_ORDER_EQ);
 }
@@ -32470,35 +32778,35 @@ UA_DecimalString_equal(const UA_DecimalString *p1, const UA_DecimalString *p2) {
 
 
 /* DurationString */
-UA_EXPORT void
+static UA_INLINE void
 UA_DurationString_init(UA_DurationString *p) {
     memset(p, 0, sizeof(UA_DurationString));
 }
 
-UA_EXPORT UA_DurationString *
+static UA_INLINE UA_DurationString *
 UA_DurationString_new(void) {
     return (UA_DurationString*)UA_new(&UA_TYPES[UA_TYPES_DURATIONSTRING]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_DurationString_copy(const UA_DurationString *src, UA_DurationString *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_DURATIONSTRING]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_DurationString_deleteMembers(UA_DurationString *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_DURATIONSTRING]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_DurationString_clear(UA_DurationString *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_DURATIONSTRING]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_DurationString_delete(UA_DurationString *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_DURATIONSTRING]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_DurationString_equal(const UA_DurationString *p1, const UA_DurationString *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_DURATIONSTRING]) == UA_ORDER_EQ);
 }
@@ -32506,35 +32814,35 @@ UA_DurationString_equal(const UA_DurationString *p1, const UA_DurationString *p2
 
 
 /* TimeString */
-UA_EXPORT void
+static UA_INLINE void
 UA_TimeString_init(UA_TimeString *p) {
     memset(p, 0, sizeof(UA_TimeString));
 }
 
-UA_EXPORT UA_TimeString *
+static UA_INLINE UA_TimeString *
 UA_TimeString_new(void) {
     return (UA_TimeString*)UA_new(&UA_TYPES[UA_TYPES_TIMESTRING]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_TimeString_copy(const UA_TimeString *src, UA_TimeString *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_TIMESTRING]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_TimeString_deleteMembers(UA_TimeString *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_TIMESTRING]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_TimeString_clear(UA_TimeString *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_TIMESTRING]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_TimeString_delete(UA_TimeString *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_TIMESTRING]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_TimeString_equal(const UA_TimeString *p1, const UA_TimeString *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_TIMESTRING]) == UA_ORDER_EQ);
 }
@@ -32542,35 +32850,35 @@ UA_TimeString_equal(const UA_TimeString *p1, const UA_TimeString *p2) {
 
 
 /* DateString */
-UA_EXPORT void
+static UA_INLINE void
 UA_DateString_init(UA_DateString *p) {
     memset(p, 0, sizeof(UA_DateString));
 }
 
-UA_EXPORT UA_DateString *
+static UA_INLINE UA_DateString *
 UA_DateString_new(void) {
     return (UA_DateString*)UA_new(&UA_TYPES[UA_TYPES_DATESTRING]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_DateString_copy(const UA_DateString *src, UA_DateString *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_DATESTRING]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_DateString_deleteMembers(UA_DateString *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_DATESTRING]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_DateString_clear(UA_DateString *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_DATESTRING]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_DateString_delete(UA_DateString *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_DATESTRING]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_DateString_equal(const UA_DateString *p1, const UA_DateString *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_DATESTRING]) == UA_ORDER_EQ);
 }
@@ -32578,35 +32886,35 @@ UA_DateString_equal(const UA_DateString *p1, const UA_DateString *p2) {
 
 
 /* Duration */
-UA_EXPORT void
+static UA_INLINE void
 UA_Duration_init(UA_Duration *p) {
     memset(p, 0, sizeof(UA_Duration));
 }
 
-UA_EXPORT UA_Duration *
+static UA_INLINE UA_Duration *
 UA_Duration_new(void) {
     return (UA_Duration*)UA_new(&UA_TYPES[UA_TYPES_DURATION]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_Duration_copy(const UA_Duration *src, UA_Duration *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_DURATION]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_Duration_deleteMembers(UA_Duration *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_DURATION]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_Duration_clear(UA_Duration *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_DURATION]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_Duration_delete(UA_Duration *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_DURATION]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_Duration_equal(const UA_Duration *p1, const UA_Duration *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_DURATION]) == UA_ORDER_EQ);
 }
@@ -32614,35 +32922,35 @@ UA_Duration_equal(const UA_Duration *p1, const UA_Duration *p2) {
 
 
 /* UtcTime */
-UA_EXPORT void
+static UA_INLINE void
 UA_UtcTime_init(UA_UtcTime *p) {
     memset(p, 0, sizeof(UA_UtcTime));
 }
 
-UA_EXPORT UA_UtcTime *
+static UA_INLINE UA_UtcTime *
 UA_UtcTime_new(void) {
     return (UA_UtcTime*)UA_new(&UA_TYPES[UA_TYPES_UTCTIME]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_UtcTime_copy(const UA_UtcTime *src, UA_UtcTime *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_UTCTIME]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_UtcTime_deleteMembers(UA_UtcTime *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_UTCTIME]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_UtcTime_clear(UA_UtcTime *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_UTCTIME]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_UtcTime_delete(UA_UtcTime *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_UTCTIME]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_UtcTime_equal(const UA_UtcTime *p1, const UA_UtcTime *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_UTCTIME]) == UA_ORDER_EQ);
 }
@@ -32650,35 +32958,35 @@ UA_UtcTime_equal(const UA_UtcTime *p1, const UA_UtcTime *p2) {
 
 
 /* LocaleId */
-UA_EXPORT void
+static UA_INLINE void
 UA_LocaleId_init(UA_LocaleId *p) {
     memset(p, 0, sizeof(UA_LocaleId));
 }
 
-UA_EXPORT UA_LocaleId *
+static UA_INLINE UA_LocaleId *
 UA_LocaleId_new(void) {
     return (UA_LocaleId*)UA_new(&UA_TYPES[UA_TYPES_LOCALEID]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_LocaleId_copy(const UA_LocaleId *src, UA_LocaleId *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_LOCALEID]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_LocaleId_deleteMembers(UA_LocaleId *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_LOCALEID]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_LocaleId_clear(UA_LocaleId *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_LOCALEID]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_LocaleId_delete(UA_LocaleId *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_LOCALEID]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_LocaleId_equal(const UA_LocaleId *p1, const UA_LocaleId *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_LOCALEID]) == UA_ORDER_EQ);
 }
@@ -32686,35 +32994,35 @@ UA_LocaleId_equal(const UA_LocaleId *p1, const UA_LocaleId *p2) {
 
 
 /* TimeZoneDataType */
-UA_EXPORT void
+static UA_INLINE void
 UA_TimeZoneDataType_init(UA_TimeZoneDataType *p) {
     memset(p, 0, sizeof(UA_TimeZoneDataType));
 }
 
-UA_EXPORT UA_TimeZoneDataType *
+static UA_INLINE UA_TimeZoneDataType *
 UA_TimeZoneDataType_new(void) {
     return (UA_TimeZoneDataType*)UA_new(&UA_TYPES[UA_TYPES_TIMEZONEDATATYPE]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_TimeZoneDataType_copy(const UA_TimeZoneDataType *src, UA_TimeZoneDataType *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_TIMEZONEDATATYPE]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_TimeZoneDataType_deleteMembers(UA_TimeZoneDataType *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_TIMEZONEDATATYPE]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_TimeZoneDataType_clear(UA_TimeZoneDataType *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_TIMEZONEDATATYPE]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_TimeZoneDataType_delete(UA_TimeZoneDataType *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_TIMEZONEDATATYPE]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_TimeZoneDataType_equal(const UA_TimeZoneDataType *p1, const UA_TimeZoneDataType *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_TIMEZONEDATATYPE]) == UA_ORDER_EQ);
 }
@@ -32722,35 +33030,35 @@ UA_TimeZoneDataType_equal(const UA_TimeZoneDataType *p1, const UA_TimeZoneDataTy
 
 
 /* Index */
-UA_EXPORT void
+static UA_INLINE void
 UA_Index_init(UA_Index *p) {
     memset(p, 0, sizeof(UA_Index));
 }
 
-UA_EXPORT UA_Index *
+static UA_INLINE UA_Index *
 UA_Index_new(void) {
     return (UA_Index*)UA_new(&UA_TYPES[UA_TYPES_INDEX]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_Index_copy(const UA_Index *src, UA_Index *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_INDEX]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_Index_deleteMembers(UA_Index *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_INDEX]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_Index_clear(UA_Index *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_INDEX]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_Index_delete(UA_Index *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_INDEX]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_Index_equal(const UA_Index *p1, const UA_Index *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_INDEX]) == UA_ORDER_EQ);
 }
@@ -32758,35 +33066,35 @@ UA_Index_equal(const UA_Index *p1, const UA_Index *p2) {
 
 
 /* IntegerId */
-UA_EXPORT void
+static UA_INLINE void
 UA_IntegerId_init(UA_IntegerId *p) {
     memset(p, 0, sizeof(UA_IntegerId));
 }
 
-UA_EXPORT UA_IntegerId *
+static UA_INLINE UA_IntegerId *
 UA_IntegerId_new(void) {
     return (UA_IntegerId*)UA_new(&UA_TYPES[UA_TYPES_INTEGERID]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_IntegerId_copy(const UA_IntegerId *src, UA_IntegerId *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_INTEGERID]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_IntegerId_deleteMembers(UA_IntegerId *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_INTEGERID]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_IntegerId_clear(UA_IntegerId *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_INTEGERID]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_IntegerId_delete(UA_IntegerId *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_INTEGERID]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_IntegerId_equal(const UA_IntegerId *p1, const UA_IntegerId *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_INTEGERID]) == UA_ORDER_EQ);
 }
@@ -32794,35 +33102,35 @@ UA_IntegerId_equal(const UA_IntegerId *p1, const UA_IntegerId *p2) {
 
 
 /* ApplicationType */
-UA_EXPORT void
+static UA_INLINE void
 UA_ApplicationType_init(UA_ApplicationType *p) {
     memset(p, 0, sizeof(UA_ApplicationType));
 }
 
-UA_EXPORT UA_ApplicationType *
+static UA_INLINE UA_ApplicationType *
 UA_ApplicationType_new(void) {
     return (UA_ApplicationType*)UA_new(&UA_TYPES[UA_TYPES_APPLICATIONTYPE]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_ApplicationType_copy(const UA_ApplicationType *src, UA_ApplicationType *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_APPLICATIONTYPE]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_ApplicationType_deleteMembers(UA_ApplicationType *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_APPLICATIONTYPE]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_ApplicationType_clear(UA_ApplicationType *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_APPLICATIONTYPE]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_ApplicationType_delete(UA_ApplicationType *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_APPLICATIONTYPE]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_ApplicationType_equal(const UA_ApplicationType *p1, const UA_ApplicationType *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_APPLICATIONTYPE]) == UA_ORDER_EQ);
 }
@@ -32830,35 +33138,35 @@ UA_ApplicationType_equal(const UA_ApplicationType *p1, const UA_ApplicationType 
 
 
 /* ApplicationDescription */
-UA_EXPORT void
+static UA_INLINE void
 UA_ApplicationDescription_init(UA_ApplicationDescription *p) {
     memset(p, 0, sizeof(UA_ApplicationDescription));
 }
 
-UA_EXPORT UA_ApplicationDescription *
+static UA_INLINE UA_ApplicationDescription *
 UA_ApplicationDescription_new(void) {
     return (UA_ApplicationDescription*)UA_new(&UA_TYPES[UA_TYPES_APPLICATIONDESCRIPTION]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_ApplicationDescription_copy(const UA_ApplicationDescription *src, UA_ApplicationDescription *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_APPLICATIONDESCRIPTION]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_ApplicationDescription_deleteMembers(UA_ApplicationDescription *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_APPLICATIONDESCRIPTION]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_ApplicationDescription_clear(UA_ApplicationDescription *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_APPLICATIONDESCRIPTION]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_ApplicationDescription_delete(UA_ApplicationDescription *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_APPLICATIONDESCRIPTION]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_ApplicationDescription_equal(const UA_ApplicationDescription *p1, const UA_ApplicationDescription *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_APPLICATIONDESCRIPTION]) == UA_ORDER_EQ);
 }
@@ -32866,35 +33174,35 @@ UA_ApplicationDescription_equal(const UA_ApplicationDescription *p1, const UA_Ap
 
 
 /* RequestHeader */
-UA_EXPORT void
+static UA_INLINE void
 UA_RequestHeader_init(UA_RequestHeader *p) {
     memset(p, 0, sizeof(UA_RequestHeader));
 }
 
-UA_EXPORT UA_RequestHeader *
+static UA_INLINE UA_RequestHeader *
 UA_RequestHeader_new(void) {
     return (UA_RequestHeader*)UA_new(&UA_TYPES[UA_TYPES_REQUESTHEADER]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_RequestHeader_copy(const UA_RequestHeader *src, UA_RequestHeader *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_REQUESTHEADER]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_RequestHeader_deleteMembers(UA_RequestHeader *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_REQUESTHEADER]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_RequestHeader_clear(UA_RequestHeader *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_REQUESTHEADER]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_RequestHeader_delete(UA_RequestHeader *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_REQUESTHEADER]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_RequestHeader_equal(const UA_RequestHeader *p1, const UA_RequestHeader *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_REQUESTHEADER]) == UA_ORDER_EQ);
 }
@@ -32902,35 +33210,35 @@ UA_RequestHeader_equal(const UA_RequestHeader *p1, const UA_RequestHeader *p2) {
 
 
 /* ResponseHeader */
-UA_EXPORT void
+static UA_INLINE void
 UA_ResponseHeader_init(UA_ResponseHeader *p) {
     memset(p, 0, sizeof(UA_ResponseHeader));
 }
 
-UA_EXPORT UA_ResponseHeader *
+static UA_INLINE UA_ResponseHeader *
 UA_ResponseHeader_new(void) {
     return (UA_ResponseHeader*)UA_new(&UA_TYPES[UA_TYPES_RESPONSEHEADER]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_ResponseHeader_copy(const UA_ResponseHeader *src, UA_ResponseHeader *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_RESPONSEHEADER]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_ResponseHeader_deleteMembers(UA_ResponseHeader *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_RESPONSEHEADER]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_ResponseHeader_clear(UA_ResponseHeader *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_RESPONSEHEADER]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_ResponseHeader_delete(UA_ResponseHeader *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_RESPONSEHEADER]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_ResponseHeader_equal(const UA_ResponseHeader *p1, const UA_ResponseHeader *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_RESPONSEHEADER]) == UA_ORDER_EQ);
 }
@@ -32938,35 +33246,35 @@ UA_ResponseHeader_equal(const UA_ResponseHeader *p1, const UA_ResponseHeader *p2
 
 
 /* VersionTime */
-UA_EXPORT void
+static UA_INLINE void
 UA_VersionTime_init(UA_VersionTime *p) {
     memset(p, 0, sizeof(UA_VersionTime));
 }
 
-UA_EXPORT UA_VersionTime *
+static UA_INLINE UA_VersionTime *
 UA_VersionTime_new(void) {
     return (UA_VersionTime*)UA_new(&UA_TYPES[UA_TYPES_VERSIONTIME]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_VersionTime_copy(const UA_VersionTime *src, UA_VersionTime *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_VERSIONTIME]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_VersionTime_deleteMembers(UA_VersionTime *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_VERSIONTIME]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_VersionTime_clear(UA_VersionTime *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_VERSIONTIME]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_VersionTime_delete(UA_VersionTime *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_VERSIONTIME]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_VersionTime_equal(const UA_VersionTime *p1, const UA_VersionTime *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_VERSIONTIME]) == UA_ORDER_EQ);
 }
@@ -32974,35 +33282,35 @@ UA_VersionTime_equal(const UA_VersionTime *p1, const UA_VersionTime *p2) {
 
 
 /* ServiceFault */
-UA_EXPORT void
+static UA_INLINE void
 UA_ServiceFault_init(UA_ServiceFault *p) {
     memset(p, 0, sizeof(UA_ServiceFault));
 }
 
-UA_EXPORT UA_ServiceFault *
+static UA_INLINE UA_ServiceFault *
 UA_ServiceFault_new(void) {
     return (UA_ServiceFault*)UA_new(&UA_TYPES[UA_TYPES_SERVICEFAULT]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_ServiceFault_copy(const UA_ServiceFault *src, UA_ServiceFault *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_SERVICEFAULT]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_ServiceFault_deleteMembers(UA_ServiceFault *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_SERVICEFAULT]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_ServiceFault_clear(UA_ServiceFault *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_SERVICEFAULT]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_ServiceFault_delete(UA_ServiceFault *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_SERVICEFAULT]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_ServiceFault_equal(const UA_ServiceFault *p1, const UA_ServiceFault *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_SERVICEFAULT]) == UA_ORDER_EQ);
 }
@@ -33010,35 +33318,35 @@ UA_ServiceFault_equal(const UA_ServiceFault *p1, const UA_ServiceFault *p2) {
 
 
 /* SessionlessInvokeRequestType */
-UA_EXPORT void
+static UA_INLINE void
 UA_SessionlessInvokeRequestType_init(UA_SessionlessInvokeRequestType *p) {
     memset(p, 0, sizeof(UA_SessionlessInvokeRequestType));
 }
 
-UA_EXPORT UA_SessionlessInvokeRequestType *
+static UA_INLINE UA_SessionlessInvokeRequestType *
 UA_SessionlessInvokeRequestType_new(void) {
     return (UA_SessionlessInvokeRequestType*)UA_new(&UA_TYPES[UA_TYPES_SESSIONLESSINVOKEREQUESTTYPE]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_SessionlessInvokeRequestType_copy(const UA_SessionlessInvokeRequestType *src, UA_SessionlessInvokeRequestType *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_SESSIONLESSINVOKEREQUESTTYPE]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_SessionlessInvokeRequestType_deleteMembers(UA_SessionlessInvokeRequestType *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_SESSIONLESSINVOKEREQUESTTYPE]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_SessionlessInvokeRequestType_clear(UA_SessionlessInvokeRequestType *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_SESSIONLESSINVOKEREQUESTTYPE]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_SessionlessInvokeRequestType_delete(UA_SessionlessInvokeRequestType *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_SESSIONLESSINVOKEREQUESTTYPE]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_SessionlessInvokeRequestType_equal(const UA_SessionlessInvokeRequestType *p1, const UA_SessionlessInvokeRequestType *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_SESSIONLESSINVOKEREQUESTTYPE]) == UA_ORDER_EQ);
 }
@@ -33046,35 +33354,35 @@ UA_SessionlessInvokeRequestType_equal(const UA_SessionlessInvokeRequestType *p1,
 
 
 /* SessionlessInvokeResponseType */
-UA_EXPORT void
+static UA_INLINE void
 UA_SessionlessInvokeResponseType_init(UA_SessionlessInvokeResponseType *p) {
     memset(p, 0, sizeof(UA_SessionlessInvokeResponseType));
 }
 
-UA_EXPORT UA_SessionlessInvokeResponseType *
+static UA_INLINE UA_SessionlessInvokeResponseType *
 UA_SessionlessInvokeResponseType_new(void) {
     return (UA_SessionlessInvokeResponseType*)UA_new(&UA_TYPES[UA_TYPES_SESSIONLESSINVOKERESPONSETYPE]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_SessionlessInvokeResponseType_copy(const UA_SessionlessInvokeResponseType *src, UA_SessionlessInvokeResponseType *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_SESSIONLESSINVOKERESPONSETYPE]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_SessionlessInvokeResponseType_deleteMembers(UA_SessionlessInvokeResponseType *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_SESSIONLESSINVOKERESPONSETYPE]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_SessionlessInvokeResponseType_clear(UA_SessionlessInvokeResponseType *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_SESSIONLESSINVOKERESPONSETYPE]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_SessionlessInvokeResponseType_delete(UA_SessionlessInvokeResponseType *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_SESSIONLESSINVOKERESPONSETYPE]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_SessionlessInvokeResponseType_equal(const UA_SessionlessInvokeResponseType *p1, const UA_SessionlessInvokeResponseType *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_SESSIONLESSINVOKERESPONSETYPE]) == UA_ORDER_EQ);
 }
@@ -33082,35 +33390,35 @@ UA_SessionlessInvokeResponseType_equal(const UA_SessionlessInvokeResponseType *p
 
 
 /* FindServersRequest */
-UA_EXPORT void
+static UA_INLINE void
 UA_FindServersRequest_init(UA_FindServersRequest *p) {
     memset(p, 0, sizeof(UA_FindServersRequest));
 }
 
-UA_EXPORT UA_FindServersRequest *
+static UA_INLINE UA_FindServersRequest *
 UA_FindServersRequest_new(void) {
     return (UA_FindServersRequest*)UA_new(&UA_TYPES[UA_TYPES_FINDSERVERSREQUEST]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_FindServersRequest_copy(const UA_FindServersRequest *src, UA_FindServersRequest *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_FINDSERVERSREQUEST]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_FindServersRequest_deleteMembers(UA_FindServersRequest *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_FINDSERVERSREQUEST]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_FindServersRequest_clear(UA_FindServersRequest *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_FINDSERVERSREQUEST]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_FindServersRequest_delete(UA_FindServersRequest *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_FINDSERVERSREQUEST]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_FindServersRequest_equal(const UA_FindServersRequest *p1, const UA_FindServersRequest *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_FINDSERVERSREQUEST]) == UA_ORDER_EQ);
 }
@@ -33118,35 +33426,35 @@ UA_FindServersRequest_equal(const UA_FindServersRequest *p1, const UA_FindServer
 
 
 /* FindServersResponse */
-UA_EXPORT void
+static UA_INLINE void
 UA_FindServersResponse_init(UA_FindServersResponse *p) {
     memset(p, 0, sizeof(UA_FindServersResponse));
 }
 
-UA_EXPORT UA_FindServersResponse *
+static UA_INLINE UA_FindServersResponse *
 UA_FindServersResponse_new(void) {
     return (UA_FindServersResponse*)UA_new(&UA_TYPES[UA_TYPES_FINDSERVERSRESPONSE]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_FindServersResponse_copy(const UA_FindServersResponse *src, UA_FindServersResponse *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_FINDSERVERSRESPONSE]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_FindServersResponse_deleteMembers(UA_FindServersResponse *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_FINDSERVERSRESPONSE]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_FindServersResponse_clear(UA_FindServersResponse *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_FINDSERVERSRESPONSE]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_FindServersResponse_delete(UA_FindServersResponse *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_FINDSERVERSRESPONSE]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_FindServersResponse_equal(const UA_FindServersResponse *p1, const UA_FindServersResponse *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_FINDSERVERSRESPONSE]) == UA_ORDER_EQ);
 }
@@ -33154,35 +33462,35 @@ UA_FindServersResponse_equal(const UA_FindServersResponse *p1, const UA_FindServ
 
 
 /* ServerOnNetwork */
-UA_EXPORT void
+static UA_INLINE void
 UA_ServerOnNetwork_init(UA_ServerOnNetwork *p) {
     memset(p, 0, sizeof(UA_ServerOnNetwork));
 }
 
-UA_EXPORT UA_ServerOnNetwork *
+static UA_INLINE UA_ServerOnNetwork *
 UA_ServerOnNetwork_new(void) {
     return (UA_ServerOnNetwork*)UA_new(&UA_TYPES[UA_TYPES_SERVERONNETWORK]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_ServerOnNetwork_copy(const UA_ServerOnNetwork *src, UA_ServerOnNetwork *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_SERVERONNETWORK]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_ServerOnNetwork_deleteMembers(UA_ServerOnNetwork *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_SERVERONNETWORK]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_ServerOnNetwork_clear(UA_ServerOnNetwork *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_SERVERONNETWORK]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_ServerOnNetwork_delete(UA_ServerOnNetwork *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_SERVERONNETWORK]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_ServerOnNetwork_equal(const UA_ServerOnNetwork *p1, const UA_ServerOnNetwork *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_SERVERONNETWORK]) == UA_ORDER_EQ);
 }
@@ -33190,35 +33498,35 @@ UA_ServerOnNetwork_equal(const UA_ServerOnNetwork *p1, const UA_ServerOnNetwork 
 
 
 /* FindServersOnNetworkRequest */
-UA_EXPORT void
+static UA_INLINE void
 UA_FindServersOnNetworkRequest_init(UA_FindServersOnNetworkRequest *p) {
     memset(p, 0, sizeof(UA_FindServersOnNetworkRequest));
 }
 
-UA_EXPORT UA_FindServersOnNetworkRequest *
+static UA_INLINE UA_FindServersOnNetworkRequest *
 UA_FindServersOnNetworkRequest_new(void) {
     return (UA_FindServersOnNetworkRequest*)UA_new(&UA_TYPES[UA_TYPES_FINDSERVERSONNETWORKREQUEST]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_FindServersOnNetworkRequest_copy(const UA_FindServersOnNetworkRequest *src, UA_FindServersOnNetworkRequest *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_FINDSERVERSONNETWORKREQUEST]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_FindServersOnNetworkRequest_deleteMembers(UA_FindServersOnNetworkRequest *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_FINDSERVERSONNETWORKREQUEST]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_FindServersOnNetworkRequest_clear(UA_FindServersOnNetworkRequest *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_FINDSERVERSONNETWORKREQUEST]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_FindServersOnNetworkRequest_delete(UA_FindServersOnNetworkRequest *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_FINDSERVERSONNETWORKREQUEST]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_FindServersOnNetworkRequest_equal(const UA_FindServersOnNetworkRequest *p1, const UA_FindServersOnNetworkRequest *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_FINDSERVERSONNETWORKREQUEST]) == UA_ORDER_EQ);
 }
@@ -33226,35 +33534,35 @@ UA_FindServersOnNetworkRequest_equal(const UA_FindServersOnNetworkRequest *p1, c
 
 
 /* FindServersOnNetworkResponse */
-UA_EXPORT void
+static UA_INLINE void
 UA_FindServersOnNetworkResponse_init(UA_FindServersOnNetworkResponse *p) {
     memset(p, 0, sizeof(UA_FindServersOnNetworkResponse));
 }
 
-UA_EXPORT UA_FindServersOnNetworkResponse *
+static UA_INLINE UA_FindServersOnNetworkResponse *
 UA_FindServersOnNetworkResponse_new(void) {
     return (UA_FindServersOnNetworkResponse*)UA_new(&UA_TYPES[UA_TYPES_FINDSERVERSONNETWORKRESPONSE]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_FindServersOnNetworkResponse_copy(const UA_FindServersOnNetworkResponse *src, UA_FindServersOnNetworkResponse *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_FINDSERVERSONNETWORKRESPONSE]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_FindServersOnNetworkResponse_deleteMembers(UA_FindServersOnNetworkResponse *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_FINDSERVERSONNETWORKRESPONSE]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_FindServersOnNetworkResponse_clear(UA_FindServersOnNetworkResponse *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_FINDSERVERSONNETWORKRESPONSE]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_FindServersOnNetworkResponse_delete(UA_FindServersOnNetworkResponse *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_FINDSERVERSONNETWORKRESPONSE]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_FindServersOnNetworkResponse_equal(const UA_FindServersOnNetworkResponse *p1, const UA_FindServersOnNetworkResponse *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_FINDSERVERSONNETWORKRESPONSE]) == UA_ORDER_EQ);
 }
@@ -33262,35 +33570,35 @@ UA_FindServersOnNetworkResponse_equal(const UA_FindServersOnNetworkResponse *p1,
 
 
 /* ApplicationInstanceCertificate */
-UA_EXPORT void
+static UA_INLINE void
 UA_ApplicationInstanceCertificate_init(UA_ApplicationInstanceCertificate *p) {
     memset(p, 0, sizeof(UA_ApplicationInstanceCertificate));
 }
 
-UA_EXPORT UA_ApplicationInstanceCertificate *
+static UA_INLINE UA_ApplicationInstanceCertificate *
 UA_ApplicationInstanceCertificate_new(void) {
     return (UA_ApplicationInstanceCertificate*)UA_new(&UA_TYPES[UA_TYPES_APPLICATIONINSTANCECERTIFICATE]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_ApplicationInstanceCertificate_copy(const UA_ApplicationInstanceCertificate *src, UA_ApplicationInstanceCertificate *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_APPLICATIONINSTANCECERTIFICATE]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_ApplicationInstanceCertificate_deleteMembers(UA_ApplicationInstanceCertificate *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_APPLICATIONINSTANCECERTIFICATE]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_ApplicationInstanceCertificate_clear(UA_ApplicationInstanceCertificate *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_APPLICATIONINSTANCECERTIFICATE]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_ApplicationInstanceCertificate_delete(UA_ApplicationInstanceCertificate *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_APPLICATIONINSTANCECERTIFICATE]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_ApplicationInstanceCertificate_equal(const UA_ApplicationInstanceCertificate *p1, const UA_ApplicationInstanceCertificate *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_APPLICATIONINSTANCECERTIFICATE]) == UA_ORDER_EQ);
 }
@@ -33298,35 +33606,35 @@ UA_ApplicationInstanceCertificate_equal(const UA_ApplicationInstanceCertificate 
 
 
 /* MessageSecurityMode */
-UA_EXPORT void
+static UA_INLINE void
 UA_MessageSecurityMode_init(UA_MessageSecurityMode *p) {
     memset(p, 0, sizeof(UA_MessageSecurityMode));
 }
 
-UA_EXPORT UA_MessageSecurityMode *
+static UA_INLINE UA_MessageSecurityMode *
 UA_MessageSecurityMode_new(void) {
     return (UA_MessageSecurityMode*)UA_new(&UA_TYPES[UA_TYPES_MESSAGESECURITYMODE]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_MessageSecurityMode_copy(const UA_MessageSecurityMode *src, UA_MessageSecurityMode *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_MESSAGESECURITYMODE]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_MessageSecurityMode_deleteMembers(UA_MessageSecurityMode *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_MESSAGESECURITYMODE]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_MessageSecurityMode_clear(UA_MessageSecurityMode *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_MESSAGESECURITYMODE]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_MessageSecurityMode_delete(UA_MessageSecurityMode *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_MESSAGESECURITYMODE]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_MessageSecurityMode_equal(const UA_MessageSecurityMode *p1, const UA_MessageSecurityMode *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_MESSAGESECURITYMODE]) == UA_ORDER_EQ);
 }
@@ -33334,35 +33642,35 @@ UA_MessageSecurityMode_equal(const UA_MessageSecurityMode *p1, const UA_MessageS
 
 
 /* UserTokenType */
-UA_EXPORT void
+static UA_INLINE void
 UA_UserTokenType_init(UA_UserTokenType *p) {
     memset(p, 0, sizeof(UA_UserTokenType));
 }
 
-UA_EXPORT UA_UserTokenType *
+static UA_INLINE UA_UserTokenType *
 UA_UserTokenType_new(void) {
     return (UA_UserTokenType*)UA_new(&UA_TYPES[UA_TYPES_USERTOKENTYPE]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_UserTokenType_copy(const UA_UserTokenType *src, UA_UserTokenType *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_USERTOKENTYPE]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_UserTokenType_deleteMembers(UA_UserTokenType *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_USERTOKENTYPE]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_UserTokenType_clear(UA_UserTokenType *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_USERTOKENTYPE]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_UserTokenType_delete(UA_UserTokenType *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_USERTOKENTYPE]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_UserTokenType_equal(const UA_UserTokenType *p1, const UA_UserTokenType *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_USERTOKENTYPE]) == UA_ORDER_EQ);
 }
@@ -33370,35 +33678,35 @@ UA_UserTokenType_equal(const UA_UserTokenType *p1, const UA_UserTokenType *p2) {
 
 
 /* UserTokenPolicy */
-UA_EXPORT void
+static UA_INLINE void
 UA_UserTokenPolicy_init(UA_UserTokenPolicy *p) {
     memset(p, 0, sizeof(UA_UserTokenPolicy));
 }
 
-UA_EXPORT UA_UserTokenPolicy *
+static UA_INLINE UA_UserTokenPolicy *
 UA_UserTokenPolicy_new(void) {
     return (UA_UserTokenPolicy*)UA_new(&UA_TYPES[UA_TYPES_USERTOKENPOLICY]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_UserTokenPolicy_copy(const UA_UserTokenPolicy *src, UA_UserTokenPolicy *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_USERTOKENPOLICY]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_UserTokenPolicy_deleteMembers(UA_UserTokenPolicy *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_USERTOKENPOLICY]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_UserTokenPolicy_clear(UA_UserTokenPolicy *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_USERTOKENPOLICY]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_UserTokenPolicy_delete(UA_UserTokenPolicy *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_USERTOKENPOLICY]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_UserTokenPolicy_equal(const UA_UserTokenPolicy *p1, const UA_UserTokenPolicy *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_USERTOKENPOLICY]) == UA_ORDER_EQ);
 }
@@ -33406,35 +33714,35 @@ UA_UserTokenPolicy_equal(const UA_UserTokenPolicy *p1, const UA_UserTokenPolicy 
 
 
 /* EndpointDescription */
-UA_EXPORT void
+static UA_INLINE void
 UA_EndpointDescription_init(UA_EndpointDescription *p) {
     memset(p, 0, sizeof(UA_EndpointDescription));
 }
 
-UA_EXPORT UA_EndpointDescription *
+static UA_INLINE UA_EndpointDescription *
 UA_EndpointDescription_new(void) {
     return (UA_EndpointDescription*)UA_new(&UA_TYPES[UA_TYPES_ENDPOINTDESCRIPTION]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_EndpointDescription_copy(const UA_EndpointDescription *src, UA_EndpointDescription *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_ENDPOINTDESCRIPTION]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_EndpointDescription_deleteMembers(UA_EndpointDescription *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_ENDPOINTDESCRIPTION]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_EndpointDescription_clear(UA_EndpointDescription *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_ENDPOINTDESCRIPTION]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_EndpointDescription_delete(UA_EndpointDescription *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_ENDPOINTDESCRIPTION]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_EndpointDescription_equal(const UA_EndpointDescription *p1, const UA_EndpointDescription *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_ENDPOINTDESCRIPTION]) == UA_ORDER_EQ);
 }
@@ -33442,35 +33750,35 @@ UA_EndpointDescription_equal(const UA_EndpointDescription *p1, const UA_Endpoint
 
 
 /* GetEndpointsRequest */
-UA_EXPORT void
+static UA_INLINE void
 UA_GetEndpointsRequest_init(UA_GetEndpointsRequest *p) {
     memset(p, 0, sizeof(UA_GetEndpointsRequest));
 }
 
-UA_EXPORT UA_GetEndpointsRequest *
+static UA_INLINE UA_GetEndpointsRequest *
 UA_GetEndpointsRequest_new(void) {
     return (UA_GetEndpointsRequest*)UA_new(&UA_TYPES[UA_TYPES_GETENDPOINTSREQUEST]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_GetEndpointsRequest_copy(const UA_GetEndpointsRequest *src, UA_GetEndpointsRequest *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_GETENDPOINTSREQUEST]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_GetEndpointsRequest_deleteMembers(UA_GetEndpointsRequest *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_GETENDPOINTSREQUEST]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_GetEndpointsRequest_clear(UA_GetEndpointsRequest *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_GETENDPOINTSREQUEST]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_GetEndpointsRequest_delete(UA_GetEndpointsRequest *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_GETENDPOINTSREQUEST]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_GetEndpointsRequest_equal(const UA_GetEndpointsRequest *p1, const UA_GetEndpointsRequest *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_GETENDPOINTSREQUEST]) == UA_ORDER_EQ);
 }
@@ -33478,35 +33786,35 @@ UA_GetEndpointsRequest_equal(const UA_GetEndpointsRequest *p1, const UA_GetEndpo
 
 
 /* GetEndpointsResponse */
-UA_EXPORT void
+static UA_INLINE void
 UA_GetEndpointsResponse_init(UA_GetEndpointsResponse *p) {
     memset(p, 0, sizeof(UA_GetEndpointsResponse));
 }
 
-UA_EXPORT UA_GetEndpointsResponse *
+static UA_INLINE UA_GetEndpointsResponse *
 UA_GetEndpointsResponse_new(void) {
     return (UA_GetEndpointsResponse*)UA_new(&UA_TYPES[UA_TYPES_GETENDPOINTSRESPONSE]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_GetEndpointsResponse_copy(const UA_GetEndpointsResponse *src, UA_GetEndpointsResponse *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_GETENDPOINTSRESPONSE]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_GetEndpointsResponse_deleteMembers(UA_GetEndpointsResponse *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_GETENDPOINTSRESPONSE]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_GetEndpointsResponse_clear(UA_GetEndpointsResponse *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_GETENDPOINTSRESPONSE]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_GetEndpointsResponse_delete(UA_GetEndpointsResponse *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_GETENDPOINTSRESPONSE]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_GetEndpointsResponse_equal(const UA_GetEndpointsResponse *p1, const UA_GetEndpointsResponse *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_GETENDPOINTSRESPONSE]) == UA_ORDER_EQ);
 }
@@ -33514,35 +33822,35 @@ UA_GetEndpointsResponse_equal(const UA_GetEndpointsResponse *p1, const UA_GetEnd
 
 
 /* RegisteredServer */
-UA_EXPORT void
+static UA_INLINE void
 UA_RegisteredServer_init(UA_RegisteredServer *p) {
     memset(p, 0, sizeof(UA_RegisteredServer));
 }
 
-UA_EXPORT UA_RegisteredServer *
+static UA_INLINE UA_RegisteredServer *
 UA_RegisteredServer_new(void) {
     return (UA_RegisteredServer*)UA_new(&UA_TYPES[UA_TYPES_REGISTEREDSERVER]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_RegisteredServer_copy(const UA_RegisteredServer *src, UA_RegisteredServer *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_REGISTEREDSERVER]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_RegisteredServer_deleteMembers(UA_RegisteredServer *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_REGISTEREDSERVER]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_RegisteredServer_clear(UA_RegisteredServer *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_REGISTEREDSERVER]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_RegisteredServer_delete(UA_RegisteredServer *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_REGISTEREDSERVER]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_RegisteredServer_equal(const UA_RegisteredServer *p1, const UA_RegisteredServer *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_REGISTEREDSERVER]) == UA_ORDER_EQ);
 }
@@ -33550,35 +33858,35 @@ UA_RegisteredServer_equal(const UA_RegisteredServer *p1, const UA_RegisteredServ
 
 
 /* RegisterServerRequest */
-UA_EXPORT void
+static UA_INLINE void
 UA_RegisterServerRequest_init(UA_RegisterServerRequest *p) {
     memset(p, 0, sizeof(UA_RegisterServerRequest));
 }
 
-UA_EXPORT UA_RegisterServerRequest *
+static UA_INLINE UA_RegisterServerRequest *
 UA_RegisterServerRequest_new(void) {
     return (UA_RegisterServerRequest*)UA_new(&UA_TYPES[UA_TYPES_REGISTERSERVERREQUEST]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_RegisterServerRequest_copy(const UA_RegisterServerRequest *src, UA_RegisterServerRequest *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_REGISTERSERVERREQUEST]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_RegisterServerRequest_deleteMembers(UA_RegisterServerRequest *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_REGISTERSERVERREQUEST]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_RegisterServerRequest_clear(UA_RegisterServerRequest *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_REGISTERSERVERREQUEST]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_RegisterServerRequest_delete(UA_RegisterServerRequest *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_REGISTERSERVERREQUEST]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_RegisterServerRequest_equal(const UA_RegisterServerRequest *p1, const UA_RegisterServerRequest *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_REGISTERSERVERREQUEST]) == UA_ORDER_EQ);
 }
@@ -33586,35 +33894,35 @@ UA_RegisterServerRequest_equal(const UA_RegisterServerRequest *p1, const UA_Regi
 
 
 /* RegisterServerResponse */
-UA_EXPORT void
+static UA_INLINE void
 UA_RegisterServerResponse_init(UA_RegisterServerResponse *p) {
     memset(p, 0, sizeof(UA_RegisterServerResponse));
 }
 
-UA_EXPORT UA_RegisterServerResponse *
+static UA_INLINE UA_RegisterServerResponse *
 UA_RegisterServerResponse_new(void) {
     return (UA_RegisterServerResponse*)UA_new(&UA_TYPES[UA_TYPES_REGISTERSERVERRESPONSE]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_RegisterServerResponse_copy(const UA_RegisterServerResponse *src, UA_RegisterServerResponse *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_REGISTERSERVERRESPONSE]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_RegisterServerResponse_deleteMembers(UA_RegisterServerResponse *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_REGISTERSERVERRESPONSE]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_RegisterServerResponse_clear(UA_RegisterServerResponse *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_REGISTERSERVERRESPONSE]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_RegisterServerResponse_delete(UA_RegisterServerResponse *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_REGISTERSERVERRESPONSE]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_RegisterServerResponse_equal(const UA_RegisterServerResponse *p1, const UA_RegisterServerResponse *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_REGISTERSERVERRESPONSE]) == UA_ORDER_EQ);
 }
@@ -33622,35 +33930,35 @@ UA_RegisterServerResponse_equal(const UA_RegisterServerResponse *p1, const UA_Re
 
 
 /* MdnsDiscoveryConfiguration */
-UA_EXPORT void
+static UA_INLINE void
 UA_MdnsDiscoveryConfiguration_init(UA_MdnsDiscoveryConfiguration *p) {
     memset(p, 0, sizeof(UA_MdnsDiscoveryConfiguration));
 }
 
-UA_EXPORT UA_MdnsDiscoveryConfiguration *
+static UA_INLINE UA_MdnsDiscoveryConfiguration *
 UA_MdnsDiscoveryConfiguration_new(void) {
     return (UA_MdnsDiscoveryConfiguration*)UA_new(&UA_TYPES[UA_TYPES_MDNSDISCOVERYCONFIGURATION]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_MdnsDiscoveryConfiguration_copy(const UA_MdnsDiscoveryConfiguration *src, UA_MdnsDiscoveryConfiguration *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_MDNSDISCOVERYCONFIGURATION]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_MdnsDiscoveryConfiguration_deleteMembers(UA_MdnsDiscoveryConfiguration *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_MDNSDISCOVERYCONFIGURATION]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_MdnsDiscoveryConfiguration_clear(UA_MdnsDiscoveryConfiguration *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_MDNSDISCOVERYCONFIGURATION]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_MdnsDiscoveryConfiguration_delete(UA_MdnsDiscoveryConfiguration *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_MDNSDISCOVERYCONFIGURATION]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_MdnsDiscoveryConfiguration_equal(const UA_MdnsDiscoveryConfiguration *p1, const UA_MdnsDiscoveryConfiguration *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_MDNSDISCOVERYCONFIGURATION]) == UA_ORDER_EQ);
 }
@@ -33658,35 +33966,35 @@ UA_MdnsDiscoveryConfiguration_equal(const UA_MdnsDiscoveryConfiguration *p1, con
 
 
 /* RegisterServer2Request */
-UA_EXPORT void
+static UA_INLINE void
 UA_RegisterServer2Request_init(UA_RegisterServer2Request *p) {
     memset(p, 0, sizeof(UA_RegisterServer2Request));
 }
 
-UA_EXPORT UA_RegisterServer2Request *
+static UA_INLINE UA_RegisterServer2Request *
 UA_RegisterServer2Request_new(void) {
     return (UA_RegisterServer2Request*)UA_new(&UA_TYPES[UA_TYPES_REGISTERSERVER2REQUEST]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_RegisterServer2Request_copy(const UA_RegisterServer2Request *src, UA_RegisterServer2Request *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_REGISTERSERVER2REQUEST]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_RegisterServer2Request_deleteMembers(UA_RegisterServer2Request *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_REGISTERSERVER2REQUEST]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_RegisterServer2Request_clear(UA_RegisterServer2Request *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_REGISTERSERVER2REQUEST]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_RegisterServer2Request_delete(UA_RegisterServer2Request *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_REGISTERSERVER2REQUEST]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_RegisterServer2Request_equal(const UA_RegisterServer2Request *p1, const UA_RegisterServer2Request *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_REGISTERSERVER2REQUEST]) == UA_ORDER_EQ);
 }
@@ -33694,35 +34002,35 @@ UA_RegisterServer2Request_equal(const UA_RegisterServer2Request *p1, const UA_Re
 
 
 /* RegisterServer2Response */
-UA_EXPORT void
+static UA_INLINE void
 UA_RegisterServer2Response_init(UA_RegisterServer2Response *p) {
     memset(p, 0, sizeof(UA_RegisterServer2Response));
 }
 
-UA_EXPORT UA_RegisterServer2Response *
+static UA_INLINE UA_RegisterServer2Response *
 UA_RegisterServer2Response_new(void) {
     return (UA_RegisterServer2Response*)UA_new(&UA_TYPES[UA_TYPES_REGISTERSERVER2RESPONSE]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_RegisterServer2Response_copy(const UA_RegisterServer2Response *src, UA_RegisterServer2Response *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_REGISTERSERVER2RESPONSE]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_RegisterServer2Response_deleteMembers(UA_RegisterServer2Response *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_REGISTERSERVER2RESPONSE]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_RegisterServer2Response_clear(UA_RegisterServer2Response *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_REGISTERSERVER2RESPONSE]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_RegisterServer2Response_delete(UA_RegisterServer2Response *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_REGISTERSERVER2RESPONSE]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_RegisterServer2Response_equal(const UA_RegisterServer2Response *p1, const UA_RegisterServer2Response *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_REGISTERSERVER2RESPONSE]) == UA_ORDER_EQ);
 }
@@ -33730,35 +34038,35 @@ UA_RegisterServer2Response_equal(const UA_RegisterServer2Response *p1, const UA_
 
 
 /* SecurityTokenRequestType */
-UA_EXPORT void
+static UA_INLINE void
 UA_SecurityTokenRequestType_init(UA_SecurityTokenRequestType *p) {
     memset(p, 0, sizeof(UA_SecurityTokenRequestType));
 }
 
-UA_EXPORT UA_SecurityTokenRequestType *
+static UA_INLINE UA_SecurityTokenRequestType *
 UA_SecurityTokenRequestType_new(void) {
     return (UA_SecurityTokenRequestType*)UA_new(&UA_TYPES[UA_TYPES_SECURITYTOKENREQUESTTYPE]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_SecurityTokenRequestType_copy(const UA_SecurityTokenRequestType *src, UA_SecurityTokenRequestType *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_SECURITYTOKENREQUESTTYPE]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_SecurityTokenRequestType_deleteMembers(UA_SecurityTokenRequestType *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_SECURITYTOKENREQUESTTYPE]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_SecurityTokenRequestType_clear(UA_SecurityTokenRequestType *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_SECURITYTOKENREQUESTTYPE]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_SecurityTokenRequestType_delete(UA_SecurityTokenRequestType *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_SECURITYTOKENREQUESTTYPE]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_SecurityTokenRequestType_equal(const UA_SecurityTokenRequestType *p1, const UA_SecurityTokenRequestType *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_SECURITYTOKENREQUESTTYPE]) == UA_ORDER_EQ);
 }
@@ -33766,35 +34074,35 @@ UA_SecurityTokenRequestType_equal(const UA_SecurityTokenRequestType *p1, const U
 
 
 /* ChannelSecurityToken */
-UA_EXPORT void
+static UA_INLINE void
 UA_ChannelSecurityToken_init(UA_ChannelSecurityToken *p) {
     memset(p, 0, sizeof(UA_ChannelSecurityToken));
 }
 
-UA_EXPORT UA_ChannelSecurityToken *
+static UA_INLINE UA_ChannelSecurityToken *
 UA_ChannelSecurityToken_new(void) {
     return (UA_ChannelSecurityToken*)UA_new(&UA_TYPES[UA_TYPES_CHANNELSECURITYTOKEN]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_ChannelSecurityToken_copy(const UA_ChannelSecurityToken *src, UA_ChannelSecurityToken *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_CHANNELSECURITYTOKEN]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_ChannelSecurityToken_deleteMembers(UA_ChannelSecurityToken *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_CHANNELSECURITYTOKEN]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_ChannelSecurityToken_clear(UA_ChannelSecurityToken *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_CHANNELSECURITYTOKEN]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_ChannelSecurityToken_delete(UA_ChannelSecurityToken *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_CHANNELSECURITYTOKEN]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_ChannelSecurityToken_equal(const UA_ChannelSecurityToken *p1, const UA_ChannelSecurityToken *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_CHANNELSECURITYTOKEN]) == UA_ORDER_EQ);
 }
@@ -33802,35 +34110,35 @@ UA_ChannelSecurityToken_equal(const UA_ChannelSecurityToken *p1, const UA_Channe
 
 
 /* OpenSecureChannelRequest */
-UA_EXPORT void
+static UA_INLINE void
 UA_OpenSecureChannelRequest_init(UA_OpenSecureChannelRequest *p) {
     memset(p, 0, sizeof(UA_OpenSecureChannelRequest));
 }
 
-UA_EXPORT UA_OpenSecureChannelRequest *
+static UA_INLINE UA_OpenSecureChannelRequest *
 UA_OpenSecureChannelRequest_new(void) {
     return (UA_OpenSecureChannelRequest*)UA_new(&UA_TYPES[UA_TYPES_OPENSECURECHANNELREQUEST]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_OpenSecureChannelRequest_copy(const UA_OpenSecureChannelRequest *src, UA_OpenSecureChannelRequest *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_OPENSECURECHANNELREQUEST]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_OpenSecureChannelRequest_deleteMembers(UA_OpenSecureChannelRequest *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_OPENSECURECHANNELREQUEST]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_OpenSecureChannelRequest_clear(UA_OpenSecureChannelRequest *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_OPENSECURECHANNELREQUEST]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_OpenSecureChannelRequest_delete(UA_OpenSecureChannelRequest *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_OPENSECURECHANNELREQUEST]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_OpenSecureChannelRequest_equal(const UA_OpenSecureChannelRequest *p1, const UA_OpenSecureChannelRequest *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_OPENSECURECHANNELREQUEST]) == UA_ORDER_EQ);
 }
@@ -33838,35 +34146,35 @@ UA_OpenSecureChannelRequest_equal(const UA_OpenSecureChannelRequest *p1, const U
 
 
 /* OpenSecureChannelResponse */
-UA_EXPORT void
+static UA_INLINE void
 UA_OpenSecureChannelResponse_init(UA_OpenSecureChannelResponse *p) {
     memset(p, 0, sizeof(UA_OpenSecureChannelResponse));
 }
 
-UA_EXPORT UA_OpenSecureChannelResponse *
+static UA_INLINE UA_OpenSecureChannelResponse *
 UA_OpenSecureChannelResponse_new(void) {
     return (UA_OpenSecureChannelResponse*)UA_new(&UA_TYPES[UA_TYPES_OPENSECURECHANNELRESPONSE]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_OpenSecureChannelResponse_copy(const UA_OpenSecureChannelResponse *src, UA_OpenSecureChannelResponse *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_OPENSECURECHANNELRESPONSE]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_OpenSecureChannelResponse_deleteMembers(UA_OpenSecureChannelResponse *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_OPENSECURECHANNELRESPONSE]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_OpenSecureChannelResponse_clear(UA_OpenSecureChannelResponse *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_OPENSECURECHANNELRESPONSE]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_OpenSecureChannelResponse_delete(UA_OpenSecureChannelResponse *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_OPENSECURECHANNELRESPONSE]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_OpenSecureChannelResponse_equal(const UA_OpenSecureChannelResponse *p1, const UA_OpenSecureChannelResponse *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_OPENSECURECHANNELRESPONSE]) == UA_ORDER_EQ);
 }
@@ -33874,35 +34182,35 @@ UA_OpenSecureChannelResponse_equal(const UA_OpenSecureChannelResponse *p1, const
 
 
 /* CloseSecureChannelRequest */
-UA_EXPORT void
+static UA_INLINE void
 UA_CloseSecureChannelRequest_init(UA_CloseSecureChannelRequest *p) {
     memset(p, 0, sizeof(UA_CloseSecureChannelRequest));
 }
 
-UA_EXPORT UA_CloseSecureChannelRequest *
+static UA_INLINE UA_CloseSecureChannelRequest *
 UA_CloseSecureChannelRequest_new(void) {
     return (UA_CloseSecureChannelRequest*)UA_new(&UA_TYPES[UA_TYPES_CLOSESECURECHANNELREQUEST]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_CloseSecureChannelRequest_copy(const UA_CloseSecureChannelRequest *src, UA_CloseSecureChannelRequest *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_CLOSESECURECHANNELREQUEST]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_CloseSecureChannelRequest_deleteMembers(UA_CloseSecureChannelRequest *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_CLOSESECURECHANNELREQUEST]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_CloseSecureChannelRequest_clear(UA_CloseSecureChannelRequest *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_CLOSESECURECHANNELREQUEST]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_CloseSecureChannelRequest_delete(UA_CloseSecureChannelRequest *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_CLOSESECURECHANNELREQUEST]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_CloseSecureChannelRequest_equal(const UA_CloseSecureChannelRequest *p1, const UA_CloseSecureChannelRequest *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_CLOSESECURECHANNELREQUEST]) == UA_ORDER_EQ);
 }
@@ -33910,35 +34218,35 @@ UA_CloseSecureChannelRequest_equal(const UA_CloseSecureChannelRequest *p1, const
 
 
 /* CloseSecureChannelResponse */
-UA_EXPORT void
+static UA_INLINE void
 UA_CloseSecureChannelResponse_init(UA_CloseSecureChannelResponse *p) {
     memset(p, 0, sizeof(UA_CloseSecureChannelResponse));
 }
 
-UA_EXPORT UA_CloseSecureChannelResponse *
+static UA_INLINE UA_CloseSecureChannelResponse *
 UA_CloseSecureChannelResponse_new(void) {
     return (UA_CloseSecureChannelResponse*)UA_new(&UA_TYPES[UA_TYPES_CLOSESECURECHANNELRESPONSE]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_CloseSecureChannelResponse_copy(const UA_CloseSecureChannelResponse *src, UA_CloseSecureChannelResponse *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_CLOSESECURECHANNELRESPONSE]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_CloseSecureChannelResponse_deleteMembers(UA_CloseSecureChannelResponse *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_CLOSESECURECHANNELRESPONSE]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_CloseSecureChannelResponse_clear(UA_CloseSecureChannelResponse *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_CLOSESECURECHANNELRESPONSE]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_CloseSecureChannelResponse_delete(UA_CloseSecureChannelResponse *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_CLOSESECURECHANNELRESPONSE]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_CloseSecureChannelResponse_equal(const UA_CloseSecureChannelResponse *p1, const UA_CloseSecureChannelResponse *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_CLOSESECURECHANNELRESPONSE]) == UA_ORDER_EQ);
 }
@@ -33946,35 +34254,35 @@ UA_CloseSecureChannelResponse_equal(const UA_CloseSecureChannelResponse *p1, con
 
 
 /* SignedSoftwareCertificate */
-UA_EXPORT void
+static UA_INLINE void
 UA_SignedSoftwareCertificate_init(UA_SignedSoftwareCertificate *p) {
     memset(p, 0, sizeof(UA_SignedSoftwareCertificate));
 }
 
-UA_EXPORT UA_SignedSoftwareCertificate *
+static UA_INLINE UA_SignedSoftwareCertificate *
 UA_SignedSoftwareCertificate_new(void) {
     return (UA_SignedSoftwareCertificate*)UA_new(&UA_TYPES[UA_TYPES_SIGNEDSOFTWARECERTIFICATE]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_SignedSoftwareCertificate_copy(const UA_SignedSoftwareCertificate *src, UA_SignedSoftwareCertificate *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_SIGNEDSOFTWARECERTIFICATE]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_SignedSoftwareCertificate_deleteMembers(UA_SignedSoftwareCertificate *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_SIGNEDSOFTWARECERTIFICATE]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_SignedSoftwareCertificate_clear(UA_SignedSoftwareCertificate *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_SIGNEDSOFTWARECERTIFICATE]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_SignedSoftwareCertificate_delete(UA_SignedSoftwareCertificate *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_SIGNEDSOFTWARECERTIFICATE]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_SignedSoftwareCertificate_equal(const UA_SignedSoftwareCertificate *p1, const UA_SignedSoftwareCertificate *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_SIGNEDSOFTWARECERTIFICATE]) == UA_ORDER_EQ);
 }
@@ -33982,35 +34290,35 @@ UA_SignedSoftwareCertificate_equal(const UA_SignedSoftwareCertificate *p1, const
 
 
 /* SessionAuthenticationToken */
-UA_EXPORT void
+static UA_INLINE void
 UA_SessionAuthenticationToken_init(UA_SessionAuthenticationToken *p) {
     memset(p, 0, sizeof(UA_SessionAuthenticationToken));
 }
 
-UA_EXPORT UA_SessionAuthenticationToken *
+static UA_INLINE UA_SessionAuthenticationToken *
 UA_SessionAuthenticationToken_new(void) {
     return (UA_SessionAuthenticationToken*)UA_new(&UA_TYPES[UA_TYPES_SESSIONAUTHENTICATIONTOKEN]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_SessionAuthenticationToken_copy(const UA_SessionAuthenticationToken *src, UA_SessionAuthenticationToken *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_SESSIONAUTHENTICATIONTOKEN]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_SessionAuthenticationToken_deleteMembers(UA_SessionAuthenticationToken *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_SESSIONAUTHENTICATIONTOKEN]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_SessionAuthenticationToken_clear(UA_SessionAuthenticationToken *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_SESSIONAUTHENTICATIONTOKEN]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_SessionAuthenticationToken_delete(UA_SessionAuthenticationToken *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_SESSIONAUTHENTICATIONTOKEN]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_SessionAuthenticationToken_equal(const UA_SessionAuthenticationToken *p1, const UA_SessionAuthenticationToken *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_SESSIONAUTHENTICATIONTOKEN]) == UA_ORDER_EQ);
 }
@@ -34018,35 +34326,35 @@ UA_SessionAuthenticationToken_equal(const UA_SessionAuthenticationToken *p1, con
 
 
 /* SignatureData */
-UA_EXPORT void
+static UA_INLINE void
 UA_SignatureData_init(UA_SignatureData *p) {
     memset(p, 0, sizeof(UA_SignatureData));
 }
 
-UA_EXPORT UA_SignatureData *
+static UA_INLINE UA_SignatureData *
 UA_SignatureData_new(void) {
     return (UA_SignatureData*)UA_new(&UA_TYPES[UA_TYPES_SIGNATUREDATA]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_SignatureData_copy(const UA_SignatureData *src, UA_SignatureData *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_SIGNATUREDATA]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_SignatureData_deleteMembers(UA_SignatureData *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_SIGNATUREDATA]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_SignatureData_clear(UA_SignatureData *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_SIGNATUREDATA]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_SignatureData_delete(UA_SignatureData *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_SIGNATUREDATA]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_SignatureData_equal(const UA_SignatureData *p1, const UA_SignatureData *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_SIGNATUREDATA]) == UA_ORDER_EQ);
 }
@@ -34054,35 +34362,35 @@ UA_SignatureData_equal(const UA_SignatureData *p1, const UA_SignatureData *p2) {
 
 
 /* CreateSessionRequest */
-UA_EXPORT void
+static UA_INLINE void
 UA_CreateSessionRequest_init(UA_CreateSessionRequest *p) {
     memset(p, 0, sizeof(UA_CreateSessionRequest));
 }
 
-UA_EXPORT UA_CreateSessionRequest *
+static UA_INLINE UA_CreateSessionRequest *
 UA_CreateSessionRequest_new(void) {
     return (UA_CreateSessionRequest*)UA_new(&UA_TYPES[UA_TYPES_CREATESESSIONREQUEST]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_CreateSessionRequest_copy(const UA_CreateSessionRequest *src, UA_CreateSessionRequest *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_CREATESESSIONREQUEST]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_CreateSessionRequest_deleteMembers(UA_CreateSessionRequest *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_CREATESESSIONREQUEST]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_CreateSessionRequest_clear(UA_CreateSessionRequest *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_CREATESESSIONREQUEST]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_CreateSessionRequest_delete(UA_CreateSessionRequest *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_CREATESESSIONREQUEST]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_CreateSessionRequest_equal(const UA_CreateSessionRequest *p1, const UA_CreateSessionRequest *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_CREATESESSIONREQUEST]) == UA_ORDER_EQ);
 }
@@ -34090,35 +34398,35 @@ UA_CreateSessionRequest_equal(const UA_CreateSessionRequest *p1, const UA_Create
 
 
 /* CreateSessionResponse */
-UA_EXPORT void
+static UA_INLINE void
 UA_CreateSessionResponse_init(UA_CreateSessionResponse *p) {
     memset(p, 0, sizeof(UA_CreateSessionResponse));
 }
 
-UA_EXPORT UA_CreateSessionResponse *
+static UA_INLINE UA_CreateSessionResponse *
 UA_CreateSessionResponse_new(void) {
     return (UA_CreateSessionResponse*)UA_new(&UA_TYPES[UA_TYPES_CREATESESSIONRESPONSE]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_CreateSessionResponse_copy(const UA_CreateSessionResponse *src, UA_CreateSessionResponse *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_CREATESESSIONRESPONSE]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_CreateSessionResponse_deleteMembers(UA_CreateSessionResponse *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_CREATESESSIONRESPONSE]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_CreateSessionResponse_clear(UA_CreateSessionResponse *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_CREATESESSIONRESPONSE]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_CreateSessionResponse_delete(UA_CreateSessionResponse *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_CREATESESSIONRESPONSE]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_CreateSessionResponse_equal(const UA_CreateSessionResponse *p1, const UA_CreateSessionResponse *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_CREATESESSIONRESPONSE]) == UA_ORDER_EQ);
 }
@@ -34126,35 +34434,35 @@ UA_CreateSessionResponse_equal(const UA_CreateSessionResponse *p1, const UA_Crea
 
 
 /* UserIdentityToken */
-UA_EXPORT void
+static UA_INLINE void
 UA_UserIdentityToken_init(UA_UserIdentityToken *p) {
     memset(p, 0, sizeof(UA_UserIdentityToken));
 }
 
-UA_EXPORT UA_UserIdentityToken *
+static UA_INLINE UA_UserIdentityToken *
 UA_UserIdentityToken_new(void) {
     return (UA_UserIdentityToken*)UA_new(&UA_TYPES[UA_TYPES_USERIDENTITYTOKEN]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_UserIdentityToken_copy(const UA_UserIdentityToken *src, UA_UserIdentityToken *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_USERIDENTITYTOKEN]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_UserIdentityToken_deleteMembers(UA_UserIdentityToken *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_USERIDENTITYTOKEN]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_UserIdentityToken_clear(UA_UserIdentityToken *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_USERIDENTITYTOKEN]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_UserIdentityToken_delete(UA_UserIdentityToken *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_USERIDENTITYTOKEN]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_UserIdentityToken_equal(const UA_UserIdentityToken *p1, const UA_UserIdentityToken *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_USERIDENTITYTOKEN]) == UA_ORDER_EQ);
 }
@@ -34162,35 +34470,35 @@ UA_UserIdentityToken_equal(const UA_UserIdentityToken *p1, const UA_UserIdentity
 
 
 /* AnonymousIdentityToken */
-UA_EXPORT void
+static UA_INLINE void
 UA_AnonymousIdentityToken_init(UA_AnonymousIdentityToken *p) {
     memset(p, 0, sizeof(UA_AnonymousIdentityToken));
 }
 
-UA_EXPORT UA_AnonymousIdentityToken *
+static UA_INLINE UA_AnonymousIdentityToken *
 UA_AnonymousIdentityToken_new(void) {
     return (UA_AnonymousIdentityToken*)UA_new(&UA_TYPES[UA_TYPES_ANONYMOUSIDENTITYTOKEN]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_AnonymousIdentityToken_copy(const UA_AnonymousIdentityToken *src, UA_AnonymousIdentityToken *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_ANONYMOUSIDENTITYTOKEN]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_AnonymousIdentityToken_deleteMembers(UA_AnonymousIdentityToken *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_ANONYMOUSIDENTITYTOKEN]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_AnonymousIdentityToken_clear(UA_AnonymousIdentityToken *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_ANONYMOUSIDENTITYTOKEN]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_AnonymousIdentityToken_delete(UA_AnonymousIdentityToken *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_ANONYMOUSIDENTITYTOKEN]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_AnonymousIdentityToken_equal(const UA_AnonymousIdentityToken *p1, const UA_AnonymousIdentityToken *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_ANONYMOUSIDENTITYTOKEN]) == UA_ORDER_EQ);
 }
@@ -34198,35 +34506,35 @@ UA_AnonymousIdentityToken_equal(const UA_AnonymousIdentityToken *p1, const UA_An
 
 
 /* UserNameIdentityToken */
-UA_EXPORT void
+static UA_INLINE void
 UA_UserNameIdentityToken_init(UA_UserNameIdentityToken *p) {
     memset(p, 0, sizeof(UA_UserNameIdentityToken));
 }
 
-UA_EXPORT UA_UserNameIdentityToken *
+static UA_INLINE UA_UserNameIdentityToken *
 UA_UserNameIdentityToken_new(void) {
     return (UA_UserNameIdentityToken*)UA_new(&UA_TYPES[UA_TYPES_USERNAMEIDENTITYTOKEN]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_UserNameIdentityToken_copy(const UA_UserNameIdentityToken *src, UA_UserNameIdentityToken *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_USERNAMEIDENTITYTOKEN]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_UserNameIdentityToken_deleteMembers(UA_UserNameIdentityToken *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_USERNAMEIDENTITYTOKEN]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_UserNameIdentityToken_clear(UA_UserNameIdentityToken *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_USERNAMEIDENTITYTOKEN]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_UserNameIdentityToken_delete(UA_UserNameIdentityToken *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_USERNAMEIDENTITYTOKEN]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_UserNameIdentityToken_equal(const UA_UserNameIdentityToken *p1, const UA_UserNameIdentityToken *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_USERNAMEIDENTITYTOKEN]) == UA_ORDER_EQ);
 }
@@ -34234,35 +34542,35 @@ UA_UserNameIdentityToken_equal(const UA_UserNameIdentityToken *p1, const UA_User
 
 
 /* X509IdentityToken */
-UA_EXPORT void
+static UA_INLINE void
 UA_X509IdentityToken_init(UA_X509IdentityToken *p) {
     memset(p, 0, sizeof(UA_X509IdentityToken));
 }
 
-UA_EXPORT UA_X509IdentityToken *
+static UA_INLINE UA_X509IdentityToken *
 UA_X509IdentityToken_new(void) {
     return (UA_X509IdentityToken*)UA_new(&UA_TYPES[UA_TYPES_X509IDENTITYTOKEN]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_X509IdentityToken_copy(const UA_X509IdentityToken *src, UA_X509IdentityToken *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_X509IDENTITYTOKEN]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_X509IdentityToken_deleteMembers(UA_X509IdentityToken *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_X509IDENTITYTOKEN]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_X509IdentityToken_clear(UA_X509IdentityToken *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_X509IDENTITYTOKEN]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_X509IdentityToken_delete(UA_X509IdentityToken *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_X509IDENTITYTOKEN]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_X509IdentityToken_equal(const UA_X509IdentityToken *p1, const UA_X509IdentityToken *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_X509IDENTITYTOKEN]) == UA_ORDER_EQ);
 }
@@ -34270,35 +34578,35 @@ UA_X509IdentityToken_equal(const UA_X509IdentityToken *p1, const UA_X509Identity
 
 
 /* IssuedIdentityToken */
-UA_EXPORT void
+static UA_INLINE void
 UA_IssuedIdentityToken_init(UA_IssuedIdentityToken *p) {
     memset(p, 0, sizeof(UA_IssuedIdentityToken));
 }
 
-UA_EXPORT UA_IssuedIdentityToken *
+static UA_INLINE UA_IssuedIdentityToken *
 UA_IssuedIdentityToken_new(void) {
     return (UA_IssuedIdentityToken*)UA_new(&UA_TYPES[UA_TYPES_ISSUEDIDENTITYTOKEN]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_IssuedIdentityToken_copy(const UA_IssuedIdentityToken *src, UA_IssuedIdentityToken *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_ISSUEDIDENTITYTOKEN]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_IssuedIdentityToken_deleteMembers(UA_IssuedIdentityToken *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_ISSUEDIDENTITYTOKEN]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_IssuedIdentityToken_clear(UA_IssuedIdentityToken *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_ISSUEDIDENTITYTOKEN]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_IssuedIdentityToken_delete(UA_IssuedIdentityToken *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_ISSUEDIDENTITYTOKEN]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_IssuedIdentityToken_equal(const UA_IssuedIdentityToken *p1, const UA_IssuedIdentityToken *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_ISSUEDIDENTITYTOKEN]) == UA_ORDER_EQ);
 }
@@ -34306,35 +34614,35 @@ UA_IssuedIdentityToken_equal(const UA_IssuedIdentityToken *p1, const UA_IssuedId
 
 
 /* RsaEncryptedSecret */
-UA_EXPORT void
+static UA_INLINE void
 UA_RsaEncryptedSecret_init(UA_RsaEncryptedSecret *p) {
     memset(p, 0, sizeof(UA_RsaEncryptedSecret));
 }
 
-UA_EXPORT UA_RsaEncryptedSecret *
+static UA_INLINE UA_RsaEncryptedSecret *
 UA_RsaEncryptedSecret_new(void) {
     return (UA_RsaEncryptedSecret*)UA_new(&UA_TYPES[UA_TYPES_RSAENCRYPTEDSECRET]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_RsaEncryptedSecret_copy(const UA_RsaEncryptedSecret *src, UA_RsaEncryptedSecret *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_RSAENCRYPTEDSECRET]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_RsaEncryptedSecret_deleteMembers(UA_RsaEncryptedSecret *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_RSAENCRYPTEDSECRET]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_RsaEncryptedSecret_clear(UA_RsaEncryptedSecret *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_RSAENCRYPTEDSECRET]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_RsaEncryptedSecret_delete(UA_RsaEncryptedSecret *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_RSAENCRYPTEDSECRET]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_RsaEncryptedSecret_equal(const UA_RsaEncryptedSecret *p1, const UA_RsaEncryptedSecret *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_RSAENCRYPTEDSECRET]) == UA_ORDER_EQ);
 }
@@ -34342,35 +34650,35 @@ UA_RsaEncryptedSecret_equal(const UA_RsaEncryptedSecret *p1, const UA_RsaEncrypt
 
 
 /* EccEncryptedSecret */
-UA_EXPORT void
+static UA_INLINE void
 UA_EccEncryptedSecret_init(UA_EccEncryptedSecret *p) {
     memset(p, 0, sizeof(UA_EccEncryptedSecret));
 }
 
-UA_EXPORT UA_EccEncryptedSecret *
+static UA_INLINE UA_EccEncryptedSecret *
 UA_EccEncryptedSecret_new(void) {
     return (UA_EccEncryptedSecret*)UA_new(&UA_TYPES[UA_TYPES_ECCENCRYPTEDSECRET]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_EccEncryptedSecret_copy(const UA_EccEncryptedSecret *src, UA_EccEncryptedSecret *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_ECCENCRYPTEDSECRET]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_EccEncryptedSecret_deleteMembers(UA_EccEncryptedSecret *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_ECCENCRYPTEDSECRET]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_EccEncryptedSecret_clear(UA_EccEncryptedSecret *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_ECCENCRYPTEDSECRET]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_EccEncryptedSecret_delete(UA_EccEncryptedSecret *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_ECCENCRYPTEDSECRET]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_EccEncryptedSecret_equal(const UA_EccEncryptedSecret *p1, const UA_EccEncryptedSecret *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_ECCENCRYPTEDSECRET]) == UA_ORDER_EQ);
 }
@@ -34378,35 +34686,35 @@ UA_EccEncryptedSecret_equal(const UA_EccEncryptedSecret *p1, const UA_EccEncrypt
 
 
 /* ActivateSessionRequest */
-UA_EXPORT void
+static UA_INLINE void
 UA_ActivateSessionRequest_init(UA_ActivateSessionRequest *p) {
     memset(p, 0, sizeof(UA_ActivateSessionRequest));
 }
 
-UA_EXPORT UA_ActivateSessionRequest *
+static UA_INLINE UA_ActivateSessionRequest *
 UA_ActivateSessionRequest_new(void) {
     return (UA_ActivateSessionRequest*)UA_new(&UA_TYPES[UA_TYPES_ACTIVATESESSIONREQUEST]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_ActivateSessionRequest_copy(const UA_ActivateSessionRequest *src, UA_ActivateSessionRequest *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_ACTIVATESESSIONREQUEST]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_ActivateSessionRequest_deleteMembers(UA_ActivateSessionRequest *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_ACTIVATESESSIONREQUEST]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_ActivateSessionRequest_clear(UA_ActivateSessionRequest *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_ACTIVATESESSIONREQUEST]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_ActivateSessionRequest_delete(UA_ActivateSessionRequest *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_ACTIVATESESSIONREQUEST]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_ActivateSessionRequest_equal(const UA_ActivateSessionRequest *p1, const UA_ActivateSessionRequest *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_ACTIVATESESSIONREQUEST]) == UA_ORDER_EQ);
 }
@@ -34414,35 +34722,35 @@ UA_ActivateSessionRequest_equal(const UA_ActivateSessionRequest *p1, const UA_Ac
 
 
 /* ActivateSessionResponse */
-UA_EXPORT void
+static UA_INLINE void
 UA_ActivateSessionResponse_init(UA_ActivateSessionResponse *p) {
     memset(p, 0, sizeof(UA_ActivateSessionResponse));
 }
 
-UA_EXPORT UA_ActivateSessionResponse *
+static UA_INLINE UA_ActivateSessionResponse *
 UA_ActivateSessionResponse_new(void) {
     return (UA_ActivateSessionResponse*)UA_new(&UA_TYPES[UA_TYPES_ACTIVATESESSIONRESPONSE]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_ActivateSessionResponse_copy(const UA_ActivateSessionResponse *src, UA_ActivateSessionResponse *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_ACTIVATESESSIONRESPONSE]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_ActivateSessionResponse_deleteMembers(UA_ActivateSessionResponse *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_ACTIVATESESSIONRESPONSE]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_ActivateSessionResponse_clear(UA_ActivateSessionResponse *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_ACTIVATESESSIONRESPONSE]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_ActivateSessionResponse_delete(UA_ActivateSessionResponse *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_ACTIVATESESSIONRESPONSE]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_ActivateSessionResponse_equal(const UA_ActivateSessionResponse *p1, const UA_ActivateSessionResponse *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_ACTIVATESESSIONRESPONSE]) == UA_ORDER_EQ);
 }
@@ -34450,35 +34758,35 @@ UA_ActivateSessionResponse_equal(const UA_ActivateSessionResponse *p1, const UA_
 
 
 /* CloseSessionRequest */
-UA_EXPORT void
+static UA_INLINE void
 UA_CloseSessionRequest_init(UA_CloseSessionRequest *p) {
     memset(p, 0, sizeof(UA_CloseSessionRequest));
 }
 
-UA_EXPORT UA_CloseSessionRequest *
+static UA_INLINE UA_CloseSessionRequest *
 UA_CloseSessionRequest_new(void) {
     return (UA_CloseSessionRequest*)UA_new(&UA_TYPES[UA_TYPES_CLOSESESSIONREQUEST]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_CloseSessionRequest_copy(const UA_CloseSessionRequest *src, UA_CloseSessionRequest *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_CLOSESESSIONREQUEST]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_CloseSessionRequest_deleteMembers(UA_CloseSessionRequest *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_CLOSESESSIONREQUEST]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_CloseSessionRequest_clear(UA_CloseSessionRequest *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_CLOSESESSIONREQUEST]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_CloseSessionRequest_delete(UA_CloseSessionRequest *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_CLOSESESSIONREQUEST]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_CloseSessionRequest_equal(const UA_CloseSessionRequest *p1, const UA_CloseSessionRequest *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_CLOSESESSIONREQUEST]) == UA_ORDER_EQ);
 }
@@ -34486,35 +34794,35 @@ UA_CloseSessionRequest_equal(const UA_CloseSessionRequest *p1, const UA_CloseSes
 
 
 /* CloseSessionResponse */
-UA_EXPORT void
+static UA_INLINE void
 UA_CloseSessionResponse_init(UA_CloseSessionResponse *p) {
     memset(p, 0, sizeof(UA_CloseSessionResponse));
 }
 
-UA_EXPORT UA_CloseSessionResponse *
+static UA_INLINE UA_CloseSessionResponse *
 UA_CloseSessionResponse_new(void) {
     return (UA_CloseSessionResponse*)UA_new(&UA_TYPES[UA_TYPES_CLOSESESSIONRESPONSE]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_CloseSessionResponse_copy(const UA_CloseSessionResponse *src, UA_CloseSessionResponse *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_CLOSESESSIONRESPONSE]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_CloseSessionResponse_deleteMembers(UA_CloseSessionResponse *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_CLOSESESSIONRESPONSE]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_CloseSessionResponse_clear(UA_CloseSessionResponse *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_CLOSESESSIONRESPONSE]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_CloseSessionResponse_delete(UA_CloseSessionResponse *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_CLOSESESSIONRESPONSE]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_CloseSessionResponse_equal(const UA_CloseSessionResponse *p1, const UA_CloseSessionResponse *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_CLOSESESSIONRESPONSE]) == UA_ORDER_EQ);
 }
@@ -34522,35 +34830,35 @@ UA_CloseSessionResponse_equal(const UA_CloseSessionResponse *p1, const UA_CloseS
 
 
 /* CancelRequest */
-UA_EXPORT void
+static UA_INLINE void
 UA_CancelRequest_init(UA_CancelRequest *p) {
     memset(p, 0, sizeof(UA_CancelRequest));
 }
 
-UA_EXPORT UA_CancelRequest *
+static UA_INLINE UA_CancelRequest *
 UA_CancelRequest_new(void) {
     return (UA_CancelRequest*)UA_new(&UA_TYPES[UA_TYPES_CANCELREQUEST]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_CancelRequest_copy(const UA_CancelRequest *src, UA_CancelRequest *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_CANCELREQUEST]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_CancelRequest_deleteMembers(UA_CancelRequest *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_CANCELREQUEST]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_CancelRequest_clear(UA_CancelRequest *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_CANCELREQUEST]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_CancelRequest_delete(UA_CancelRequest *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_CANCELREQUEST]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_CancelRequest_equal(const UA_CancelRequest *p1, const UA_CancelRequest *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_CANCELREQUEST]) == UA_ORDER_EQ);
 }
@@ -34558,35 +34866,35 @@ UA_CancelRequest_equal(const UA_CancelRequest *p1, const UA_CancelRequest *p2) {
 
 
 /* CancelResponse */
-UA_EXPORT void
+static UA_INLINE void
 UA_CancelResponse_init(UA_CancelResponse *p) {
     memset(p, 0, sizeof(UA_CancelResponse));
 }
 
-UA_EXPORT UA_CancelResponse *
+static UA_INLINE UA_CancelResponse *
 UA_CancelResponse_new(void) {
     return (UA_CancelResponse*)UA_new(&UA_TYPES[UA_TYPES_CANCELRESPONSE]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_CancelResponse_copy(const UA_CancelResponse *src, UA_CancelResponse *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_CANCELRESPONSE]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_CancelResponse_deleteMembers(UA_CancelResponse *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_CANCELRESPONSE]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_CancelResponse_clear(UA_CancelResponse *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_CANCELRESPONSE]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_CancelResponse_delete(UA_CancelResponse *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_CANCELRESPONSE]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_CancelResponse_equal(const UA_CancelResponse *p1, const UA_CancelResponse *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_CANCELRESPONSE]) == UA_ORDER_EQ);
 }
@@ -34594,35 +34902,35 @@ UA_CancelResponse_equal(const UA_CancelResponse *p1, const UA_CancelResponse *p2
 
 
 /* NodeAttributesMask */
-UA_EXPORT void
+static UA_INLINE void
 UA_NodeAttributesMask_init(UA_NodeAttributesMask *p) {
     memset(p, 0, sizeof(UA_NodeAttributesMask));
 }
 
-UA_EXPORT UA_NodeAttributesMask *
+static UA_INLINE UA_NodeAttributesMask *
 UA_NodeAttributesMask_new(void) {
     return (UA_NodeAttributesMask*)UA_new(&UA_TYPES[UA_TYPES_NODEATTRIBUTESMASK]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_NodeAttributesMask_copy(const UA_NodeAttributesMask *src, UA_NodeAttributesMask *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_NODEATTRIBUTESMASK]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_NodeAttributesMask_deleteMembers(UA_NodeAttributesMask *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_NODEATTRIBUTESMASK]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_NodeAttributesMask_clear(UA_NodeAttributesMask *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_NODEATTRIBUTESMASK]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_NodeAttributesMask_delete(UA_NodeAttributesMask *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_NODEATTRIBUTESMASK]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_NodeAttributesMask_equal(const UA_NodeAttributesMask *p1, const UA_NodeAttributesMask *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_NODEATTRIBUTESMASK]) == UA_ORDER_EQ);
 }
@@ -34630,35 +34938,35 @@ UA_NodeAttributesMask_equal(const UA_NodeAttributesMask *p1, const UA_NodeAttrib
 
 
 /* NodeAttributes */
-UA_EXPORT void
+static UA_INLINE void
 UA_NodeAttributes_init(UA_NodeAttributes *p) {
     memset(p, 0, sizeof(UA_NodeAttributes));
 }
 
-UA_EXPORT UA_NodeAttributes *
+static UA_INLINE UA_NodeAttributes *
 UA_NodeAttributes_new(void) {
     return (UA_NodeAttributes*)UA_new(&UA_TYPES[UA_TYPES_NODEATTRIBUTES]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_NodeAttributes_copy(const UA_NodeAttributes *src, UA_NodeAttributes *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_NODEATTRIBUTES]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_NodeAttributes_deleteMembers(UA_NodeAttributes *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_NODEATTRIBUTES]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_NodeAttributes_clear(UA_NodeAttributes *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_NODEATTRIBUTES]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_NodeAttributes_delete(UA_NodeAttributes *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_NODEATTRIBUTES]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_NodeAttributes_equal(const UA_NodeAttributes *p1, const UA_NodeAttributes *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_NODEATTRIBUTES]) == UA_ORDER_EQ);
 }
@@ -34666,35 +34974,35 @@ UA_NodeAttributes_equal(const UA_NodeAttributes *p1, const UA_NodeAttributes *p2
 
 
 /* ObjectAttributes */
-UA_EXPORT void
+static UA_INLINE void
 UA_ObjectAttributes_init(UA_ObjectAttributes *p) {
     memset(p, 0, sizeof(UA_ObjectAttributes));
 }
 
-UA_EXPORT UA_ObjectAttributes *
+static UA_INLINE UA_ObjectAttributes *
 UA_ObjectAttributes_new(void) {
     return (UA_ObjectAttributes*)UA_new(&UA_TYPES[UA_TYPES_OBJECTATTRIBUTES]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_ObjectAttributes_copy(const UA_ObjectAttributes *src, UA_ObjectAttributes *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_OBJECTATTRIBUTES]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_ObjectAttributes_deleteMembers(UA_ObjectAttributes *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_OBJECTATTRIBUTES]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_ObjectAttributes_clear(UA_ObjectAttributes *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_OBJECTATTRIBUTES]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_ObjectAttributes_delete(UA_ObjectAttributes *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_OBJECTATTRIBUTES]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_ObjectAttributes_equal(const UA_ObjectAttributes *p1, const UA_ObjectAttributes *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_OBJECTATTRIBUTES]) == UA_ORDER_EQ);
 }
@@ -34702,35 +35010,35 @@ UA_ObjectAttributes_equal(const UA_ObjectAttributes *p1, const UA_ObjectAttribut
 
 
 /* VariableAttributes */
-UA_EXPORT void
+static UA_INLINE void
 UA_VariableAttributes_init(UA_VariableAttributes *p) {
     memset(p, 0, sizeof(UA_VariableAttributes));
 }
 
-UA_EXPORT UA_VariableAttributes *
+static UA_INLINE UA_VariableAttributes *
 UA_VariableAttributes_new(void) {
     return (UA_VariableAttributes*)UA_new(&UA_TYPES[UA_TYPES_VARIABLEATTRIBUTES]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_VariableAttributes_copy(const UA_VariableAttributes *src, UA_VariableAttributes *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_VARIABLEATTRIBUTES]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_VariableAttributes_deleteMembers(UA_VariableAttributes *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_VARIABLEATTRIBUTES]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_VariableAttributes_clear(UA_VariableAttributes *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_VARIABLEATTRIBUTES]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_VariableAttributes_delete(UA_VariableAttributes *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_VARIABLEATTRIBUTES]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_VariableAttributes_equal(const UA_VariableAttributes *p1, const UA_VariableAttributes *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_VARIABLEATTRIBUTES]) == UA_ORDER_EQ);
 }
@@ -34738,35 +35046,35 @@ UA_VariableAttributes_equal(const UA_VariableAttributes *p1, const UA_VariableAt
 
 
 /* MethodAttributes */
-UA_EXPORT void
+static UA_INLINE void
 UA_MethodAttributes_init(UA_MethodAttributes *p) {
     memset(p, 0, sizeof(UA_MethodAttributes));
 }
 
-UA_EXPORT UA_MethodAttributes *
+static UA_INLINE UA_MethodAttributes *
 UA_MethodAttributes_new(void) {
     return (UA_MethodAttributes*)UA_new(&UA_TYPES[UA_TYPES_METHODATTRIBUTES]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_MethodAttributes_copy(const UA_MethodAttributes *src, UA_MethodAttributes *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_METHODATTRIBUTES]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_MethodAttributes_deleteMembers(UA_MethodAttributes *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_METHODATTRIBUTES]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_MethodAttributes_clear(UA_MethodAttributes *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_METHODATTRIBUTES]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_MethodAttributes_delete(UA_MethodAttributes *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_METHODATTRIBUTES]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_MethodAttributes_equal(const UA_MethodAttributes *p1, const UA_MethodAttributes *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_METHODATTRIBUTES]) == UA_ORDER_EQ);
 }
@@ -34774,35 +35082,35 @@ UA_MethodAttributes_equal(const UA_MethodAttributes *p1, const UA_MethodAttribut
 
 
 /* ObjectTypeAttributes */
-UA_EXPORT void
+static UA_INLINE void
 UA_ObjectTypeAttributes_init(UA_ObjectTypeAttributes *p) {
     memset(p, 0, sizeof(UA_ObjectTypeAttributes));
 }
 
-UA_EXPORT UA_ObjectTypeAttributes *
+static UA_INLINE UA_ObjectTypeAttributes *
 UA_ObjectTypeAttributes_new(void) {
     return (UA_ObjectTypeAttributes*)UA_new(&UA_TYPES[UA_TYPES_OBJECTTYPEATTRIBUTES]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_ObjectTypeAttributes_copy(const UA_ObjectTypeAttributes *src, UA_ObjectTypeAttributes *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_OBJECTTYPEATTRIBUTES]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_ObjectTypeAttributes_deleteMembers(UA_ObjectTypeAttributes *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_OBJECTTYPEATTRIBUTES]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_ObjectTypeAttributes_clear(UA_ObjectTypeAttributes *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_OBJECTTYPEATTRIBUTES]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_ObjectTypeAttributes_delete(UA_ObjectTypeAttributes *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_OBJECTTYPEATTRIBUTES]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_ObjectTypeAttributes_equal(const UA_ObjectTypeAttributes *p1, const UA_ObjectTypeAttributes *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_OBJECTTYPEATTRIBUTES]) == UA_ORDER_EQ);
 }
@@ -34810,35 +35118,35 @@ UA_ObjectTypeAttributes_equal(const UA_ObjectTypeAttributes *p1, const UA_Object
 
 
 /* VariableTypeAttributes */
-UA_EXPORT void
+static UA_INLINE void
 UA_VariableTypeAttributes_init(UA_VariableTypeAttributes *p) {
     memset(p, 0, sizeof(UA_VariableTypeAttributes));
 }
 
-UA_EXPORT UA_VariableTypeAttributes *
+static UA_INLINE UA_VariableTypeAttributes *
 UA_VariableTypeAttributes_new(void) {
     return (UA_VariableTypeAttributes*)UA_new(&UA_TYPES[UA_TYPES_VARIABLETYPEATTRIBUTES]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_VariableTypeAttributes_copy(const UA_VariableTypeAttributes *src, UA_VariableTypeAttributes *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_VARIABLETYPEATTRIBUTES]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_VariableTypeAttributes_deleteMembers(UA_VariableTypeAttributes *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_VARIABLETYPEATTRIBUTES]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_VariableTypeAttributes_clear(UA_VariableTypeAttributes *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_VARIABLETYPEATTRIBUTES]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_VariableTypeAttributes_delete(UA_VariableTypeAttributes *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_VARIABLETYPEATTRIBUTES]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_VariableTypeAttributes_equal(const UA_VariableTypeAttributes *p1, const UA_VariableTypeAttributes *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_VARIABLETYPEATTRIBUTES]) == UA_ORDER_EQ);
 }
@@ -34846,35 +35154,35 @@ UA_VariableTypeAttributes_equal(const UA_VariableTypeAttributes *p1, const UA_Va
 
 
 /* ReferenceTypeAttributes */
-UA_EXPORT void
+static UA_INLINE void
 UA_ReferenceTypeAttributes_init(UA_ReferenceTypeAttributes *p) {
     memset(p, 0, sizeof(UA_ReferenceTypeAttributes));
 }
 
-UA_EXPORT UA_ReferenceTypeAttributes *
+static UA_INLINE UA_ReferenceTypeAttributes *
 UA_ReferenceTypeAttributes_new(void) {
     return (UA_ReferenceTypeAttributes*)UA_new(&UA_TYPES[UA_TYPES_REFERENCETYPEATTRIBUTES]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_ReferenceTypeAttributes_copy(const UA_ReferenceTypeAttributes *src, UA_ReferenceTypeAttributes *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_REFERENCETYPEATTRIBUTES]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_ReferenceTypeAttributes_deleteMembers(UA_ReferenceTypeAttributes *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_REFERENCETYPEATTRIBUTES]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_ReferenceTypeAttributes_clear(UA_ReferenceTypeAttributes *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_REFERENCETYPEATTRIBUTES]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_ReferenceTypeAttributes_delete(UA_ReferenceTypeAttributes *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_REFERENCETYPEATTRIBUTES]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_ReferenceTypeAttributes_equal(const UA_ReferenceTypeAttributes *p1, const UA_ReferenceTypeAttributes *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_REFERENCETYPEATTRIBUTES]) == UA_ORDER_EQ);
 }
@@ -34882,35 +35190,35 @@ UA_ReferenceTypeAttributes_equal(const UA_ReferenceTypeAttributes *p1, const UA_
 
 
 /* DataTypeAttributes */
-UA_EXPORT void
+static UA_INLINE void
 UA_DataTypeAttributes_init(UA_DataTypeAttributes *p) {
     memset(p, 0, sizeof(UA_DataTypeAttributes));
 }
 
-UA_EXPORT UA_DataTypeAttributes *
+static UA_INLINE UA_DataTypeAttributes *
 UA_DataTypeAttributes_new(void) {
     return (UA_DataTypeAttributes*)UA_new(&UA_TYPES[UA_TYPES_DATATYPEATTRIBUTES]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_DataTypeAttributes_copy(const UA_DataTypeAttributes *src, UA_DataTypeAttributes *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_DATATYPEATTRIBUTES]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_DataTypeAttributes_deleteMembers(UA_DataTypeAttributes *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_DATATYPEATTRIBUTES]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_DataTypeAttributes_clear(UA_DataTypeAttributes *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_DATATYPEATTRIBUTES]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_DataTypeAttributes_delete(UA_DataTypeAttributes *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_DATATYPEATTRIBUTES]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_DataTypeAttributes_equal(const UA_DataTypeAttributes *p1, const UA_DataTypeAttributes *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_DATATYPEATTRIBUTES]) == UA_ORDER_EQ);
 }
@@ -34918,35 +35226,35 @@ UA_DataTypeAttributes_equal(const UA_DataTypeAttributes *p1, const UA_DataTypeAt
 
 
 /* ViewAttributes */
-UA_EXPORT void
+static UA_INLINE void
 UA_ViewAttributes_init(UA_ViewAttributes *p) {
     memset(p, 0, sizeof(UA_ViewAttributes));
 }
 
-UA_EXPORT UA_ViewAttributes *
+static UA_INLINE UA_ViewAttributes *
 UA_ViewAttributes_new(void) {
     return (UA_ViewAttributes*)UA_new(&UA_TYPES[UA_TYPES_VIEWATTRIBUTES]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_ViewAttributes_copy(const UA_ViewAttributes *src, UA_ViewAttributes *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_VIEWATTRIBUTES]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_ViewAttributes_deleteMembers(UA_ViewAttributes *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_VIEWATTRIBUTES]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_ViewAttributes_clear(UA_ViewAttributes *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_VIEWATTRIBUTES]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_ViewAttributes_delete(UA_ViewAttributes *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_VIEWATTRIBUTES]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_ViewAttributes_equal(const UA_ViewAttributes *p1, const UA_ViewAttributes *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_VIEWATTRIBUTES]) == UA_ORDER_EQ);
 }
@@ -34954,35 +35262,35 @@ UA_ViewAttributes_equal(const UA_ViewAttributes *p1, const UA_ViewAttributes *p2
 
 
 /* GenericAttributeValue */
-UA_EXPORT void
+static UA_INLINE void
 UA_GenericAttributeValue_init(UA_GenericAttributeValue *p) {
     memset(p, 0, sizeof(UA_GenericAttributeValue));
 }
 
-UA_EXPORT UA_GenericAttributeValue *
+static UA_INLINE UA_GenericAttributeValue *
 UA_GenericAttributeValue_new(void) {
     return (UA_GenericAttributeValue*)UA_new(&UA_TYPES[UA_TYPES_GENERICATTRIBUTEVALUE]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_GenericAttributeValue_copy(const UA_GenericAttributeValue *src, UA_GenericAttributeValue *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_GENERICATTRIBUTEVALUE]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_GenericAttributeValue_deleteMembers(UA_GenericAttributeValue *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_GENERICATTRIBUTEVALUE]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_GenericAttributeValue_clear(UA_GenericAttributeValue *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_GENERICATTRIBUTEVALUE]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_GenericAttributeValue_delete(UA_GenericAttributeValue *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_GENERICATTRIBUTEVALUE]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_GenericAttributeValue_equal(const UA_GenericAttributeValue *p1, const UA_GenericAttributeValue *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_GENERICATTRIBUTEVALUE]) == UA_ORDER_EQ);
 }
@@ -34990,35 +35298,35 @@ UA_GenericAttributeValue_equal(const UA_GenericAttributeValue *p1, const UA_Gene
 
 
 /* GenericAttributes */
-UA_EXPORT void
+static UA_INLINE void
 UA_GenericAttributes_init(UA_GenericAttributes *p) {
     memset(p, 0, sizeof(UA_GenericAttributes));
 }
 
-UA_EXPORT UA_GenericAttributes *
+static UA_INLINE UA_GenericAttributes *
 UA_GenericAttributes_new(void) {
     return (UA_GenericAttributes*)UA_new(&UA_TYPES[UA_TYPES_GENERICATTRIBUTES]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_GenericAttributes_copy(const UA_GenericAttributes *src, UA_GenericAttributes *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_GENERICATTRIBUTES]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_GenericAttributes_deleteMembers(UA_GenericAttributes *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_GENERICATTRIBUTES]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_GenericAttributes_clear(UA_GenericAttributes *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_GENERICATTRIBUTES]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_GenericAttributes_delete(UA_GenericAttributes *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_GENERICATTRIBUTES]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_GenericAttributes_equal(const UA_GenericAttributes *p1, const UA_GenericAttributes *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_GENERICATTRIBUTES]) == UA_ORDER_EQ);
 }
@@ -35026,35 +35334,35 @@ UA_GenericAttributes_equal(const UA_GenericAttributes *p1, const UA_GenericAttri
 
 
 /* AddNodesItem */
-UA_EXPORT void
+static UA_INLINE void
 UA_AddNodesItem_init(UA_AddNodesItem *p) {
     memset(p, 0, sizeof(UA_AddNodesItem));
 }
 
-UA_EXPORT UA_AddNodesItem *
+static UA_INLINE UA_AddNodesItem *
 UA_AddNodesItem_new(void) {
     return (UA_AddNodesItem*)UA_new(&UA_TYPES[UA_TYPES_ADDNODESITEM]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_AddNodesItem_copy(const UA_AddNodesItem *src, UA_AddNodesItem *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_ADDNODESITEM]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_AddNodesItem_deleteMembers(UA_AddNodesItem *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_ADDNODESITEM]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_AddNodesItem_clear(UA_AddNodesItem *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_ADDNODESITEM]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_AddNodesItem_delete(UA_AddNodesItem *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_ADDNODESITEM]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_AddNodesItem_equal(const UA_AddNodesItem *p1, const UA_AddNodesItem *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_ADDNODESITEM]) == UA_ORDER_EQ);
 }
@@ -35062,35 +35370,35 @@ UA_AddNodesItem_equal(const UA_AddNodesItem *p1, const UA_AddNodesItem *p2) {
 
 
 /* AddNodesResult */
-UA_EXPORT void
+static UA_INLINE void
 UA_AddNodesResult_init(UA_AddNodesResult *p) {
     memset(p, 0, sizeof(UA_AddNodesResult));
 }
 
-UA_EXPORT UA_AddNodesResult *
+static UA_INLINE UA_AddNodesResult *
 UA_AddNodesResult_new(void) {
     return (UA_AddNodesResult*)UA_new(&UA_TYPES[UA_TYPES_ADDNODESRESULT]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_AddNodesResult_copy(const UA_AddNodesResult *src, UA_AddNodesResult *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_ADDNODESRESULT]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_AddNodesResult_deleteMembers(UA_AddNodesResult *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_ADDNODESRESULT]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_AddNodesResult_clear(UA_AddNodesResult *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_ADDNODESRESULT]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_AddNodesResult_delete(UA_AddNodesResult *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_ADDNODESRESULT]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_AddNodesResult_equal(const UA_AddNodesResult *p1, const UA_AddNodesResult *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_ADDNODESRESULT]) == UA_ORDER_EQ);
 }
@@ -35098,35 +35406,35 @@ UA_AddNodesResult_equal(const UA_AddNodesResult *p1, const UA_AddNodesResult *p2
 
 
 /* AddNodesRequest */
-UA_EXPORT void
+static UA_INLINE void
 UA_AddNodesRequest_init(UA_AddNodesRequest *p) {
     memset(p, 0, sizeof(UA_AddNodesRequest));
 }
 
-UA_EXPORT UA_AddNodesRequest *
+static UA_INLINE UA_AddNodesRequest *
 UA_AddNodesRequest_new(void) {
     return (UA_AddNodesRequest*)UA_new(&UA_TYPES[UA_TYPES_ADDNODESREQUEST]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_AddNodesRequest_copy(const UA_AddNodesRequest *src, UA_AddNodesRequest *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_ADDNODESREQUEST]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_AddNodesRequest_deleteMembers(UA_AddNodesRequest *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_ADDNODESREQUEST]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_AddNodesRequest_clear(UA_AddNodesRequest *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_ADDNODESREQUEST]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_AddNodesRequest_delete(UA_AddNodesRequest *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_ADDNODESREQUEST]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_AddNodesRequest_equal(const UA_AddNodesRequest *p1, const UA_AddNodesRequest *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_ADDNODESREQUEST]) == UA_ORDER_EQ);
 }
@@ -35134,35 +35442,35 @@ UA_AddNodesRequest_equal(const UA_AddNodesRequest *p1, const UA_AddNodesRequest 
 
 
 /* AddNodesResponse */
-UA_EXPORT void
+static UA_INLINE void
 UA_AddNodesResponse_init(UA_AddNodesResponse *p) {
     memset(p, 0, sizeof(UA_AddNodesResponse));
 }
 
-UA_EXPORT UA_AddNodesResponse *
+static UA_INLINE UA_AddNodesResponse *
 UA_AddNodesResponse_new(void) {
     return (UA_AddNodesResponse*)UA_new(&UA_TYPES[UA_TYPES_ADDNODESRESPONSE]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_AddNodesResponse_copy(const UA_AddNodesResponse *src, UA_AddNodesResponse *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_ADDNODESRESPONSE]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_AddNodesResponse_deleteMembers(UA_AddNodesResponse *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_ADDNODESRESPONSE]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_AddNodesResponse_clear(UA_AddNodesResponse *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_ADDNODESRESPONSE]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_AddNodesResponse_delete(UA_AddNodesResponse *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_ADDNODESRESPONSE]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_AddNodesResponse_equal(const UA_AddNodesResponse *p1, const UA_AddNodesResponse *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_ADDNODESRESPONSE]) == UA_ORDER_EQ);
 }
@@ -35170,35 +35478,35 @@ UA_AddNodesResponse_equal(const UA_AddNodesResponse *p1, const UA_AddNodesRespon
 
 
 /* AddReferencesItem */
-UA_EXPORT void
+static UA_INLINE void
 UA_AddReferencesItem_init(UA_AddReferencesItem *p) {
     memset(p, 0, sizeof(UA_AddReferencesItem));
 }
 
-UA_EXPORT UA_AddReferencesItem *
+static UA_INLINE UA_AddReferencesItem *
 UA_AddReferencesItem_new(void) {
     return (UA_AddReferencesItem*)UA_new(&UA_TYPES[UA_TYPES_ADDREFERENCESITEM]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_AddReferencesItem_copy(const UA_AddReferencesItem *src, UA_AddReferencesItem *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_ADDREFERENCESITEM]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_AddReferencesItem_deleteMembers(UA_AddReferencesItem *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_ADDREFERENCESITEM]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_AddReferencesItem_clear(UA_AddReferencesItem *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_ADDREFERENCESITEM]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_AddReferencesItem_delete(UA_AddReferencesItem *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_ADDREFERENCESITEM]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_AddReferencesItem_equal(const UA_AddReferencesItem *p1, const UA_AddReferencesItem *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_ADDREFERENCESITEM]) == UA_ORDER_EQ);
 }
@@ -35206,35 +35514,35 @@ UA_AddReferencesItem_equal(const UA_AddReferencesItem *p1, const UA_AddReference
 
 
 /* AddReferencesRequest */
-UA_EXPORT void
+static UA_INLINE void
 UA_AddReferencesRequest_init(UA_AddReferencesRequest *p) {
     memset(p, 0, sizeof(UA_AddReferencesRequest));
 }
 
-UA_EXPORT UA_AddReferencesRequest *
+static UA_INLINE UA_AddReferencesRequest *
 UA_AddReferencesRequest_new(void) {
     return (UA_AddReferencesRequest*)UA_new(&UA_TYPES[UA_TYPES_ADDREFERENCESREQUEST]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_AddReferencesRequest_copy(const UA_AddReferencesRequest *src, UA_AddReferencesRequest *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_ADDREFERENCESREQUEST]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_AddReferencesRequest_deleteMembers(UA_AddReferencesRequest *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_ADDREFERENCESREQUEST]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_AddReferencesRequest_clear(UA_AddReferencesRequest *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_ADDREFERENCESREQUEST]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_AddReferencesRequest_delete(UA_AddReferencesRequest *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_ADDREFERENCESREQUEST]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_AddReferencesRequest_equal(const UA_AddReferencesRequest *p1, const UA_AddReferencesRequest *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_ADDREFERENCESREQUEST]) == UA_ORDER_EQ);
 }
@@ -35242,35 +35550,35 @@ UA_AddReferencesRequest_equal(const UA_AddReferencesRequest *p1, const UA_AddRef
 
 
 /* AddReferencesResponse */
-UA_EXPORT void
+static UA_INLINE void
 UA_AddReferencesResponse_init(UA_AddReferencesResponse *p) {
     memset(p, 0, sizeof(UA_AddReferencesResponse));
 }
 
-UA_EXPORT UA_AddReferencesResponse *
+static UA_INLINE UA_AddReferencesResponse *
 UA_AddReferencesResponse_new(void) {
     return (UA_AddReferencesResponse*)UA_new(&UA_TYPES[UA_TYPES_ADDREFERENCESRESPONSE]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_AddReferencesResponse_copy(const UA_AddReferencesResponse *src, UA_AddReferencesResponse *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_ADDREFERENCESRESPONSE]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_AddReferencesResponse_deleteMembers(UA_AddReferencesResponse *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_ADDREFERENCESRESPONSE]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_AddReferencesResponse_clear(UA_AddReferencesResponse *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_ADDREFERENCESRESPONSE]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_AddReferencesResponse_delete(UA_AddReferencesResponse *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_ADDREFERENCESRESPONSE]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_AddReferencesResponse_equal(const UA_AddReferencesResponse *p1, const UA_AddReferencesResponse *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_ADDREFERENCESRESPONSE]) == UA_ORDER_EQ);
 }
@@ -35278,35 +35586,35 @@ UA_AddReferencesResponse_equal(const UA_AddReferencesResponse *p1, const UA_AddR
 
 
 /* DeleteNodesItem */
-UA_EXPORT void
+static UA_INLINE void
 UA_DeleteNodesItem_init(UA_DeleteNodesItem *p) {
     memset(p, 0, sizeof(UA_DeleteNodesItem));
 }
 
-UA_EXPORT UA_DeleteNodesItem *
+static UA_INLINE UA_DeleteNodesItem *
 UA_DeleteNodesItem_new(void) {
     return (UA_DeleteNodesItem*)UA_new(&UA_TYPES[UA_TYPES_DELETENODESITEM]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_DeleteNodesItem_copy(const UA_DeleteNodesItem *src, UA_DeleteNodesItem *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_DELETENODESITEM]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_DeleteNodesItem_deleteMembers(UA_DeleteNodesItem *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_DELETENODESITEM]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_DeleteNodesItem_clear(UA_DeleteNodesItem *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_DELETENODESITEM]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_DeleteNodesItem_delete(UA_DeleteNodesItem *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_DELETENODESITEM]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_DeleteNodesItem_equal(const UA_DeleteNodesItem *p1, const UA_DeleteNodesItem *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_DELETENODESITEM]) == UA_ORDER_EQ);
 }
@@ -35314,35 +35622,35 @@ UA_DeleteNodesItem_equal(const UA_DeleteNodesItem *p1, const UA_DeleteNodesItem 
 
 
 /* DeleteNodesRequest */
-UA_EXPORT void
+static UA_INLINE void
 UA_DeleteNodesRequest_init(UA_DeleteNodesRequest *p) {
     memset(p, 0, sizeof(UA_DeleteNodesRequest));
 }
 
-UA_EXPORT UA_DeleteNodesRequest *
+static UA_INLINE UA_DeleteNodesRequest *
 UA_DeleteNodesRequest_new(void) {
     return (UA_DeleteNodesRequest*)UA_new(&UA_TYPES[UA_TYPES_DELETENODESREQUEST]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_DeleteNodesRequest_copy(const UA_DeleteNodesRequest *src, UA_DeleteNodesRequest *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_DELETENODESREQUEST]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_DeleteNodesRequest_deleteMembers(UA_DeleteNodesRequest *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_DELETENODESREQUEST]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_DeleteNodesRequest_clear(UA_DeleteNodesRequest *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_DELETENODESREQUEST]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_DeleteNodesRequest_delete(UA_DeleteNodesRequest *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_DELETENODESREQUEST]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_DeleteNodesRequest_equal(const UA_DeleteNodesRequest *p1, const UA_DeleteNodesRequest *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_DELETENODESREQUEST]) == UA_ORDER_EQ);
 }
@@ -35350,35 +35658,35 @@ UA_DeleteNodesRequest_equal(const UA_DeleteNodesRequest *p1, const UA_DeleteNode
 
 
 /* DeleteNodesResponse */
-UA_EXPORT void
+static UA_INLINE void
 UA_DeleteNodesResponse_init(UA_DeleteNodesResponse *p) {
     memset(p, 0, sizeof(UA_DeleteNodesResponse));
 }
 
-UA_EXPORT UA_DeleteNodesResponse *
+static UA_INLINE UA_DeleteNodesResponse *
 UA_DeleteNodesResponse_new(void) {
     return (UA_DeleteNodesResponse*)UA_new(&UA_TYPES[UA_TYPES_DELETENODESRESPONSE]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_DeleteNodesResponse_copy(const UA_DeleteNodesResponse *src, UA_DeleteNodesResponse *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_DELETENODESRESPONSE]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_DeleteNodesResponse_deleteMembers(UA_DeleteNodesResponse *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_DELETENODESRESPONSE]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_DeleteNodesResponse_clear(UA_DeleteNodesResponse *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_DELETENODESRESPONSE]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_DeleteNodesResponse_delete(UA_DeleteNodesResponse *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_DELETENODESRESPONSE]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_DeleteNodesResponse_equal(const UA_DeleteNodesResponse *p1, const UA_DeleteNodesResponse *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_DELETENODESRESPONSE]) == UA_ORDER_EQ);
 }
@@ -35386,35 +35694,35 @@ UA_DeleteNodesResponse_equal(const UA_DeleteNodesResponse *p1, const UA_DeleteNo
 
 
 /* DeleteReferencesItem */
-UA_EXPORT void
+static UA_INLINE void
 UA_DeleteReferencesItem_init(UA_DeleteReferencesItem *p) {
     memset(p, 0, sizeof(UA_DeleteReferencesItem));
 }
 
-UA_EXPORT UA_DeleteReferencesItem *
+static UA_INLINE UA_DeleteReferencesItem *
 UA_DeleteReferencesItem_new(void) {
     return (UA_DeleteReferencesItem*)UA_new(&UA_TYPES[UA_TYPES_DELETEREFERENCESITEM]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_DeleteReferencesItem_copy(const UA_DeleteReferencesItem *src, UA_DeleteReferencesItem *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_DELETEREFERENCESITEM]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_DeleteReferencesItem_deleteMembers(UA_DeleteReferencesItem *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_DELETEREFERENCESITEM]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_DeleteReferencesItem_clear(UA_DeleteReferencesItem *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_DELETEREFERENCESITEM]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_DeleteReferencesItem_delete(UA_DeleteReferencesItem *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_DELETEREFERENCESITEM]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_DeleteReferencesItem_equal(const UA_DeleteReferencesItem *p1, const UA_DeleteReferencesItem *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_DELETEREFERENCESITEM]) == UA_ORDER_EQ);
 }
@@ -35422,35 +35730,35 @@ UA_DeleteReferencesItem_equal(const UA_DeleteReferencesItem *p1, const UA_Delete
 
 
 /* DeleteReferencesRequest */
-UA_EXPORT void
+static UA_INLINE void
 UA_DeleteReferencesRequest_init(UA_DeleteReferencesRequest *p) {
     memset(p, 0, sizeof(UA_DeleteReferencesRequest));
 }
 
-UA_EXPORT UA_DeleteReferencesRequest *
+static UA_INLINE UA_DeleteReferencesRequest *
 UA_DeleteReferencesRequest_new(void) {
     return (UA_DeleteReferencesRequest*)UA_new(&UA_TYPES[UA_TYPES_DELETEREFERENCESREQUEST]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_DeleteReferencesRequest_copy(const UA_DeleteReferencesRequest *src, UA_DeleteReferencesRequest *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_DELETEREFERENCESREQUEST]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_DeleteReferencesRequest_deleteMembers(UA_DeleteReferencesRequest *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_DELETEREFERENCESREQUEST]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_DeleteReferencesRequest_clear(UA_DeleteReferencesRequest *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_DELETEREFERENCESREQUEST]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_DeleteReferencesRequest_delete(UA_DeleteReferencesRequest *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_DELETEREFERENCESREQUEST]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_DeleteReferencesRequest_equal(const UA_DeleteReferencesRequest *p1, const UA_DeleteReferencesRequest *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_DELETEREFERENCESREQUEST]) == UA_ORDER_EQ);
 }
@@ -35458,35 +35766,35 @@ UA_DeleteReferencesRequest_equal(const UA_DeleteReferencesRequest *p1, const UA_
 
 
 /* DeleteReferencesResponse */
-UA_EXPORT void
+static UA_INLINE void
 UA_DeleteReferencesResponse_init(UA_DeleteReferencesResponse *p) {
     memset(p, 0, sizeof(UA_DeleteReferencesResponse));
 }
 
-UA_EXPORT UA_DeleteReferencesResponse *
+static UA_INLINE UA_DeleteReferencesResponse *
 UA_DeleteReferencesResponse_new(void) {
     return (UA_DeleteReferencesResponse*)UA_new(&UA_TYPES[UA_TYPES_DELETEREFERENCESRESPONSE]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_DeleteReferencesResponse_copy(const UA_DeleteReferencesResponse *src, UA_DeleteReferencesResponse *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_DELETEREFERENCESRESPONSE]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_DeleteReferencesResponse_deleteMembers(UA_DeleteReferencesResponse *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_DELETEREFERENCESRESPONSE]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_DeleteReferencesResponse_clear(UA_DeleteReferencesResponse *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_DELETEREFERENCESRESPONSE]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_DeleteReferencesResponse_delete(UA_DeleteReferencesResponse *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_DELETEREFERENCESRESPONSE]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_DeleteReferencesResponse_equal(const UA_DeleteReferencesResponse *p1, const UA_DeleteReferencesResponse *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_DELETEREFERENCESRESPONSE]) == UA_ORDER_EQ);
 }
@@ -35494,35 +35802,35 @@ UA_DeleteReferencesResponse_equal(const UA_DeleteReferencesResponse *p1, const U
 
 
 /* AttributeWriteMask */
-UA_EXPORT void
+static UA_INLINE void
 UA_AttributeWriteMask_init(UA_AttributeWriteMask *p) {
     memset(p, 0, sizeof(UA_AttributeWriteMask));
 }
 
-UA_EXPORT UA_AttributeWriteMask *
+static UA_INLINE UA_AttributeWriteMask *
 UA_AttributeWriteMask_new(void) {
     return (UA_AttributeWriteMask*)UA_new(&UA_TYPES[UA_TYPES_ATTRIBUTEWRITEMASK]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_AttributeWriteMask_copy(const UA_AttributeWriteMask *src, UA_AttributeWriteMask *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_ATTRIBUTEWRITEMASK]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_AttributeWriteMask_deleteMembers(UA_AttributeWriteMask *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_ATTRIBUTEWRITEMASK]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_AttributeWriteMask_clear(UA_AttributeWriteMask *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_ATTRIBUTEWRITEMASK]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_AttributeWriteMask_delete(UA_AttributeWriteMask *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_ATTRIBUTEWRITEMASK]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_AttributeWriteMask_equal(const UA_AttributeWriteMask *p1, const UA_AttributeWriteMask *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_ATTRIBUTEWRITEMASK]) == UA_ORDER_EQ);
 }
@@ -35530,35 +35838,35 @@ UA_AttributeWriteMask_equal(const UA_AttributeWriteMask *p1, const UA_AttributeW
 
 
 /* BrowseDirection */
-UA_EXPORT void
+static UA_INLINE void
 UA_BrowseDirection_init(UA_BrowseDirection *p) {
     memset(p, 0, sizeof(UA_BrowseDirection));
 }
 
-UA_EXPORT UA_BrowseDirection *
+static UA_INLINE UA_BrowseDirection *
 UA_BrowseDirection_new(void) {
     return (UA_BrowseDirection*)UA_new(&UA_TYPES[UA_TYPES_BROWSEDIRECTION]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_BrowseDirection_copy(const UA_BrowseDirection *src, UA_BrowseDirection *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_BROWSEDIRECTION]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_BrowseDirection_deleteMembers(UA_BrowseDirection *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_BROWSEDIRECTION]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_BrowseDirection_clear(UA_BrowseDirection *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_BROWSEDIRECTION]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_BrowseDirection_delete(UA_BrowseDirection *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_BROWSEDIRECTION]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_BrowseDirection_equal(const UA_BrowseDirection *p1, const UA_BrowseDirection *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_BROWSEDIRECTION]) == UA_ORDER_EQ);
 }
@@ -35566,35 +35874,35 @@ UA_BrowseDirection_equal(const UA_BrowseDirection *p1, const UA_BrowseDirection 
 
 
 /* ViewDescription */
-UA_EXPORT void
+static UA_INLINE void
 UA_ViewDescription_init(UA_ViewDescription *p) {
     memset(p, 0, sizeof(UA_ViewDescription));
 }
 
-UA_EXPORT UA_ViewDescription *
+static UA_INLINE UA_ViewDescription *
 UA_ViewDescription_new(void) {
     return (UA_ViewDescription*)UA_new(&UA_TYPES[UA_TYPES_VIEWDESCRIPTION]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_ViewDescription_copy(const UA_ViewDescription *src, UA_ViewDescription *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_VIEWDESCRIPTION]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_ViewDescription_deleteMembers(UA_ViewDescription *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_VIEWDESCRIPTION]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_ViewDescription_clear(UA_ViewDescription *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_VIEWDESCRIPTION]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_ViewDescription_delete(UA_ViewDescription *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_VIEWDESCRIPTION]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_ViewDescription_equal(const UA_ViewDescription *p1, const UA_ViewDescription *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_VIEWDESCRIPTION]) == UA_ORDER_EQ);
 }
@@ -35602,35 +35910,35 @@ UA_ViewDescription_equal(const UA_ViewDescription *p1, const UA_ViewDescription 
 
 
 /* BrowseDescription */
-UA_EXPORT void
+static UA_INLINE void
 UA_BrowseDescription_init(UA_BrowseDescription *p) {
     memset(p, 0, sizeof(UA_BrowseDescription));
 }
 
-UA_EXPORT UA_BrowseDescription *
+static UA_INLINE UA_BrowseDescription *
 UA_BrowseDescription_new(void) {
     return (UA_BrowseDescription*)UA_new(&UA_TYPES[UA_TYPES_BROWSEDESCRIPTION]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_BrowseDescription_copy(const UA_BrowseDescription *src, UA_BrowseDescription *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_BROWSEDESCRIPTION]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_BrowseDescription_deleteMembers(UA_BrowseDescription *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_BROWSEDESCRIPTION]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_BrowseDescription_clear(UA_BrowseDescription *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_BROWSEDESCRIPTION]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_BrowseDescription_delete(UA_BrowseDescription *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_BROWSEDESCRIPTION]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_BrowseDescription_equal(const UA_BrowseDescription *p1, const UA_BrowseDescription *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_BROWSEDESCRIPTION]) == UA_ORDER_EQ);
 }
@@ -35638,35 +35946,35 @@ UA_BrowseDescription_equal(const UA_BrowseDescription *p1, const UA_BrowseDescri
 
 
 /* BrowseResultMask */
-UA_EXPORT void
+static UA_INLINE void
 UA_BrowseResultMask_init(UA_BrowseResultMask *p) {
     memset(p, 0, sizeof(UA_BrowseResultMask));
 }
 
-UA_EXPORT UA_BrowseResultMask *
+static UA_INLINE UA_BrowseResultMask *
 UA_BrowseResultMask_new(void) {
     return (UA_BrowseResultMask*)UA_new(&UA_TYPES[UA_TYPES_BROWSERESULTMASK]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_BrowseResultMask_copy(const UA_BrowseResultMask *src, UA_BrowseResultMask *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_BROWSERESULTMASK]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_BrowseResultMask_deleteMembers(UA_BrowseResultMask *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_BROWSERESULTMASK]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_BrowseResultMask_clear(UA_BrowseResultMask *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_BROWSERESULTMASK]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_BrowseResultMask_delete(UA_BrowseResultMask *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_BROWSERESULTMASK]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_BrowseResultMask_equal(const UA_BrowseResultMask *p1, const UA_BrowseResultMask *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_BROWSERESULTMASK]) == UA_ORDER_EQ);
 }
@@ -35674,35 +35982,35 @@ UA_BrowseResultMask_equal(const UA_BrowseResultMask *p1, const UA_BrowseResultMa
 
 
 /* ReferenceDescription */
-UA_EXPORT void
+static UA_INLINE void
 UA_ReferenceDescription_init(UA_ReferenceDescription *p) {
     memset(p, 0, sizeof(UA_ReferenceDescription));
 }
 
-UA_EXPORT UA_ReferenceDescription *
+static UA_INLINE UA_ReferenceDescription *
 UA_ReferenceDescription_new(void) {
     return (UA_ReferenceDescription*)UA_new(&UA_TYPES[UA_TYPES_REFERENCEDESCRIPTION]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_ReferenceDescription_copy(const UA_ReferenceDescription *src, UA_ReferenceDescription *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_REFERENCEDESCRIPTION]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_ReferenceDescription_deleteMembers(UA_ReferenceDescription *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_REFERENCEDESCRIPTION]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_ReferenceDescription_clear(UA_ReferenceDescription *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_REFERENCEDESCRIPTION]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_ReferenceDescription_delete(UA_ReferenceDescription *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_REFERENCEDESCRIPTION]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_ReferenceDescription_equal(const UA_ReferenceDescription *p1, const UA_ReferenceDescription *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_REFERENCEDESCRIPTION]) == UA_ORDER_EQ);
 }
@@ -35710,35 +36018,35 @@ UA_ReferenceDescription_equal(const UA_ReferenceDescription *p1, const UA_Refere
 
 
 /* ContinuationPoint */
-UA_EXPORT void
+static UA_INLINE void
 UA_ContinuationPoint_init(UA_ContinuationPoint *p) {
     memset(p, 0, sizeof(UA_ContinuationPoint));
 }
 
-UA_EXPORT UA_ContinuationPoint *
+static UA_INLINE UA_ContinuationPoint *
 UA_ContinuationPoint_new(void) {
     return (UA_ContinuationPoint*)UA_new(&UA_TYPES[UA_TYPES_CONTINUATIONPOINT]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_ContinuationPoint_copy(const UA_ContinuationPoint *src, UA_ContinuationPoint *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_CONTINUATIONPOINT]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_ContinuationPoint_deleteMembers(UA_ContinuationPoint *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_CONTINUATIONPOINT]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_ContinuationPoint_clear(UA_ContinuationPoint *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_CONTINUATIONPOINT]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_ContinuationPoint_delete(UA_ContinuationPoint *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_CONTINUATIONPOINT]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_ContinuationPoint_equal(const UA_ContinuationPoint *p1, const UA_ContinuationPoint *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_CONTINUATIONPOINT]) == UA_ORDER_EQ);
 }
@@ -35746,35 +36054,35 @@ UA_ContinuationPoint_equal(const UA_ContinuationPoint *p1, const UA_Continuation
 
 
 /* BrowseResult */
-UA_EXPORT void
+static UA_INLINE void
 UA_BrowseResult_init(UA_BrowseResult *p) {
     memset(p, 0, sizeof(UA_BrowseResult));
 }
 
-UA_EXPORT UA_BrowseResult *
+static UA_INLINE UA_BrowseResult *
 UA_BrowseResult_new(void) {
     return (UA_BrowseResult*)UA_new(&UA_TYPES[UA_TYPES_BROWSERESULT]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_BrowseResult_copy(const UA_BrowseResult *src, UA_BrowseResult *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_BROWSERESULT]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_BrowseResult_deleteMembers(UA_BrowseResult *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_BROWSERESULT]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_BrowseResult_clear(UA_BrowseResult *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_BROWSERESULT]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_BrowseResult_delete(UA_BrowseResult *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_BROWSERESULT]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_BrowseResult_equal(const UA_BrowseResult *p1, const UA_BrowseResult *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_BROWSERESULT]) == UA_ORDER_EQ);
 }
@@ -35782,35 +36090,35 @@ UA_BrowseResult_equal(const UA_BrowseResult *p1, const UA_BrowseResult *p2) {
 
 
 /* BrowseRequest */
-UA_EXPORT void
+static UA_INLINE void
 UA_BrowseRequest_init(UA_BrowseRequest *p) {
     memset(p, 0, sizeof(UA_BrowseRequest));
 }
 
-UA_EXPORT UA_BrowseRequest *
+static UA_INLINE UA_BrowseRequest *
 UA_BrowseRequest_new(void) {
     return (UA_BrowseRequest*)UA_new(&UA_TYPES[UA_TYPES_BROWSEREQUEST]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_BrowseRequest_copy(const UA_BrowseRequest *src, UA_BrowseRequest *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_BROWSEREQUEST]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_BrowseRequest_deleteMembers(UA_BrowseRequest *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_BROWSEREQUEST]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_BrowseRequest_clear(UA_BrowseRequest *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_BROWSEREQUEST]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_BrowseRequest_delete(UA_BrowseRequest *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_BROWSEREQUEST]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_BrowseRequest_equal(const UA_BrowseRequest *p1, const UA_BrowseRequest *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_BROWSEREQUEST]) == UA_ORDER_EQ);
 }
@@ -35818,35 +36126,35 @@ UA_BrowseRequest_equal(const UA_BrowseRequest *p1, const UA_BrowseRequest *p2) {
 
 
 /* BrowseResponse */
-UA_EXPORT void
+static UA_INLINE void
 UA_BrowseResponse_init(UA_BrowseResponse *p) {
     memset(p, 0, sizeof(UA_BrowseResponse));
 }
 
-UA_EXPORT UA_BrowseResponse *
+static UA_INLINE UA_BrowseResponse *
 UA_BrowseResponse_new(void) {
     return (UA_BrowseResponse*)UA_new(&UA_TYPES[UA_TYPES_BROWSERESPONSE]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_BrowseResponse_copy(const UA_BrowseResponse *src, UA_BrowseResponse *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_BROWSERESPONSE]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_BrowseResponse_deleteMembers(UA_BrowseResponse *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_BROWSERESPONSE]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_BrowseResponse_clear(UA_BrowseResponse *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_BROWSERESPONSE]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_BrowseResponse_delete(UA_BrowseResponse *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_BROWSERESPONSE]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_BrowseResponse_equal(const UA_BrowseResponse *p1, const UA_BrowseResponse *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_BROWSERESPONSE]) == UA_ORDER_EQ);
 }
@@ -35854,35 +36162,35 @@ UA_BrowseResponse_equal(const UA_BrowseResponse *p1, const UA_BrowseResponse *p2
 
 
 /* BrowseNextRequest */
-UA_EXPORT void
+static UA_INLINE void
 UA_BrowseNextRequest_init(UA_BrowseNextRequest *p) {
     memset(p, 0, sizeof(UA_BrowseNextRequest));
 }
 
-UA_EXPORT UA_BrowseNextRequest *
+static UA_INLINE UA_BrowseNextRequest *
 UA_BrowseNextRequest_new(void) {
     return (UA_BrowseNextRequest*)UA_new(&UA_TYPES[UA_TYPES_BROWSENEXTREQUEST]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_BrowseNextRequest_copy(const UA_BrowseNextRequest *src, UA_BrowseNextRequest *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_BROWSENEXTREQUEST]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_BrowseNextRequest_deleteMembers(UA_BrowseNextRequest *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_BROWSENEXTREQUEST]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_BrowseNextRequest_clear(UA_BrowseNextRequest *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_BROWSENEXTREQUEST]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_BrowseNextRequest_delete(UA_BrowseNextRequest *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_BROWSENEXTREQUEST]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_BrowseNextRequest_equal(const UA_BrowseNextRequest *p1, const UA_BrowseNextRequest *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_BROWSENEXTREQUEST]) == UA_ORDER_EQ);
 }
@@ -35890,35 +36198,35 @@ UA_BrowseNextRequest_equal(const UA_BrowseNextRequest *p1, const UA_BrowseNextRe
 
 
 /* BrowseNextResponse */
-UA_EXPORT void
+static UA_INLINE void
 UA_BrowseNextResponse_init(UA_BrowseNextResponse *p) {
     memset(p, 0, sizeof(UA_BrowseNextResponse));
 }
 
-UA_EXPORT UA_BrowseNextResponse *
+static UA_INLINE UA_BrowseNextResponse *
 UA_BrowseNextResponse_new(void) {
     return (UA_BrowseNextResponse*)UA_new(&UA_TYPES[UA_TYPES_BROWSENEXTRESPONSE]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_BrowseNextResponse_copy(const UA_BrowseNextResponse *src, UA_BrowseNextResponse *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_BROWSENEXTRESPONSE]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_BrowseNextResponse_deleteMembers(UA_BrowseNextResponse *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_BROWSENEXTRESPONSE]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_BrowseNextResponse_clear(UA_BrowseNextResponse *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_BROWSENEXTRESPONSE]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_BrowseNextResponse_delete(UA_BrowseNextResponse *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_BROWSENEXTRESPONSE]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_BrowseNextResponse_equal(const UA_BrowseNextResponse *p1, const UA_BrowseNextResponse *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_BROWSENEXTRESPONSE]) == UA_ORDER_EQ);
 }
@@ -35926,35 +36234,35 @@ UA_BrowseNextResponse_equal(const UA_BrowseNextResponse *p1, const UA_BrowseNext
 
 
 /* RelativePathElement */
-UA_EXPORT void
+static UA_INLINE void
 UA_RelativePathElement_init(UA_RelativePathElement *p) {
     memset(p, 0, sizeof(UA_RelativePathElement));
 }
 
-UA_EXPORT UA_RelativePathElement *
+static UA_INLINE UA_RelativePathElement *
 UA_RelativePathElement_new(void) {
     return (UA_RelativePathElement*)UA_new(&UA_TYPES[UA_TYPES_RELATIVEPATHELEMENT]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_RelativePathElement_copy(const UA_RelativePathElement *src, UA_RelativePathElement *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_RELATIVEPATHELEMENT]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_RelativePathElement_deleteMembers(UA_RelativePathElement *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_RELATIVEPATHELEMENT]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_RelativePathElement_clear(UA_RelativePathElement *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_RELATIVEPATHELEMENT]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_RelativePathElement_delete(UA_RelativePathElement *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_RELATIVEPATHELEMENT]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_RelativePathElement_equal(const UA_RelativePathElement *p1, const UA_RelativePathElement *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_RELATIVEPATHELEMENT]) == UA_ORDER_EQ);
 }
@@ -35962,35 +36270,35 @@ UA_RelativePathElement_equal(const UA_RelativePathElement *p1, const UA_Relative
 
 
 /* RelativePath */
-UA_EXPORT void
+static UA_INLINE void
 UA_RelativePath_init(UA_RelativePath *p) {
     memset(p, 0, sizeof(UA_RelativePath));
 }
 
-UA_EXPORT UA_RelativePath *
+static UA_INLINE UA_RelativePath *
 UA_RelativePath_new(void) {
     return (UA_RelativePath*)UA_new(&UA_TYPES[UA_TYPES_RELATIVEPATH]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_RelativePath_copy(const UA_RelativePath *src, UA_RelativePath *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_RELATIVEPATH]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_RelativePath_deleteMembers(UA_RelativePath *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_RELATIVEPATH]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_RelativePath_clear(UA_RelativePath *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_RELATIVEPATH]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_RelativePath_delete(UA_RelativePath *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_RELATIVEPATH]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_RelativePath_equal(const UA_RelativePath *p1, const UA_RelativePath *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_RELATIVEPATH]) == UA_ORDER_EQ);
 }
@@ -35998,35 +36306,35 @@ UA_RelativePath_equal(const UA_RelativePath *p1, const UA_RelativePath *p2) {
 
 
 /* BrowsePath */
-UA_EXPORT void
+static UA_INLINE void
 UA_BrowsePath_init(UA_BrowsePath *p) {
     memset(p, 0, sizeof(UA_BrowsePath));
 }
 
-UA_EXPORT UA_BrowsePath *
+static UA_INLINE UA_BrowsePath *
 UA_BrowsePath_new(void) {
     return (UA_BrowsePath*)UA_new(&UA_TYPES[UA_TYPES_BROWSEPATH]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_BrowsePath_copy(const UA_BrowsePath *src, UA_BrowsePath *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_BROWSEPATH]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_BrowsePath_deleteMembers(UA_BrowsePath *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_BROWSEPATH]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_BrowsePath_clear(UA_BrowsePath *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_BROWSEPATH]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_BrowsePath_delete(UA_BrowsePath *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_BROWSEPATH]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_BrowsePath_equal(const UA_BrowsePath *p1, const UA_BrowsePath *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_BROWSEPATH]) == UA_ORDER_EQ);
 }
@@ -36034,35 +36342,35 @@ UA_BrowsePath_equal(const UA_BrowsePath *p1, const UA_BrowsePath *p2) {
 
 
 /* BrowsePathTarget */
-UA_EXPORT void
+static UA_INLINE void
 UA_BrowsePathTarget_init(UA_BrowsePathTarget *p) {
     memset(p, 0, sizeof(UA_BrowsePathTarget));
 }
 
-UA_EXPORT UA_BrowsePathTarget *
+static UA_INLINE UA_BrowsePathTarget *
 UA_BrowsePathTarget_new(void) {
     return (UA_BrowsePathTarget*)UA_new(&UA_TYPES[UA_TYPES_BROWSEPATHTARGET]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_BrowsePathTarget_copy(const UA_BrowsePathTarget *src, UA_BrowsePathTarget *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_BROWSEPATHTARGET]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_BrowsePathTarget_deleteMembers(UA_BrowsePathTarget *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_BROWSEPATHTARGET]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_BrowsePathTarget_clear(UA_BrowsePathTarget *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_BROWSEPATHTARGET]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_BrowsePathTarget_delete(UA_BrowsePathTarget *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_BROWSEPATHTARGET]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_BrowsePathTarget_equal(const UA_BrowsePathTarget *p1, const UA_BrowsePathTarget *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_BROWSEPATHTARGET]) == UA_ORDER_EQ);
 }
@@ -36070,35 +36378,35 @@ UA_BrowsePathTarget_equal(const UA_BrowsePathTarget *p1, const UA_BrowsePathTarg
 
 
 /* BrowsePathResult */
-UA_EXPORT void
+static UA_INLINE void
 UA_BrowsePathResult_init(UA_BrowsePathResult *p) {
     memset(p, 0, sizeof(UA_BrowsePathResult));
 }
 
-UA_EXPORT UA_BrowsePathResult *
+static UA_INLINE UA_BrowsePathResult *
 UA_BrowsePathResult_new(void) {
     return (UA_BrowsePathResult*)UA_new(&UA_TYPES[UA_TYPES_BROWSEPATHRESULT]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_BrowsePathResult_copy(const UA_BrowsePathResult *src, UA_BrowsePathResult *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_BROWSEPATHRESULT]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_BrowsePathResult_deleteMembers(UA_BrowsePathResult *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_BROWSEPATHRESULT]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_BrowsePathResult_clear(UA_BrowsePathResult *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_BROWSEPATHRESULT]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_BrowsePathResult_delete(UA_BrowsePathResult *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_BROWSEPATHRESULT]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_BrowsePathResult_equal(const UA_BrowsePathResult *p1, const UA_BrowsePathResult *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_BROWSEPATHRESULT]) == UA_ORDER_EQ);
 }
@@ -36106,35 +36414,35 @@ UA_BrowsePathResult_equal(const UA_BrowsePathResult *p1, const UA_BrowsePathResu
 
 
 /* TranslateBrowsePathsToNodeIdsRequest */
-UA_EXPORT void
+static UA_INLINE void
 UA_TranslateBrowsePathsToNodeIdsRequest_init(UA_TranslateBrowsePathsToNodeIdsRequest *p) {
     memset(p, 0, sizeof(UA_TranslateBrowsePathsToNodeIdsRequest));
 }
 
-UA_EXPORT UA_TranslateBrowsePathsToNodeIdsRequest *
+static UA_INLINE UA_TranslateBrowsePathsToNodeIdsRequest *
 UA_TranslateBrowsePathsToNodeIdsRequest_new(void) {
     return (UA_TranslateBrowsePathsToNodeIdsRequest*)UA_new(&UA_TYPES[UA_TYPES_TRANSLATEBROWSEPATHSTONODEIDSREQUEST]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_TranslateBrowsePathsToNodeIdsRequest_copy(const UA_TranslateBrowsePathsToNodeIdsRequest *src, UA_TranslateBrowsePathsToNodeIdsRequest *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_TRANSLATEBROWSEPATHSTONODEIDSREQUEST]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_TranslateBrowsePathsToNodeIdsRequest_deleteMembers(UA_TranslateBrowsePathsToNodeIdsRequest *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_TRANSLATEBROWSEPATHSTONODEIDSREQUEST]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_TranslateBrowsePathsToNodeIdsRequest_clear(UA_TranslateBrowsePathsToNodeIdsRequest *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_TRANSLATEBROWSEPATHSTONODEIDSREQUEST]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_TranslateBrowsePathsToNodeIdsRequest_delete(UA_TranslateBrowsePathsToNodeIdsRequest *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_TRANSLATEBROWSEPATHSTONODEIDSREQUEST]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_TranslateBrowsePathsToNodeIdsRequest_equal(const UA_TranslateBrowsePathsToNodeIdsRequest *p1, const UA_TranslateBrowsePathsToNodeIdsRequest *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_TRANSLATEBROWSEPATHSTONODEIDSREQUEST]) == UA_ORDER_EQ);
 }
@@ -36142,35 +36450,35 @@ UA_TranslateBrowsePathsToNodeIdsRequest_equal(const UA_TranslateBrowsePathsToNod
 
 
 /* TranslateBrowsePathsToNodeIdsResponse */
-UA_EXPORT void
+static UA_INLINE void
 UA_TranslateBrowsePathsToNodeIdsResponse_init(UA_TranslateBrowsePathsToNodeIdsResponse *p) {
     memset(p, 0, sizeof(UA_TranslateBrowsePathsToNodeIdsResponse));
 }
 
-UA_EXPORT UA_TranslateBrowsePathsToNodeIdsResponse *
+static UA_INLINE UA_TranslateBrowsePathsToNodeIdsResponse *
 UA_TranslateBrowsePathsToNodeIdsResponse_new(void) {
     return (UA_TranslateBrowsePathsToNodeIdsResponse*)UA_new(&UA_TYPES[UA_TYPES_TRANSLATEBROWSEPATHSTONODEIDSRESPONSE]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_TranslateBrowsePathsToNodeIdsResponse_copy(const UA_TranslateBrowsePathsToNodeIdsResponse *src, UA_TranslateBrowsePathsToNodeIdsResponse *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_TRANSLATEBROWSEPATHSTONODEIDSRESPONSE]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_TranslateBrowsePathsToNodeIdsResponse_deleteMembers(UA_TranslateBrowsePathsToNodeIdsResponse *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_TRANSLATEBROWSEPATHSTONODEIDSRESPONSE]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_TranslateBrowsePathsToNodeIdsResponse_clear(UA_TranslateBrowsePathsToNodeIdsResponse *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_TRANSLATEBROWSEPATHSTONODEIDSRESPONSE]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_TranslateBrowsePathsToNodeIdsResponse_delete(UA_TranslateBrowsePathsToNodeIdsResponse *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_TRANSLATEBROWSEPATHSTONODEIDSRESPONSE]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_TranslateBrowsePathsToNodeIdsResponse_equal(const UA_TranslateBrowsePathsToNodeIdsResponse *p1, const UA_TranslateBrowsePathsToNodeIdsResponse *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_TRANSLATEBROWSEPATHSTONODEIDSRESPONSE]) == UA_ORDER_EQ);
 }
@@ -36178,35 +36486,35 @@ UA_TranslateBrowsePathsToNodeIdsResponse_equal(const UA_TranslateBrowsePathsToNo
 
 
 /* RegisterNodesRequest */
-UA_EXPORT void
+static UA_INLINE void
 UA_RegisterNodesRequest_init(UA_RegisterNodesRequest *p) {
     memset(p, 0, sizeof(UA_RegisterNodesRequest));
 }
 
-UA_EXPORT UA_RegisterNodesRequest *
+static UA_INLINE UA_RegisterNodesRequest *
 UA_RegisterNodesRequest_new(void) {
     return (UA_RegisterNodesRequest*)UA_new(&UA_TYPES[UA_TYPES_REGISTERNODESREQUEST]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_RegisterNodesRequest_copy(const UA_RegisterNodesRequest *src, UA_RegisterNodesRequest *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_REGISTERNODESREQUEST]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_RegisterNodesRequest_deleteMembers(UA_RegisterNodesRequest *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_REGISTERNODESREQUEST]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_RegisterNodesRequest_clear(UA_RegisterNodesRequest *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_REGISTERNODESREQUEST]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_RegisterNodesRequest_delete(UA_RegisterNodesRequest *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_REGISTERNODESREQUEST]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_RegisterNodesRequest_equal(const UA_RegisterNodesRequest *p1, const UA_RegisterNodesRequest *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_REGISTERNODESREQUEST]) == UA_ORDER_EQ);
 }
@@ -36214,35 +36522,35 @@ UA_RegisterNodesRequest_equal(const UA_RegisterNodesRequest *p1, const UA_Regist
 
 
 /* RegisterNodesResponse */
-UA_EXPORT void
+static UA_INLINE void
 UA_RegisterNodesResponse_init(UA_RegisterNodesResponse *p) {
     memset(p, 0, sizeof(UA_RegisterNodesResponse));
 }
 
-UA_EXPORT UA_RegisterNodesResponse *
+static UA_INLINE UA_RegisterNodesResponse *
 UA_RegisterNodesResponse_new(void) {
     return (UA_RegisterNodesResponse*)UA_new(&UA_TYPES[UA_TYPES_REGISTERNODESRESPONSE]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_RegisterNodesResponse_copy(const UA_RegisterNodesResponse *src, UA_RegisterNodesResponse *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_REGISTERNODESRESPONSE]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_RegisterNodesResponse_deleteMembers(UA_RegisterNodesResponse *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_REGISTERNODESRESPONSE]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_RegisterNodesResponse_clear(UA_RegisterNodesResponse *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_REGISTERNODESRESPONSE]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_RegisterNodesResponse_delete(UA_RegisterNodesResponse *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_REGISTERNODESRESPONSE]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_RegisterNodesResponse_equal(const UA_RegisterNodesResponse *p1, const UA_RegisterNodesResponse *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_REGISTERNODESRESPONSE]) == UA_ORDER_EQ);
 }
@@ -36250,35 +36558,35 @@ UA_RegisterNodesResponse_equal(const UA_RegisterNodesResponse *p1, const UA_Regi
 
 
 /* UnregisterNodesRequest */
-UA_EXPORT void
+static UA_INLINE void
 UA_UnregisterNodesRequest_init(UA_UnregisterNodesRequest *p) {
     memset(p, 0, sizeof(UA_UnregisterNodesRequest));
 }
 
-UA_EXPORT UA_UnregisterNodesRequest *
+static UA_INLINE UA_UnregisterNodesRequest *
 UA_UnregisterNodesRequest_new(void) {
     return (UA_UnregisterNodesRequest*)UA_new(&UA_TYPES[UA_TYPES_UNREGISTERNODESREQUEST]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_UnregisterNodesRequest_copy(const UA_UnregisterNodesRequest *src, UA_UnregisterNodesRequest *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_UNREGISTERNODESREQUEST]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_UnregisterNodesRequest_deleteMembers(UA_UnregisterNodesRequest *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_UNREGISTERNODESREQUEST]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_UnregisterNodesRequest_clear(UA_UnregisterNodesRequest *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_UNREGISTERNODESREQUEST]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_UnregisterNodesRequest_delete(UA_UnregisterNodesRequest *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_UNREGISTERNODESREQUEST]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_UnregisterNodesRequest_equal(const UA_UnregisterNodesRequest *p1, const UA_UnregisterNodesRequest *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_UNREGISTERNODESREQUEST]) == UA_ORDER_EQ);
 }
@@ -36286,35 +36594,35 @@ UA_UnregisterNodesRequest_equal(const UA_UnregisterNodesRequest *p1, const UA_Un
 
 
 /* UnregisterNodesResponse */
-UA_EXPORT void
+static UA_INLINE void
 UA_UnregisterNodesResponse_init(UA_UnregisterNodesResponse *p) {
     memset(p, 0, sizeof(UA_UnregisterNodesResponse));
 }
 
-UA_EXPORT UA_UnregisterNodesResponse *
+static UA_INLINE UA_UnregisterNodesResponse *
 UA_UnregisterNodesResponse_new(void) {
     return (UA_UnregisterNodesResponse*)UA_new(&UA_TYPES[UA_TYPES_UNREGISTERNODESRESPONSE]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_UnregisterNodesResponse_copy(const UA_UnregisterNodesResponse *src, UA_UnregisterNodesResponse *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_UNREGISTERNODESRESPONSE]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_UnregisterNodesResponse_deleteMembers(UA_UnregisterNodesResponse *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_UNREGISTERNODESRESPONSE]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_UnregisterNodesResponse_clear(UA_UnregisterNodesResponse *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_UNREGISTERNODESRESPONSE]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_UnregisterNodesResponse_delete(UA_UnregisterNodesResponse *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_UNREGISTERNODESRESPONSE]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_UnregisterNodesResponse_equal(const UA_UnregisterNodesResponse *p1, const UA_UnregisterNodesResponse *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_UNREGISTERNODESRESPONSE]) == UA_ORDER_EQ);
 }
@@ -36322,35 +36630,35 @@ UA_UnregisterNodesResponse_equal(const UA_UnregisterNodesResponse *p1, const UA_
 
 
 /* Counter */
-UA_EXPORT void
+static UA_INLINE void
 UA_Counter_init(UA_Counter *p) {
     memset(p, 0, sizeof(UA_Counter));
 }
 
-UA_EXPORT UA_Counter *
+static UA_INLINE UA_Counter *
 UA_Counter_new(void) {
     return (UA_Counter*)UA_new(&UA_TYPES[UA_TYPES_COUNTER]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_Counter_copy(const UA_Counter *src, UA_Counter *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_COUNTER]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_Counter_deleteMembers(UA_Counter *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_COUNTER]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_Counter_clear(UA_Counter *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_COUNTER]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_Counter_delete(UA_Counter *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_COUNTER]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_Counter_equal(const UA_Counter *p1, const UA_Counter *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_COUNTER]) == UA_ORDER_EQ);
 }
@@ -36358,35 +36666,35 @@ UA_Counter_equal(const UA_Counter *p1, const UA_Counter *p2) {
 
 
 /* OpaqueNumericRange */
-UA_EXPORT void
+static UA_INLINE void
 UA_OpaqueNumericRange_init(UA_OpaqueNumericRange *p) {
     memset(p, 0, sizeof(UA_OpaqueNumericRange));
 }
 
-UA_EXPORT UA_OpaqueNumericRange *
+static UA_INLINE UA_OpaqueNumericRange *
 UA_OpaqueNumericRange_new(void) {
     return (UA_OpaqueNumericRange*)UA_new(&UA_TYPES[UA_TYPES_OPAQUENUMERICRANGE]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_OpaqueNumericRange_copy(const UA_OpaqueNumericRange *src, UA_OpaqueNumericRange *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_OPAQUENUMERICRANGE]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_OpaqueNumericRange_deleteMembers(UA_OpaqueNumericRange *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_OPAQUENUMERICRANGE]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_OpaqueNumericRange_clear(UA_OpaqueNumericRange *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_OPAQUENUMERICRANGE]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_OpaqueNumericRange_delete(UA_OpaqueNumericRange *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_OPAQUENUMERICRANGE]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_OpaqueNumericRange_equal(const UA_OpaqueNumericRange *p1, const UA_OpaqueNumericRange *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_OPAQUENUMERICRANGE]) == UA_ORDER_EQ);
 }
@@ -36394,35 +36702,35 @@ UA_OpaqueNumericRange_equal(const UA_OpaqueNumericRange *p1, const UA_OpaqueNume
 
 
 /* EndpointConfiguration */
-UA_EXPORT void
+static UA_INLINE void
 UA_EndpointConfiguration_init(UA_EndpointConfiguration *p) {
     memset(p, 0, sizeof(UA_EndpointConfiguration));
 }
 
-UA_EXPORT UA_EndpointConfiguration *
+static UA_INLINE UA_EndpointConfiguration *
 UA_EndpointConfiguration_new(void) {
     return (UA_EndpointConfiguration*)UA_new(&UA_TYPES[UA_TYPES_ENDPOINTCONFIGURATION]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_EndpointConfiguration_copy(const UA_EndpointConfiguration *src, UA_EndpointConfiguration *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_ENDPOINTCONFIGURATION]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_EndpointConfiguration_deleteMembers(UA_EndpointConfiguration *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_ENDPOINTCONFIGURATION]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_EndpointConfiguration_clear(UA_EndpointConfiguration *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_ENDPOINTCONFIGURATION]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_EndpointConfiguration_delete(UA_EndpointConfiguration *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_ENDPOINTCONFIGURATION]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_EndpointConfiguration_equal(const UA_EndpointConfiguration *p1, const UA_EndpointConfiguration *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_ENDPOINTCONFIGURATION]) == UA_ORDER_EQ);
 }
@@ -36430,35 +36738,35 @@ UA_EndpointConfiguration_equal(const UA_EndpointConfiguration *p1, const UA_Endp
 
 
 /* QueryDataDescription */
-UA_EXPORT void
+static UA_INLINE void
 UA_QueryDataDescription_init(UA_QueryDataDescription *p) {
     memset(p, 0, sizeof(UA_QueryDataDescription));
 }
 
-UA_EXPORT UA_QueryDataDescription *
+static UA_INLINE UA_QueryDataDescription *
 UA_QueryDataDescription_new(void) {
     return (UA_QueryDataDescription*)UA_new(&UA_TYPES[UA_TYPES_QUERYDATADESCRIPTION]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_QueryDataDescription_copy(const UA_QueryDataDescription *src, UA_QueryDataDescription *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_QUERYDATADESCRIPTION]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_QueryDataDescription_deleteMembers(UA_QueryDataDescription *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_QUERYDATADESCRIPTION]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_QueryDataDescription_clear(UA_QueryDataDescription *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_QUERYDATADESCRIPTION]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_QueryDataDescription_delete(UA_QueryDataDescription *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_QUERYDATADESCRIPTION]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_QueryDataDescription_equal(const UA_QueryDataDescription *p1, const UA_QueryDataDescription *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_QUERYDATADESCRIPTION]) == UA_ORDER_EQ);
 }
@@ -36466,35 +36774,35 @@ UA_QueryDataDescription_equal(const UA_QueryDataDescription *p1, const UA_QueryD
 
 
 /* NodeTypeDescription */
-UA_EXPORT void
+static UA_INLINE void
 UA_NodeTypeDescription_init(UA_NodeTypeDescription *p) {
     memset(p, 0, sizeof(UA_NodeTypeDescription));
 }
 
-UA_EXPORT UA_NodeTypeDescription *
+static UA_INLINE UA_NodeTypeDescription *
 UA_NodeTypeDescription_new(void) {
     return (UA_NodeTypeDescription*)UA_new(&UA_TYPES[UA_TYPES_NODETYPEDESCRIPTION]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_NodeTypeDescription_copy(const UA_NodeTypeDescription *src, UA_NodeTypeDescription *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_NODETYPEDESCRIPTION]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_NodeTypeDescription_deleteMembers(UA_NodeTypeDescription *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_NODETYPEDESCRIPTION]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_NodeTypeDescription_clear(UA_NodeTypeDescription *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_NODETYPEDESCRIPTION]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_NodeTypeDescription_delete(UA_NodeTypeDescription *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_NODETYPEDESCRIPTION]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_NodeTypeDescription_equal(const UA_NodeTypeDescription *p1, const UA_NodeTypeDescription *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_NODETYPEDESCRIPTION]) == UA_ORDER_EQ);
 }
@@ -36502,35 +36810,35 @@ UA_NodeTypeDescription_equal(const UA_NodeTypeDescription *p1, const UA_NodeType
 
 
 /* FilterOperator */
-UA_EXPORT void
+static UA_INLINE void
 UA_FilterOperator_init(UA_FilterOperator *p) {
     memset(p, 0, sizeof(UA_FilterOperator));
 }
 
-UA_EXPORT UA_FilterOperator *
+static UA_INLINE UA_FilterOperator *
 UA_FilterOperator_new(void) {
     return (UA_FilterOperator*)UA_new(&UA_TYPES[UA_TYPES_FILTEROPERATOR]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_FilterOperator_copy(const UA_FilterOperator *src, UA_FilterOperator *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_FILTEROPERATOR]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_FilterOperator_deleteMembers(UA_FilterOperator *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_FILTEROPERATOR]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_FilterOperator_clear(UA_FilterOperator *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_FILTEROPERATOR]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_FilterOperator_delete(UA_FilterOperator *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_FILTEROPERATOR]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_FilterOperator_equal(const UA_FilterOperator *p1, const UA_FilterOperator *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_FILTEROPERATOR]) == UA_ORDER_EQ);
 }
@@ -36538,35 +36846,35 @@ UA_FilterOperator_equal(const UA_FilterOperator *p1, const UA_FilterOperator *p2
 
 
 /* QueryDataSet */
-UA_EXPORT void
+static UA_INLINE void
 UA_QueryDataSet_init(UA_QueryDataSet *p) {
     memset(p, 0, sizeof(UA_QueryDataSet));
 }
 
-UA_EXPORT UA_QueryDataSet *
+static UA_INLINE UA_QueryDataSet *
 UA_QueryDataSet_new(void) {
     return (UA_QueryDataSet*)UA_new(&UA_TYPES[UA_TYPES_QUERYDATASET]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_QueryDataSet_copy(const UA_QueryDataSet *src, UA_QueryDataSet *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_QUERYDATASET]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_QueryDataSet_deleteMembers(UA_QueryDataSet *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_QUERYDATASET]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_QueryDataSet_clear(UA_QueryDataSet *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_QUERYDATASET]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_QueryDataSet_delete(UA_QueryDataSet *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_QUERYDATASET]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_QueryDataSet_equal(const UA_QueryDataSet *p1, const UA_QueryDataSet *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_QUERYDATASET]) == UA_ORDER_EQ);
 }
@@ -36574,35 +36882,35 @@ UA_QueryDataSet_equal(const UA_QueryDataSet *p1, const UA_QueryDataSet *p2) {
 
 
 /* NodeReference */
-UA_EXPORT void
+static UA_INLINE void
 UA_NodeReference_init(UA_NodeReference *p) {
     memset(p, 0, sizeof(UA_NodeReference));
 }
 
-UA_EXPORT UA_NodeReference *
+static UA_INLINE UA_NodeReference *
 UA_NodeReference_new(void) {
     return (UA_NodeReference*)UA_new(&UA_TYPES[UA_TYPES_NODEREFERENCE]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_NodeReference_copy(const UA_NodeReference *src, UA_NodeReference *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_NODEREFERENCE]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_NodeReference_deleteMembers(UA_NodeReference *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_NODEREFERENCE]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_NodeReference_clear(UA_NodeReference *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_NODEREFERENCE]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_NodeReference_delete(UA_NodeReference *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_NODEREFERENCE]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_NodeReference_equal(const UA_NodeReference *p1, const UA_NodeReference *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_NODEREFERENCE]) == UA_ORDER_EQ);
 }
@@ -36610,35 +36918,35 @@ UA_NodeReference_equal(const UA_NodeReference *p1, const UA_NodeReference *p2) {
 
 
 /* ContentFilterElement */
-UA_EXPORT void
+static UA_INLINE void
 UA_ContentFilterElement_init(UA_ContentFilterElement *p) {
     memset(p, 0, sizeof(UA_ContentFilterElement));
 }
 
-UA_EXPORT UA_ContentFilterElement *
+static UA_INLINE UA_ContentFilterElement *
 UA_ContentFilterElement_new(void) {
     return (UA_ContentFilterElement*)UA_new(&UA_TYPES[UA_TYPES_CONTENTFILTERELEMENT]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_ContentFilterElement_copy(const UA_ContentFilterElement *src, UA_ContentFilterElement *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_CONTENTFILTERELEMENT]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_ContentFilterElement_deleteMembers(UA_ContentFilterElement *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_CONTENTFILTERELEMENT]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_ContentFilterElement_clear(UA_ContentFilterElement *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_CONTENTFILTERELEMENT]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_ContentFilterElement_delete(UA_ContentFilterElement *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_CONTENTFILTERELEMENT]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_ContentFilterElement_equal(const UA_ContentFilterElement *p1, const UA_ContentFilterElement *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_CONTENTFILTERELEMENT]) == UA_ORDER_EQ);
 }
@@ -36646,35 +36954,35 @@ UA_ContentFilterElement_equal(const UA_ContentFilterElement *p1, const UA_Conten
 
 
 /* ContentFilter */
-UA_EXPORT void
+static UA_INLINE void
 UA_ContentFilter_init(UA_ContentFilter *p) {
     memset(p, 0, sizeof(UA_ContentFilter));
 }
 
-UA_EXPORT UA_ContentFilter *
+static UA_INLINE UA_ContentFilter *
 UA_ContentFilter_new(void) {
     return (UA_ContentFilter*)UA_new(&UA_TYPES[UA_TYPES_CONTENTFILTER]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_ContentFilter_copy(const UA_ContentFilter *src, UA_ContentFilter *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_CONTENTFILTER]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_ContentFilter_deleteMembers(UA_ContentFilter *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_CONTENTFILTER]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_ContentFilter_clear(UA_ContentFilter *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_CONTENTFILTER]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_ContentFilter_delete(UA_ContentFilter *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_CONTENTFILTER]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_ContentFilter_equal(const UA_ContentFilter *p1, const UA_ContentFilter *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_CONTENTFILTER]) == UA_ORDER_EQ);
 }
@@ -36682,35 +36990,35 @@ UA_ContentFilter_equal(const UA_ContentFilter *p1, const UA_ContentFilter *p2) {
 
 
 /* ElementOperand */
-UA_EXPORT void
+static UA_INLINE void
 UA_ElementOperand_init(UA_ElementOperand *p) {
     memset(p, 0, sizeof(UA_ElementOperand));
 }
 
-UA_EXPORT UA_ElementOperand *
+static UA_INLINE UA_ElementOperand *
 UA_ElementOperand_new(void) {
     return (UA_ElementOperand*)UA_new(&UA_TYPES[UA_TYPES_ELEMENTOPERAND]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_ElementOperand_copy(const UA_ElementOperand *src, UA_ElementOperand *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_ELEMENTOPERAND]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_ElementOperand_deleteMembers(UA_ElementOperand *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_ELEMENTOPERAND]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_ElementOperand_clear(UA_ElementOperand *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_ELEMENTOPERAND]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_ElementOperand_delete(UA_ElementOperand *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_ELEMENTOPERAND]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_ElementOperand_equal(const UA_ElementOperand *p1, const UA_ElementOperand *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_ELEMENTOPERAND]) == UA_ORDER_EQ);
 }
@@ -36718,35 +37026,35 @@ UA_ElementOperand_equal(const UA_ElementOperand *p1, const UA_ElementOperand *p2
 
 
 /* LiteralOperand */
-UA_EXPORT void
+static UA_INLINE void
 UA_LiteralOperand_init(UA_LiteralOperand *p) {
     memset(p, 0, sizeof(UA_LiteralOperand));
 }
 
-UA_EXPORT UA_LiteralOperand *
+static UA_INLINE UA_LiteralOperand *
 UA_LiteralOperand_new(void) {
     return (UA_LiteralOperand*)UA_new(&UA_TYPES[UA_TYPES_LITERALOPERAND]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_LiteralOperand_copy(const UA_LiteralOperand *src, UA_LiteralOperand *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_LITERALOPERAND]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_LiteralOperand_deleteMembers(UA_LiteralOperand *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_LITERALOPERAND]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_LiteralOperand_clear(UA_LiteralOperand *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_LITERALOPERAND]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_LiteralOperand_delete(UA_LiteralOperand *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_LITERALOPERAND]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_LiteralOperand_equal(const UA_LiteralOperand *p1, const UA_LiteralOperand *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_LITERALOPERAND]) == UA_ORDER_EQ);
 }
@@ -36754,35 +37062,35 @@ UA_LiteralOperand_equal(const UA_LiteralOperand *p1, const UA_LiteralOperand *p2
 
 
 /* AttributeOperand */
-UA_EXPORT void
+static UA_INLINE void
 UA_AttributeOperand_init(UA_AttributeOperand *p) {
     memset(p, 0, sizeof(UA_AttributeOperand));
 }
 
-UA_EXPORT UA_AttributeOperand *
+static UA_INLINE UA_AttributeOperand *
 UA_AttributeOperand_new(void) {
     return (UA_AttributeOperand*)UA_new(&UA_TYPES[UA_TYPES_ATTRIBUTEOPERAND]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_AttributeOperand_copy(const UA_AttributeOperand *src, UA_AttributeOperand *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_ATTRIBUTEOPERAND]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_AttributeOperand_deleteMembers(UA_AttributeOperand *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_ATTRIBUTEOPERAND]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_AttributeOperand_clear(UA_AttributeOperand *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_ATTRIBUTEOPERAND]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_AttributeOperand_delete(UA_AttributeOperand *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_ATTRIBUTEOPERAND]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_AttributeOperand_equal(const UA_AttributeOperand *p1, const UA_AttributeOperand *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_ATTRIBUTEOPERAND]) == UA_ORDER_EQ);
 }
@@ -36790,35 +37098,35 @@ UA_AttributeOperand_equal(const UA_AttributeOperand *p1, const UA_AttributeOpera
 
 
 /* SimpleAttributeOperand */
-UA_EXPORT void
+static UA_INLINE void
 UA_SimpleAttributeOperand_init(UA_SimpleAttributeOperand *p) {
     memset(p, 0, sizeof(UA_SimpleAttributeOperand));
 }
 
-UA_EXPORT UA_SimpleAttributeOperand *
+static UA_INLINE UA_SimpleAttributeOperand *
 UA_SimpleAttributeOperand_new(void) {
     return (UA_SimpleAttributeOperand*)UA_new(&UA_TYPES[UA_TYPES_SIMPLEATTRIBUTEOPERAND]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_SimpleAttributeOperand_copy(const UA_SimpleAttributeOperand *src, UA_SimpleAttributeOperand *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_SIMPLEATTRIBUTEOPERAND]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_SimpleAttributeOperand_deleteMembers(UA_SimpleAttributeOperand *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_SIMPLEATTRIBUTEOPERAND]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_SimpleAttributeOperand_clear(UA_SimpleAttributeOperand *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_SIMPLEATTRIBUTEOPERAND]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_SimpleAttributeOperand_delete(UA_SimpleAttributeOperand *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_SIMPLEATTRIBUTEOPERAND]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_SimpleAttributeOperand_equal(const UA_SimpleAttributeOperand *p1, const UA_SimpleAttributeOperand *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_SIMPLEATTRIBUTEOPERAND]) == UA_ORDER_EQ);
 }
@@ -36826,35 +37134,35 @@ UA_SimpleAttributeOperand_equal(const UA_SimpleAttributeOperand *p1, const UA_Si
 
 
 /* ContentFilterElementResult */
-UA_EXPORT void
+static UA_INLINE void
 UA_ContentFilterElementResult_init(UA_ContentFilterElementResult *p) {
     memset(p, 0, sizeof(UA_ContentFilterElementResult));
 }
 
-UA_EXPORT UA_ContentFilterElementResult *
+static UA_INLINE UA_ContentFilterElementResult *
 UA_ContentFilterElementResult_new(void) {
     return (UA_ContentFilterElementResult*)UA_new(&UA_TYPES[UA_TYPES_CONTENTFILTERELEMENTRESULT]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_ContentFilterElementResult_copy(const UA_ContentFilterElementResult *src, UA_ContentFilterElementResult *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_CONTENTFILTERELEMENTRESULT]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_ContentFilterElementResult_deleteMembers(UA_ContentFilterElementResult *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_CONTENTFILTERELEMENTRESULT]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_ContentFilterElementResult_clear(UA_ContentFilterElementResult *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_CONTENTFILTERELEMENTRESULT]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_ContentFilterElementResult_delete(UA_ContentFilterElementResult *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_CONTENTFILTERELEMENTRESULT]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_ContentFilterElementResult_equal(const UA_ContentFilterElementResult *p1, const UA_ContentFilterElementResult *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_CONTENTFILTERELEMENTRESULT]) == UA_ORDER_EQ);
 }
@@ -36862,35 +37170,35 @@ UA_ContentFilterElementResult_equal(const UA_ContentFilterElementResult *p1, con
 
 
 /* ContentFilterResult */
-UA_EXPORT void
+static UA_INLINE void
 UA_ContentFilterResult_init(UA_ContentFilterResult *p) {
     memset(p, 0, sizeof(UA_ContentFilterResult));
 }
 
-UA_EXPORT UA_ContentFilterResult *
+static UA_INLINE UA_ContentFilterResult *
 UA_ContentFilterResult_new(void) {
     return (UA_ContentFilterResult*)UA_new(&UA_TYPES[UA_TYPES_CONTENTFILTERRESULT]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_ContentFilterResult_copy(const UA_ContentFilterResult *src, UA_ContentFilterResult *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_CONTENTFILTERRESULT]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_ContentFilterResult_deleteMembers(UA_ContentFilterResult *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_CONTENTFILTERRESULT]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_ContentFilterResult_clear(UA_ContentFilterResult *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_CONTENTFILTERRESULT]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_ContentFilterResult_delete(UA_ContentFilterResult *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_CONTENTFILTERRESULT]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_ContentFilterResult_equal(const UA_ContentFilterResult *p1, const UA_ContentFilterResult *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_CONTENTFILTERRESULT]) == UA_ORDER_EQ);
 }
@@ -36898,35 +37206,35 @@ UA_ContentFilterResult_equal(const UA_ContentFilterResult *p1, const UA_ContentF
 
 
 /* ParsingResult */
-UA_EXPORT void
+static UA_INLINE void
 UA_ParsingResult_init(UA_ParsingResult *p) {
     memset(p, 0, sizeof(UA_ParsingResult));
 }
 
-UA_EXPORT UA_ParsingResult *
+static UA_INLINE UA_ParsingResult *
 UA_ParsingResult_new(void) {
     return (UA_ParsingResult*)UA_new(&UA_TYPES[UA_TYPES_PARSINGRESULT]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_ParsingResult_copy(const UA_ParsingResult *src, UA_ParsingResult *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_PARSINGRESULT]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_ParsingResult_deleteMembers(UA_ParsingResult *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_PARSINGRESULT]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_ParsingResult_clear(UA_ParsingResult *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_PARSINGRESULT]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_ParsingResult_delete(UA_ParsingResult *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_PARSINGRESULT]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_ParsingResult_equal(const UA_ParsingResult *p1, const UA_ParsingResult *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_PARSINGRESULT]) == UA_ORDER_EQ);
 }
@@ -36934,35 +37242,35 @@ UA_ParsingResult_equal(const UA_ParsingResult *p1, const UA_ParsingResult *p2) {
 
 
 /* QueryFirstRequest */
-UA_EXPORT void
+static UA_INLINE void
 UA_QueryFirstRequest_init(UA_QueryFirstRequest *p) {
     memset(p, 0, sizeof(UA_QueryFirstRequest));
 }
 
-UA_EXPORT UA_QueryFirstRequest *
+static UA_INLINE UA_QueryFirstRequest *
 UA_QueryFirstRequest_new(void) {
     return (UA_QueryFirstRequest*)UA_new(&UA_TYPES[UA_TYPES_QUERYFIRSTREQUEST]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_QueryFirstRequest_copy(const UA_QueryFirstRequest *src, UA_QueryFirstRequest *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_QUERYFIRSTREQUEST]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_QueryFirstRequest_deleteMembers(UA_QueryFirstRequest *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_QUERYFIRSTREQUEST]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_QueryFirstRequest_clear(UA_QueryFirstRequest *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_QUERYFIRSTREQUEST]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_QueryFirstRequest_delete(UA_QueryFirstRequest *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_QUERYFIRSTREQUEST]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_QueryFirstRequest_equal(const UA_QueryFirstRequest *p1, const UA_QueryFirstRequest *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_QUERYFIRSTREQUEST]) == UA_ORDER_EQ);
 }
@@ -36970,35 +37278,35 @@ UA_QueryFirstRequest_equal(const UA_QueryFirstRequest *p1, const UA_QueryFirstRe
 
 
 /* QueryFirstResponse */
-UA_EXPORT void
+static UA_INLINE void
 UA_QueryFirstResponse_init(UA_QueryFirstResponse *p) {
     memset(p, 0, sizeof(UA_QueryFirstResponse));
 }
 
-UA_EXPORT UA_QueryFirstResponse *
+static UA_INLINE UA_QueryFirstResponse *
 UA_QueryFirstResponse_new(void) {
     return (UA_QueryFirstResponse*)UA_new(&UA_TYPES[UA_TYPES_QUERYFIRSTRESPONSE]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_QueryFirstResponse_copy(const UA_QueryFirstResponse *src, UA_QueryFirstResponse *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_QUERYFIRSTRESPONSE]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_QueryFirstResponse_deleteMembers(UA_QueryFirstResponse *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_QUERYFIRSTRESPONSE]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_QueryFirstResponse_clear(UA_QueryFirstResponse *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_QUERYFIRSTRESPONSE]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_QueryFirstResponse_delete(UA_QueryFirstResponse *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_QUERYFIRSTRESPONSE]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_QueryFirstResponse_equal(const UA_QueryFirstResponse *p1, const UA_QueryFirstResponse *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_QUERYFIRSTRESPONSE]) == UA_ORDER_EQ);
 }
@@ -37006,35 +37314,35 @@ UA_QueryFirstResponse_equal(const UA_QueryFirstResponse *p1, const UA_QueryFirst
 
 
 /* QueryNextRequest */
-UA_EXPORT void
+static UA_INLINE void
 UA_QueryNextRequest_init(UA_QueryNextRequest *p) {
     memset(p, 0, sizeof(UA_QueryNextRequest));
 }
 
-UA_EXPORT UA_QueryNextRequest *
+static UA_INLINE UA_QueryNextRequest *
 UA_QueryNextRequest_new(void) {
     return (UA_QueryNextRequest*)UA_new(&UA_TYPES[UA_TYPES_QUERYNEXTREQUEST]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_QueryNextRequest_copy(const UA_QueryNextRequest *src, UA_QueryNextRequest *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_QUERYNEXTREQUEST]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_QueryNextRequest_deleteMembers(UA_QueryNextRequest *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_QUERYNEXTREQUEST]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_QueryNextRequest_clear(UA_QueryNextRequest *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_QUERYNEXTREQUEST]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_QueryNextRequest_delete(UA_QueryNextRequest *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_QUERYNEXTREQUEST]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_QueryNextRequest_equal(const UA_QueryNextRequest *p1, const UA_QueryNextRequest *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_QUERYNEXTREQUEST]) == UA_ORDER_EQ);
 }
@@ -37042,35 +37350,35 @@ UA_QueryNextRequest_equal(const UA_QueryNextRequest *p1, const UA_QueryNextReque
 
 
 /* QueryNextResponse */
-UA_EXPORT void
+static UA_INLINE void
 UA_QueryNextResponse_init(UA_QueryNextResponse *p) {
     memset(p, 0, sizeof(UA_QueryNextResponse));
 }
 
-UA_EXPORT UA_QueryNextResponse *
+static UA_INLINE UA_QueryNextResponse *
 UA_QueryNextResponse_new(void) {
     return (UA_QueryNextResponse*)UA_new(&UA_TYPES[UA_TYPES_QUERYNEXTRESPONSE]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_QueryNextResponse_copy(const UA_QueryNextResponse *src, UA_QueryNextResponse *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_QUERYNEXTRESPONSE]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_QueryNextResponse_deleteMembers(UA_QueryNextResponse *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_QUERYNEXTRESPONSE]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_QueryNextResponse_clear(UA_QueryNextResponse *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_QUERYNEXTRESPONSE]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_QueryNextResponse_delete(UA_QueryNextResponse *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_QUERYNEXTRESPONSE]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_QueryNextResponse_equal(const UA_QueryNextResponse *p1, const UA_QueryNextResponse *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_QUERYNEXTRESPONSE]) == UA_ORDER_EQ);
 }
@@ -37078,35 +37386,35 @@ UA_QueryNextResponse_equal(const UA_QueryNextResponse *p1, const UA_QueryNextRes
 
 
 /* TimestampsToReturn */
-UA_EXPORT void
+static UA_INLINE void
 UA_TimestampsToReturn_init(UA_TimestampsToReturn *p) {
     memset(p, 0, sizeof(UA_TimestampsToReturn));
 }
 
-UA_EXPORT UA_TimestampsToReturn *
+static UA_INLINE UA_TimestampsToReturn *
 UA_TimestampsToReturn_new(void) {
     return (UA_TimestampsToReturn*)UA_new(&UA_TYPES[UA_TYPES_TIMESTAMPSTORETURN]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_TimestampsToReturn_copy(const UA_TimestampsToReturn *src, UA_TimestampsToReturn *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_TIMESTAMPSTORETURN]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_TimestampsToReturn_deleteMembers(UA_TimestampsToReturn *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_TIMESTAMPSTORETURN]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_TimestampsToReturn_clear(UA_TimestampsToReturn *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_TIMESTAMPSTORETURN]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_TimestampsToReturn_delete(UA_TimestampsToReturn *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_TIMESTAMPSTORETURN]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_TimestampsToReturn_equal(const UA_TimestampsToReturn *p1, const UA_TimestampsToReturn *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_TIMESTAMPSTORETURN]) == UA_ORDER_EQ);
 }
@@ -37114,35 +37422,35 @@ UA_TimestampsToReturn_equal(const UA_TimestampsToReturn *p1, const UA_Timestamps
 
 
 /* ReadValueId */
-UA_EXPORT void
+static UA_INLINE void
 UA_ReadValueId_init(UA_ReadValueId *p) {
     memset(p, 0, sizeof(UA_ReadValueId));
 }
 
-UA_EXPORT UA_ReadValueId *
+static UA_INLINE UA_ReadValueId *
 UA_ReadValueId_new(void) {
     return (UA_ReadValueId*)UA_new(&UA_TYPES[UA_TYPES_READVALUEID]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_ReadValueId_copy(const UA_ReadValueId *src, UA_ReadValueId *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_READVALUEID]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_ReadValueId_deleteMembers(UA_ReadValueId *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_READVALUEID]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_ReadValueId_clear(UA_ReadValueId *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_READVALUEID]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_ReadValueId_delete(UA_ReadValueId *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_READVALUEID]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_ReadValueId_equal(const UA_ReadValueId *p1, const UA_ReadValueId *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_READVALUEID]) == UA_ORDER_EQ);
 }
@@ -37150,35 +37458,35 @@ UA_ReadValueId_equal(const UA_ReadValueId *p1, const UA_ReadValueId *p2) {
 
 
 /* ReadRequest */
-UA_EXPORT void
+static UA_INLINE void
 UA_ReadRequest_init(UA_ReadRequest *p) {
     memset(p, 0, sizeof(UA_ReadRequest));
 }
 
-UA_EXPORT UA_ReadRequest *
+static UA_INLINE UA_ReadRequest *
 UA_ReadRequest_new(void) {
     return (UA_ReadRequest*)UA_new(&UA_TYPES[UA_TYPES_READREQUEST]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_ReadRequest_copy(const UA_ReadRequest *src, UA_ReadRequest *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_READREQUEST]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_ReadRequest_deleteMembers(UA_ReadRequest *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_READREQUEST]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_ReadRequest_clear(UA_ReadRequest *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_READREQUEST]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_ReadRequest_delete(UA_ReadRequest *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_READREQUEST]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_ReadRequest_equal(const UA_ReadRequest *p1, const UA_ReadRequest *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_READREQUEST]) == UA_ORDER_EQ);
 }
@@ -37186,35 +37494,35 @@ UA_ReadRequest_equal(const UA_ReadRequest *p1, const UA_ReadRequest *p2) {
 
 
 /* ReadResponse */
-UA_EXPORT void
+static UA_INLINE void
 UA_ReadResponse_init(UA_ReadResponse *p) {
     memset(p, 0, sizeof(UA_ReadResponse));
 }
 
-UA_EXPORT UA_ReadResponse *
+static UA_INLINE UA_ReadResponse *
 UA_ReadResponse_new(void) {
     return (UA_ReadResponse*)UA_new(&UA_TYPES[UA_TYPES_READRESPONSE]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_ReadResponse_copy(const UA_ReadResponse *src, UA_ReadResponse *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_READRESPONSE]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_ReadResponse_deleteMembers(UA_ReadResponse *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_READRESPONSE]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_ReadResponse_clear(UA_ReadResponse *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_READRESPONSE]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_ReadResponse_delete(UA_ReadResponse *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_READRESPONSE]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_ReadResponse_equal(const UA_ReadResponse *p1, const UA_ReadResponse *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_READRESPONSE]) == UA_ORDER_EQ);
 }
@@ -37222,35 +37530,35 @@ UA_ReadResponse_equal(const UA_ReadResponse *p1, const UA_ReadResponse *p2) {
 
 
 /* HistoryReadValueId */
-UA_EXPORT void
+static UA_INLINE void
 UA_HistoryReadValueId_init(UA_HistoryReadValueId *p) {
     memset(p, 0, sizeof(UA_HistoryReadValueId));
 }
 
-UA_EXPORT UA_HistoryReadValueId *
+static UA_INLINE UA_HistoryReadValueId *
 UA_HistoryReadValueId_new(void) {
     return (UA_HistoryReadValueId*)UA_new(&UA_TYPES[UA_TYPES_HISTORYREADVALUEID]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_HistoryReadValueId_copy(const UA_HistoryReadValueId *src, UA_HistoryReadValueId *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_HISTORYREADVALUEID]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_HistoryReadValueId_deleteMembers(UA_HistoryReadValueId *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_HISTORYREADVALUEID]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_HistoryReadValueId_clear(UA_HistoryReadValueId *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_HISTORYREADVALUEID]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_HistoryReadValueId_delete(UA_HistoryReadValueId *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_HISTORYREADVALUEID]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_HistoryReadValueId_equal(const UA_HistoryReadValueId *p1, const UA_HistoryReadValueId *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_HISTORYREADVALUEID]) == UA_ORDER_EQ);
 }
@@ -37258,35 +37566,35 @@ UA_HistoryReadValueId_equal(const UA_HistoryReadValueId *p1, const UA_HistoryRea
 
 
 /* HistoryReadResult */
-UA_EXPORT void
+static UA_INLINE void
 UA_HistoryReadResult_init(UA_HistoryReadResult *p) {
     memset(p, 0, sizeof(UA_HistoryReadResult));
 }
 
-UA_EXPORT UA_HistoryReadResult *
+static UA_INLINE UA_HistoryReadResult *
 UA_HistoryReadResult_new(void) {
     return (UA_HistoryReadResult*)UA_new(&UA_TYPES[UA_TYPES_HISTORYREADRESULT]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_HistoryReadResult_copy(const UA_HistoryReadResult *src, UA_HistoryReadResult *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_HISTORYREADRESULT]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_HistoryReadResult_deleteMembers(UA_HistoryReadResult *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_HISTORYREADRESULT]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_HistoryReadResult_clear(UA_HistoryReadResult *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_HISTORYREADRESULT]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_HistoryReadResult_delete(UA_HistoryReadResult *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_HISTORYREADRESULT]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_HistoryReadResult_equal(const UA_HistoryReadResult *p1, const UA_HistoryReadResult *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_HISTORYREADRESULT]) == UA_ORDER_EQ);
 }
@@ -37294,35 +37602,35 @@ UA_HistoryReadResult_equal(const UA_HistoryReadResult *p1, const UA_HistoryReadR
 
 
 /* ReadRawModifiedDetails */
-UA_EXPORT void
+static UA_INLINE void
 UA_ReadRawModifiedDetails_init(UA_ReadRawModifiedDetails *p) {
     memset(p, 0, sizeof(UA_ReadRawModifiedDetails));
 }
 
-UA_EXPORT UA_ReadRawModifiedDetails *
+static UA_INLINE UA_ReadRawModifiedDetails *
 UA_ReadRawModifiedDetails_new(void) {
     return (UA_ReadRawModifiedDetails*)UA_new(&UA_TYPES[UA_TYPES_READRAWMODIFIEDDETAILS]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_ReadRawModifiedDetails_copy(const UA_ReadRawModifiedDetails *src, UA_ReadRawModifiedDetails *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_READRAWMODIFIEDDETAILS]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_ReadRawModifiedDetails_deleteMembers(UA_ReadRawModifiedDetails *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_READRAWMODIFIEDDETAILS]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_ReadRawModifiedDetails_clear(UA_ReadRawModifiedDetails *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_READRAWMODIFIEDDETAILS]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_ReadRawModifiedDetails_delete(UA_ReadRawModifiedDetails *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_READRAWMODIFIEDDETAILS]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_ReadRawModifiedDetails_equal(const UA_ReadRawModifiedDetails *p1, const UA_ReadRawModifiedDetails *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_READRAWMODIFIEDDETAILS]) == UA_ORDER_EQ);
 }
@@ -37330,35 +37638,35 @@ UA_ReadRawModifiedDetails_equal(const UA_ReadRawModifiedDetails *p1, const UA_Re
 
 
 /* ReadAtTimeDetails */
-UA_EXPORT void
+static UA_INLINE void
 UA_ReadAtTimeDetails_init(UA_ReadAtTimeDetails *p) {
     memset(p, 0, sizeof(UA_ReadAtTimeDetails));
 }
 
-UA_EXPORT UA_ReadAtTimeDetails *
+static UA_INLINE UA_ReadAtTimeDetails *
 UA_ReadAtTimeDetails_new(void) {
     return (UA_ReadAtTimeDetails*)UA_new(&UA_TYPES[UA_TYPES_READATTIMEDETAILS]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_ReadAtTimeDetails_copy(const UA_ReadAtTimeDetails *src, UA_ReadAtTimeDetails *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_READATTIMEDETAILS]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_ReadAtTimeDetails_deleteMembers(UA_ReadAtTimeDetails *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_READATTIMEDETAILS]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_ReadAtTimeDetails_clear(UA_ReadAtTimeDetails *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_READATTIMEDETAILS]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_ReadAtTimeDetails_delete(UA_ReadAtTimeDetails *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_READATTIMEDETAILS]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_ReadAtTimeDetails_equal(const UA_ReadAtTimeDetails *p1, const UA_ReadAtTimeDetails *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_READATTIMEDETAILS]) == UA_ORDER_EQ);
 }
@@ -37366,35 +37674,35 @@ UA_ReadAtTimeDetails_equal(const UA_ReadAtTimeDetails *p1, const UA_ReadAtTimeDe
 
 
 /* ReadAnnotationDataDetails */
-UA_EXPORT void
+static UA_INLINE void
 UA_ReadAnnotationDataDetails_init(UA_ReadAnnotationDataDetails *p) {
     memset(p, 0, sizeof(UA_ReadAnnotationDataDetails));
 }
 
-UA_EXPORT UA_ReadAnnotationDataDetails *
+static UA_INLINE UA_ReadAnnotationDataDetails *
 UA_ReadAnnotationDataDetails_new(void) {
     return (UA_ReadAnnotationDataDetails*)UA_new(&UA_TYPES[UA_TYPES_READANNOTATIONDATADETAILS]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_ReadAnnotationDataDetails_copy(const UA_ReadAnnotationDataDetails *src, UA_ReadAnnotationDataDetails *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_READANNOTATIONDATADETAILS]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_ReadAnnotationDataDetails_deleteMembers(UA_ReadAnnotationDataDetails *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_READANNOTATIONDATADETAILS]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_ReadAnnotationDataDetails_clear(UA_ReadAnnotationDataDetails *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_READANNOTATIONDATADETAILS]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_ReadAnnotationDataDetails_delete(UA_ReadAnnotationDataDetails *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_READANNOTATIONDATADETAILS]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_ReadAnnotationDataDetails_equal(const UA_ReadAnnotationDataDetails *p1, const UA_ReadAnnotationDataDetails *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_READANNOTATIONDATADETAILS]) == UA_ORDER_EQ);
 }
@@ -37402,35 +37710,35 @@ UA_ReadAnnotationDataDetails_equal(const UA_ReadAnnotationDataDetails *p1, const
 
 
 /* HistoryData */
-UA_EXPORT void
+static UA_INLINE void
 UA_HistoryData_init(UA_HistoryData *p) {
     memset(p, 0, sizeof(UA_HistoryData));
 }
 
-UA_EXPORT UA_HistoryData *
+static UA_INLINE UA_HistoryData *
 UA_HistoryData_new(void) {
     return (UA_HistoryData*)UA_new(&UA_TYPES[UA_TYPES_HISTORYDATA]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_HistoryData_copy(const UA_HistoryData *src, UA_HistoryData *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_HISTORYDATA]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_HistoryData_deleteMembers(UA_HistoryData *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_HISTORYDATA]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_HistoryData_clear(UA_HistoryData *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_HISTORYDATA]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_HistoryData_delete(UA_HistoryData *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_HISTORYDATA]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_HistoryData_equal(const UA_HistoryData *p1, const UA_HistoryData *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_HISTORYDATA]) == UA_ORDER_EQ);
 }
@@ -37438,35 +37746,35 @@ UA_HistoryData_equal(const UA_HistoryData *p1, const UA_HistoryData *p2) {
 
 
 /* HistoryReadRequest */
-UA_EXPORT void
+static UA_INLINE void
 UA_HistoryReadRequest_init(UA_HistoryReadRequest *p) {
     memset(p, 0, sizeof(UA_HistoryReadRequest));
 }
 
-UA_EXPORT UA_HistoryReadRequest *
+static UA_INLINE UA_HistoryReadRequest *
 UA_HistoryReadRequest_new(void) {
     return (UA_HistoryReadRequest*)UA_new(&UA_TYPES[UA_TYPES_HISTORYREADREQUEST]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_HistoryReadRequest_copy(const UA_HistoryReadRequest *src, UA_HistoryReadRequest *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_HISTORYREADREQUEST]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_HistoryReadRequest_deleteMembers(UA_HistoryReadRequest *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_HISTORYREADREQUEST]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_HistoryReadRequest_clear(UA_HistoryReadRequest *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_HISTORYREADREQUEST]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_HistoryReadRequest_delete(UA_HistoryReadRequest *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_HISTORYREADREQUEST]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_HistoryReadRequest_equal(const UA_HistoryReadRequest *p1, const UA_HistoryReadRequest *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_HISTORYREADREQUEST]) == UA_ORDER_EQ);
 }
@@ -37474,35 +37782,35 @@ UA_HistoryReadRequest_equal(const UA_HistoryReadRequest *p1, const UA_HistoryRea
 
 
 /* HistoryReadResponse */
-UA_EXPORT void
+static UA_INLINE void
 UA_HistoryReadResponse_init(UA_HistoryReadResponse *p) {
     memset(p, 0, sizeof(UA_HistoryReadResponse));
 }
 
-UA_EXPORT UA_HistoryReadResponse *
+static UA_INLINE UA_HistoryReadResponse *
 UA_HistoryReadResponse_new(void) {
     return (UA_HistoryReadResponse*)UA_new(&UA_TYPES[UA_TYPES_HISTORYREADRESPONSE]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_HistoryReadResponse_copy(const UA_HistoryReadResponse *src, UA_HistoryReadResponse *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_HISTORYREADRESPONSE]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_HistoryReadResponse_deleteMembers(UA_HistoryReadResponse *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_HISTORYREADRESPONSE]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_HistoryReadResponse_clear(UA_HistoryReadResponse *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_HISTORYREADRESPONSE]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_HistoryReadResponse_delete(UA_HistoryReadResponse *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_HISTORYREADRESPONSE]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_HistoryReadResponse_equal(const UA_HistoryReadResponse *p1, const UA_HistoryReadResponse *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_HISTORYREADRESPONSE]) == UA_ORDER_EQ);
 }
@@ -37510,35 +37818,35 @@ UA_HistoryReadResponse_equal(const UA_HistoryReadResponse *p1, const UA_HistoryR
 
 
 /* WriteValue */
-UA_EXPORT void
+static UA_INLINE void
 UA_WriteValue_init(UA_WriteValue *p) {
     memset(p, 0, sizeof(UA_WriteValue));
 }
 
-UA_EXPORT UA_WriteValue *
+static UA_INLINE UA_WriteValue *
 UA_WriteValue_new(void) {
     return (UA_WriteValue*)UA_new(&UA_TYPES[UA_TYPES_WRITEVALUE]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_WriteValue_copy(const UA_WriteValue *src, UA_WriteValue *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_WRITEVALUE]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_WriteValue_deleteMembers(UA_WriteValue *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_WRITEVALUE]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_WriteValue_clear(UA_WriteValue *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_WRITEVALUE]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_WriteValue_delete(UA_WriteValue *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_WRITEVALUE]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_WriteValue_equal(const UA_WriteValue *p1, const UA_WriteValue *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_WRITEVALUE]) == UA_ORDER_EQ);
 }
@@ -37546,35 +37854,35 @@ UA_WriteValue_equal(const UA_WriteValue *p1, const UA_WriteValue *p2) {
 
 
 /* WriteRequest */
-UA_EXPORT void
+static UA_INLINE void
 UA_WriteRequest_init(UA_WriteRequest *p) {
     memset(p, 0, sizeof(UA_WriteRequest));
 }
 
-UA_EXPORT UA_WriteRequest *
+static UA_INLINE UA_WriteRequest *
 UA_WriteRequest_new(void) {
     return (UA_WriteRequest*)UA_new(&UA_TYPES[UA_TYPES_WRITEREQUEST]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_WriteRequest_copy(const UA_WriteRequest *src, UA_WriteRequest *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_WRITEREQUEST]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_WriteRequest_deleteMembers(UA_WriteRequest *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_WRITEREQUEST]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_WriteRequest_clear(UA_WriteRequest *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_WRITEREQUEST]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_WriteRequest_delete(UA_WriteRequest *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_WRITEREQUEST]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_WriteRequest_equal(const UA_WriteRequest *p1, const UA_WriteRequest *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_WRITEREQUEST]) == UA_ORDER_EQ);
 }
@@ -37582,35 +37890,35 @@ UA_WriteRequest_equal(const UA_WriteRequest *p1, const UA_WriteRequest *p2) {
 
 
 /* WriteResponse */
-UA_EXPORT void
+static UA_INLINE void
 UA_WriteResponse_init(UA_WriteResponse *p) {
     memset(p, 0, sizeof(UA_WriteResponse));
 }
 
-UA_EXPORT UA_WriteResponse *
+static UA_INLINE UA_WriteResponse *
 UA_WriteResponse_new(void) {
     return (UA_WriteResponse*)UA_new(&UA_TYPES[UA_TYPES_WRITERESPONSE]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_WriteResponse_copy(const UA_WriteResponse *src, UA_WriteResponse *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_WRITERESPONSE]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_WriteResponse_deleteMembers(UA_WriteResponse *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_WRITERESPONSE]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_WriteResponse_clear(UA_WriteResponse *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_WRITERESPONSE]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_WriteResponse_delete(UA_WriteResponse *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_WRITERESPONSE]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_WriteResponse_equal(const UA_WriteResponse *p1, const UA_WriteResponse *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_WRITERESPONSE]) == UA_ORDER_EQ);
 }
@@ -37618,35 +37926,35 @@ UA_WriteResponse_equal(const UA_WriteResponse *p1, const UA_WriteResponse *p2) {
 
 
 /* HistoryUpdateDetails */
-UA_EXPORT void
+static UA_INLINE void
 UA_HistoryUpdateDetails_init(UA_HistoryUpdateDetails *p) {
     memset(p, 0, sizeof(UA_HistoryUpdateDetails));
 }
 
-UA_EXPORT UA_HistoryUpdateDetails *
+static UA_INLINE UA_HistoryUpdateDetails *
 UA_HistoryUpdateDetails_new(void) {
     return (UA_HistoryUpdateDetails*)UA_new(&UA_TYPES[UA_TYPES_HISTORYUPDATEDETAILS]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_HistoryUpdateDetails_copy(const UA_HistoryUpdateDetails *src, UA_HistoryUpdateDetails *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_HISTORYUPDATEDETAILS]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_HistoryUpdateDetails_deleteMembers(UA_HistoryUpdateDetails *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_HISTORYUPDATEDETAILS]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_HistoryUpdateDetails_clear(UA_HistoryUpdateDetails *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_HISTORYUPDATEDETAILS]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_HistoryUpdateDetails_delete(UA_HistoryUpdateDetails *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_HISTORYUPDATEDETAILS]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_HistoryUpdateDetails_equal(const UA_HistoryUpdateDetails *p1, const UA_HistoryUpdateDetails *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_HISTORYUPDATEDETAILS]) == UA_ORDER_EQ);
 }
@@ -37654,35 +37962,35 @@ UA_HistoryUpdateDetails_equal(const UA_HistoryUpdateDetails *p1, const UA_Histor
 
 
 /* HistoryUpdateType */
-UA_EXPORT void
+static UA_INLINE void
 UA_HistoryUpdateType_init(UA_HistoryUpdateType *p) {
     memset(p, 0, sizeof(UA_HistoryUpdateType));
 }
 
-UA_EXPORT UA_HistoryUpdateType *
+static UA_INLINE UA_HistoryUpdateType *
 UA_HistoryUpdateType_new(void) {
     return (UA_HistoryUpdateType*)UA_new(&UA_TYPES[UA_TYPES_HISTORYUPDATETYPE]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_HistoryUpdateType_copy(const UA_HistoryUpdateType *src, UA_HistoryUpdateType *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_HISTORYUPDATETYPE]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_HistoryUpdateType_deleteMembers(UA_HistoryUpdateType *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_HISTORYUPDATETYPE]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_HistoryUpdateType_clear(UA_HistoryUpdateType *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_HISTORYUPDATETYPE]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_HistoryUpdateType_delete(UA_HistoryUpdateType *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_HISTORYUPDATETYPE]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_HistoryUpdateType_equal(const UA_HistoryUpdateType *p1, const UA_HistoryUpdateType *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_HISTORYUPDATETYPE]) == UA_ORDER_EQ);
 }
@@ -37690,35 +37998,35 @@ UA_HistoryUpdateType_equal(const UA_HistoryUpdateType *p1, const UA_HistoryUpdat
 
 
 /* PerformUpdateType */
-UA_EXPORT void
+static UA_INLINE void
 UA_PerformUpdateType_init(UA_PerformUpdateType *p) {
     memset(p, 0, sizeof(UA_PerformUpdateType));
 }
 
-UA_EXPORT UA_PerformUpdateType *
+static UA_INLINE UA_PerformUpdateType *
 UA_PerformUpdateType_new(void) {
     return (UA_PerformUpdateType*)UA_new(&UA_TYPES[UA_TYPES_PERFORMUPDATETYPE]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_PerformUpdateType_copy(const UA_PerformUpdateType *src, UA_PerformUpdateType *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_PERFORMUPDATETYPE]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_PerformUpdateType_deleteMembers(UA_PerformUpdateType *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_PERFORMUPDATETYPE]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_PerformUpdateType_clear(UA_PerformUpdateType *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_PERFORMUPDATETYPE]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_PerformUpdateType_delete(UA_PerformUpdateType *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_PERFORMUPDATETYPE]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_PerformUpdateType_equal(const UA_PerformUpdateType *p1, const UA_PerformUpdateType *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_PERFORMUPDATETYPE]) == UA_ORDER_EQ);
 }
@@ -37726,35 +38034,35 @@ UA_PerformUpdateType_equal(const UA_PerformUpdateType *p1, const UA_PerformUpdat
 
 
 /* UpdateDataDetails */
-UA_EXPORT void
+static UA_INLINE void
 UA_UpdateDataDetails_init(UA_UpdateDataDetails *p) {
     memset(p, 0, sizeof(UA_UpdateDataDetails));
 }
 
-UA_EXPORT UA_UpdateDataDetails *
+static UA_INLINE UA_UpdateDataDetails *
 UA_UpdateDataDetails_new(void) {
     return (UA_UpdateDataDetails*)UA_new(&UA_TYPES[UA_TYPES_UPDATEDATADETAILS]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_UpdateDataDetails_copy(const UA_UpdateDataDetails *src, UA_UpdateDataDetails *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_UPDATEDATADETAILS]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_UpdateDataDetails_deleteMembers(UA_UpdateDataDetails *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_UPDATEDATADETAILS]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_UpdateDataDetails_clear(UA_UpdateDataDetails *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_UPDATEDATADETAILS]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_UpdateDataDetails_delete(UA_UpdateDataDetails *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_UPDATEDATADETAILS]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_UpdateDataDetails_equal(const UA_UpdateDataDetails *p1, const UA_UpdateDataDetails *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_UPDATEDATADETAILS]) == UA_ORDER_EQ);
 }
@@ -37762,35 +38070,35 @@ UA_UpdateDataDetails_equal(const UA_UpdateDataDetails *p1, const UA_UpdateDataDe
 
 
 /* UpdateStructureDataDetails */
-UA_EXPORT void
+static UA_INLINE void
 UA_UpdateStructureDataDetails_init(UA_UpdateStructureDataDetails *p) {
     memset(p, 0, sizeof(UA_UpdateStructureDataDetails));
 }
 
-UA_EXPORT UA_UpdateStructureDataDetails *
+static UA_INLINE UA_UpdateStructureDataDetails *
 UA_UpdateStructureDataDetails_new(void) {
     return (UA_UpdateStructureDataDetails*)UA_new(&UA_TYPES[UA_TYPES_UPDATESTRUCTUREDATADETAILS]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_UpdateStructureDataDetails_copy(const UA_UpdateStructureDataDetails *src, UA_UpdateStructureDataDetails *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_UPDATESTRUCTUREDATADETAILS]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_UpdateStructureDataDetails_deleteMembers(UA_UpdateStructureDataDetails *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_UPDATESTRUCTUREDATADETAILS]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_UpdateStructureDataDetails_clear(UA_UpdateStructureDataDetails *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_UPDATESTRUCTUREDATADETAILS]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_UpdateStructureDataDetails_delete(UA_UpdateStructureDataDetails *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_UPDATESTRUCTUREDATADETAILS]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_UpdateStructureDataDetails_equal(const UA_UpdateStructureDataDetails *p1, const UA_UpdateStructureDataDetails *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_UPDATESTRUCTUREDATADETAILS]) == UA_ORDER_EQ);
 }
@@ -37798,35 +38106,35 @@ UA_UpdateStructureDataDetails_equal(const UA_UpdateStructureDataDetails *p1, con
 
 
 /* DeleteRawModifiedDetails */
-UA_EXPORT void
+static UA_INLINE void
 UA_DeleteRawModifiedDetails_init(UA_DeleteRawModifiedDetails *p) {
     memset(p, 0, sizeof(UA_DeleteRawModifiedDetails));
 }
 
-UA_EXPORT UA_DeleteRawModifiedDetails *
+static UA_INLINE UA_DeleteRawModifiedDetails *
 UA_DeleteRawModifiedDetails_new(void) {
     return (UA_DeleteRawModifiedDetails*)UA_new(&UA_TYPES[UA_TYPES_DELETERAWMODIFIEDDETAILS]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_DeleteRawModifiedDetails_copy(const UA_DeleteRawModifiedDetails *src, UA_DeleteRawModifiedDetails *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_DELETERAWMODIFIEDDETAILS]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_DeleteRawModifiedDetails_deleteMembers(UA_DeleteRawModifiedDetails *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_DELETERAWMODIFIEDDETAILS]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_DeleteRawModifiedDetails_clear(UA_DeleteRawModifiedDetails *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_DELETERAWMODIFIEDDETAILS]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_DeleteRawModifiedDetails_delete(UA_DeleteRawModifiedDetails *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_DELETERAWMODIFIEDDETAILS]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_DeleteRawModifiedDetails_equal(const UA_DeleteRawModifiedDetails *p1, const UA_DeleteRawModifiedDetails *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_DELETERAWMODIFIEDDETAILS]) == UA_ORDER_EQ);
 }
@@ -37834,35 +38142,35 @@ UA_DeleteRawModifiedDetails_equal(const UA_DeleteRawModifiedDetails *p1, const U
 
 
 /* DeleteAtTimeDetails */
-UA_EXPORT void
+static UA_INLINE void
 UA_DeleteAtTimeDetails_init(UA_DeleteAtTimeDetails *p) {
     memset(p, 0, sizeof(UA_DeleteAtTimeDetails));
 }
 
-UA_EXPORT UA_DeleteAtTimeDetails *
+static UA_INLINE UA_DeleteAtTimeDetails *
 UA_DeleteAtTimeDetails_new(void) {
     return (UA_DeleteAtTimeDetails*)UA_new(&UA_TYPES[UA_TYPES_DELETEATTIMEDETAILS]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_DeleteAtTimeDetails_copy(const UA_DeleteAtTimeDetails *src, UA_DeleteAtTimeDetails *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_DELETEATTIMEDETAILS]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_DeleteAtTimeDetails_deleteMembers(UA_DeleteAtTimeDetails *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_DELETEATTIMEDETAILS]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_DeleteAtTimeDetails_clear(UA_DeleteAtTimeDetails *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_DELETEATTIMEDETAILS]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_DeleteAtTimeDetails_delete(UA_DeleteAtTimeDetails *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_DELETEATTIMEDETAILS]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_DeleteAtTimeDetails_equal(const UA_DeleteAtTimeDetails *p1, const UA_DeleteAtTimeDetails *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_DELETEATTIMEDETAILS]) == UA_ORDER_EQ);
 }
@@ -37870,35 +38178,35 @@ UA_DeleteAtTimeDetails_equal(const UA_DeleteAtTimeDetails *p1, const UA_DeleteAt
 
 
 /* DeleteEventDetails */
-UA_EXPORT void
+static UA_INLINE void
 UA_DeleteEventDetails_init(UA_DeleteEventDetails *p) {
     memset(p, 0, sizeof(UA_DeleteEventDetails));
 }
 
-UA_EXPORT UA_DeleteEventDetails *
+static UA_INLINE UA_DeleteEventDetails *
 UA_DeleteEventDetails_new(void) {
     return (UA_DeleteEventDetails*)UA_new(&UA_TYPES[UA_TYPES_DELETEEVENTDETAILS]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_DeleteEventDetails_copy(const UA_DeleteEventDetails *src, UA_DeleteEventDetails *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_DELETEEVENTDETAILS]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_DeleteEventDetails_deleteMembers(UA_DeleteEventDetails *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_DELETEEVENTDETAILS]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_DeleteEventDetails_clear(UA_DeleteEventDetails *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_DELETEEVENTDETAILS]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_DeleteEventDetails_delete(UA_DeleteEventDetails *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_DELETEEVENTDETAILS]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_DeleteEventDetails_equal(const UA_DeleteEventDetails *p1, const UA_DeleteEventDetails *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_DELETEEVENTDETAILS]) == UA_ORDER_EQ);
 }
@@ -37906,35 +38214,35 @@ UA_DeleteEventDetails_equal(const UA_DeleteEventDetails *p1, const UA_DeleteEven
 
 
 /* HistoryUpdateResult */
-UA_EXPORT void
+static UA_INLINE void
 UA_HistoryUpdateResult_init(UA_HistoryUpdateResult *p) {
     memset(p, 0, sizeof(UA_HistoryUpdateResult));
 }
 
-UA_EXPORT UA_HistoryUpdateResult *
+static UA_INLINE UA_HistoryUpdateResult *
 UA_HistoryUpdateResult_new(void) {
     return (UA_HistoryUpdateResult*)UA_new(&UA_TYPES[UA_TYPES_HISTORYUPDATERESULT]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_HistoryUpdateResult_copy(const UA_HistoryUpdateResult *src, UA_HistoryUpdateResult *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_HISTORYUPDATERESULT]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_HistoryUpdateResult_deleteMembers(UA_HistoryUpdateResult *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_HISTORYUPDATERESULT]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_HistoryUpdateResult_clear(UA_HistoryUpdateResult *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_HISTORYUPDATERESULT]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_HistoryUpdateResult_delete(UA_HistoryUpdateResult *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_HISTORYUPDATERESULT]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_HistoryUpdateResult_equal(const UA_HistoryUpdateResult *p1, const UA_HistoryUpdateResult *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_HISTORYUPDATERESULT]) == UA_ORDER_EQ);
 }
@@ -37942,35 +38250,35 @@ UA_HistoryUpdateResult_equal(const UA_HistoryUpdateResult *p1, const UA_HistoryU
 
 
 /* HistoryUpdateRequest */
-UA_EXPORT void
+static UA_INLINE void
 UA_HistoryUpdateRequest_init(UA_HistoryUpdateRequest *p) {
     memset(p, 0, sizeof(UA_HistoryUpdateRequest));
 }
 
-UA_EXPORT UA_HistoryUpdateRequest *
+static UA_INLINE UA_HistoryUpdateRequest *
 UA_HistoryUpdateRequest_new(void) {
     return (UA_HistoryUpdateRequest*)UA_new(&UA_TYPES[UA_TYPES_HISTORYUPDATEREQUEST]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_HistoryUpdateRequest_copy(const UA_HistoryUpdateRequest *src, UA_HistoryUpdateRequest *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_HISTORYUPDATEREQUEST]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_HistoryUpdateRequest_deleteMembers(UA_HistoryUpdateRequest *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_HISTORYUPDATEREQUEST]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_HistoryUpdateRequest_clear(UA_HistoryUpdateRequest *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_HISTORYUPDATEREQUEST]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_HistoryUpdateRequest_delete(UA_HistoryUpdateRequest *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_HISTORYUPDATEREQUEST]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_HistoryUpdateRequest_equal(const UA_HistoryUpdateRequest *p1, const UA_HistoryUpdateRequest *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_HISTORYUPDATEREQUEST]) == UA_ORDER_EQ);
 }
@@ -37978,35 +38286,35 @@ UA_HistoryUpdateRequest_equal(const UA_HistoryUpdateRequest *p1, const UA_Histor
 
 
 /* HistoryUpdateResponse */
-UA_EXPORT void
+static UA_INLINE void
 UA_HistoryUpdateResponse_init(UA_HistoryUpdateResponse *p) {
     memset(p, 0, sizeof(UA_HistoryUpdateResponse));
 }
 
-UA_EXPORT UA_HistoryUpdateResponse *
+static UA_INLINE UA_HistoryUpdateResponse *
 UA_HistoryUpdateResponse_new(void) {
     return (UA_HistoryUpdateResponse*)UA_new(&UA_TYPES[UA_TYPES_HISTORYUPDATERESPONSE]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_HistoryUpdateResponse_copy(const UA_HistoryUpdateResponse *src, UA_HistoryUpdateResponse *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_HISTORYUPDATERESPONSE]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_HistoryUpdateResponse_deleteMembers(UA_HistoryUpdateResponse *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_HISTORYUPDATERESPONSE]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_HistoryUpdateResponse_clear(UA_HistoryUpdateResponse *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_HISTORYUPDATERESPONSE]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_HistoryUpdateResponse_delete(UA_HistoryUpdateResponse *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_HISTORYUPDATERESPONSE]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_HistoryUpdateResponse_equal(const UA_HistoryUpdateResponse *p1, const UA_HistoryUpdateResponse *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_HISTORYUPDATERESPONSE]) == UA_ORDER_EQ);
 }
@@ -38014,35 +38322,35 @@ UA_HistoryUpdateResponse_equal(const UA_HistoryUpdateResponse *p1, const UA_Hist
 
 
 /* CallMethodRequest */
-UA_EXPORT void
+static UA_INLINE void
 UA_CallMethodRequest_init(UA_CallMethodRequest *p) {
     memset(p, 0, sizeof(UA_CallMethodRequest));
 }
 
-UA_EXPORT UA_CallMethodRequest *
+static UA_INLINE UA_CallMethodRequest *
 UA_CallMethodRequest_new(void) {
     return (UA_CallMethodRequest*)UA_new(&UA_TYPES[UA_TYPES_CALLMETHODREQUEST]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_CallMethodRequest_copy(const UA_CallMethodRequest *src, UA_CallMethodRequest *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_CALLMETHODREQUEST]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_CallMethodRequest_deleteMembers(UA_CallMethodRequest *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_CALLMETHODREQUEST]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_CallMethodRequest_clear(UA_CallMethodRequest *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_CALLMETHODREQUEST]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_CallMethodRequest_delete(UA_CallMethodRequest *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_CALLMETHODREQUEST]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_CallMethodRequest_equal(const UA_CallMethodRequest *p1, const UA_CallMethodRequest *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_CALLMETHODREQUEST]) == UA_ORDER_EQ);
 }
@@ -38050,35 +38358,35 @@ UA_CallMethodRequest_equal(const UA_CallMethodRequest *p1, const UA_CallMethodRe
 
 
 /* CallMethodResult */
-UA_EXPORT void
+static UA_INLINE void
 UA_CallMethodResult_init(UA_CallMethodResult *p) {
     memset(p, 0, sizeof(UA_CallMethodResult));
 }
 
-UA_EXPORT UA_CallMethodResult *
+static UA_INLINE UA_CallMethodResult *
 UA_CallMethodResult_new(void) {
     return (UA_CallMethodResult*)UA_new(&UA_TYPES[UA_TYPES_CALLMETHODRESULT]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_CallMethodResult_copy(const UA_CallMethodResult *src, UA_CallMethodResult *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_CALLMETHODRESULT]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_CallMethodResult_deleteMembers(UA_CallMethodResult *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_CALLMETHODRESULT]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_CallMethodResult_clear(UA_CallMethodResult *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_CALLMETHODRESULT]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_CallMethodResult_delete(UA_CallMethodResult *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_CALLMETHODRESULT]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_CallMethodResult_equal(const UA_CallMethodResult *p1, const UA_CallMethodResult *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_CALLMETHODRESULT]) == UA_ORDER_EQ);
 }
@@ -38086,35 +38394,35 @@ UA_CallMethodResult_equal(const UA_CallMethodResult *p1, const UA_CallMethodResu
 
 
 /* CallRequest */
-UA_EXPORT void
+static UA_INLINE void
 UA_CallRequest_init(UA_CallRequest *p) {
     memset(p, 0, sizeof(UA_CallRequest));
 }
 
-UA_EXPORT UA_CallRequest *
+static UA_INLINE UA_CallRequest *
 UA_CallRequest_new(void) {
     return (UA_CallRequest*)UA_new(&UA_TYPES[UA_TYPES_CALLREQUEST]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_CallRequest_copy(const UA_CallRequest *src, UA_CallRequest *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_CALLREQUEST]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_CallRequest_deleteMembers(UA_CallRequest *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_CALLREQUEST]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_CallRequest_clear(UA_CallRequest *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_CALLREQUEST]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_CallRequest_delete(UA_CallRequest *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_CALLREQUEST]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_CallRequest_equal(const UA_CallRequest *p1, const UA_CallRequest *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_CALLREQUEST]) == UA_ORDER_EQ);
 }
@@ -38122,35 +38430,35 @@ UA_CallRequest_equal(const UA_CallRequest *p1, const UA_CallRequest *p2) {
 
 
 /* CallResponse */
-UA_EXPORT void
+static UA_INLINE void
 UA_CallResponse_init(UA_CallResponse *p) {
     memset(p, 0, sizeof(UA_CallResponse));
 }
 
-UA_EXPORT UA_CallResponse *
+static UA_INLINE UA_CallResponse *
 UA_CallResponse_new(void) {
     return (UA_CallResponse*)UA_new(&UA_TYPES[UA_TYPES_CALLRESPONSE]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_CallResponse_copy(const UA_CallResponse *src, UA_CallResponse *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_CALLRESPONSE]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_CallResponse_deleteMembers(UA_CallResponse *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_CALLRESPONSE]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_CallResponse_clear(UA_CallResponse *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_CALLRESPONSE]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_CallResponse_delete(UA_CallResponse *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_CALLRESPONSE]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_CallResponse_equal(const UA_CallResponse *p1, const UA_CallResponse *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_CALLRESPONSE]) == UA_ORDER_EQ);
 }
@@ -38158,35 +38466,35 @@ UA_CallResponse_equal(const UA_CallResponse *p1, const UA_CallResponse *p2) {
 
 
 /* MonitoringMode */
-UA_EXPORT void
+static UA_INLINE void
 UA_MonitoringMode_init(UA_MonitoringMode *p) {
     memset(p, 0, sizeof(UA_MonitoringMode));
 }
 
-UA_EXPORT UA_MonitoringMode *
+static UA_INLINE UA_MonitoringMode *
 UA_MonitoringMode_new(void) {
     return (UA_MonitoringMode*)UA_new(&UA_TYPES[UA_TYPES_MONITORINGMODE]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_MonitoringMode_copy(const UA_MonitoringMode *src, UA_MonitoringMode *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_MONITORINGMODE]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_MonitoringMode_deleteMembers(UA_MonitoringMode *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_MONITORINGMODE]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_MonitoringMode_clear(UA_MonitoringMode *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_MONITORINGMODE]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_MonitoringMode_delete(UA_MonitoringMode *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_MONITORINGMODE]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_MonitoringMode_equal(const UA_MonitoringMode *p1, const UA_MonitoringMode *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_MONITORINGMODE]) == UA_ORDER_EQ);
 }
@@ -38194,35 +38502,35 @@ UA_MonitoringMode_equal(const UA_MonitoringMode *p1, const UA_MonitoringMode *p2
 
 
 /* DataChangeTrigger */
-UA_EXPORT void
+static UA_INLINE void
 UA_DataChangeTrigger_init(UA_DataChangeTrigger *p) {
     memset(p, 0, sizeof(UA_DataChangeTrigger));
 }
 
-UA_EXPORT UA_DataChangeTrigger *
+static UA_INLINE UA_DataChangeTrigger *
 UA_DataChangeTrigger_new(void) {
     return (UA_DataChangeTrigger*)UA_new(&UA_TYPES[UA_TYPES_DATACHANGETRIGGER]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_DataChangeTrigger_copy(const UA_DataChangeTrigger *src, UA_DataChangeTrigger *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_DATACHANGETRIGGER]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_DataChangeTrigger_deleteMembers(UA_DataChangeTrigger *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_DATACHANGETRIGGER]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_DataChangeTrigger_clear(UA_DataChangeTrigger *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_DATACHANGETRIGGER]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_DataChangeTrigger_delete(UA_DataChangeTrigger *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_DATACHANGETRIGGER]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_DataChangeTrigger_equal(const UA_DataChangeTrigger *p1, const UA_DataChangeTrigger *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_DATACHANGETRIGGER]) == UA_ORDER_EQ);
 }
@@ -38230,35 +38538,35 @@ UA_DataChangeTrigger_equal(const UA_DataChangeTrigger *p1, const UA_DataChangeTr
 
 
 /* DeadbandType */
-UA_EXPORT void
+static UA_INLINE void
 UA_DeadbandType_init(UA_DeadbandType *p) {
     memset(p, 0, sizeof(UA_DeadbandType));
 }
 
-UA_EXPORT UA_DeadbandType *
+static UA_INLINE UA_DeadbandType *
 UA_DeadbandType_new(void) {
     return (UA_DeadbandType*)UA_new(&UA_TYPES[UA_TYPES_DEADBANDTYPE]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_DeadbandType_copy(const UA_DeadbandType *src, UA_DeadbandType *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_DEADBANDTYPE]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_DeadbandType_deleteMembers(UA_DeadbandType *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_DEADBANDTYPE]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_DeadbandType_clear(UA_DeadbandType *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_DEADBANDTYPE]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_DeadbandType_delete(UA_DeadbandType *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_DEADBANDTYPE]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_DeadbandType_equal(const UA_DeadbandType *p1, const UA_DeadbandType *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_DEADBANDTYPE]) == UA_ORDER_EQ);
 }
@@ -38266,35 +38574,35 @@ UA_DeadbandType_equal(const UA_DeadbandType *p1, const UA_DeadbandType *p2) {
 
 
 /* DataChangeFilter */
-UA_EXPORT void
+static UA_INLINE void
 UA_DataChangeFilter_init(UA_DataChangeFilter *p) {
     memset(p, 0, sizeof(UA_DataChangeFilter));
 }
 
-UA_EXPORT UA_DataChangeFilter *
+static UA_INLINE UA_DataChangeFilter *
 UA_DataChangeFilter_new(void) {
     return (UA_DataChangeFilter*)UA_new(&UA_TYPES[UA_TYPES_DATACHANGEFILTER]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_DataChangeFilter_copy(const UA_DataChangeFilter *src, UA_DataChangeFilter *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_DATACHANGEFILTER]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_DataChangeFilter_deleteMembers(UA_DataChangeFilter *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_DATACHANGEFILTER]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_DataChangeFilter_clear(UA_DataChangeFilter *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_DATACHANGEFILTER]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_DataChangeFilter_delete(UA_DataChangeFilter *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_DATACHANGEFILTER]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_DataChangeFilter_equal(const UA_DataChangeFilter *p1, const UA_DataChangeFilter *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_DATACHANGEFILTER]) == UA_ORDER_EQ);
 }
@@ -38302,35 +38610,35 @@ UA_DataChangeFilter_equal(const UA_DataChangeFilter *p1, const UA_DataChangeFilt
 
 
 /* EventFilter */
-UA_EXPORT void
+static UA_INLINE void
 UA_EventFilter_init(UA_EventFilter *p) {
     memset(p, 0, sizeof(UA_EventFilter));
 }
 
-UA_EXPORT UA_EventFilter *
+static UA_INLINE UA_EventFilter *
 UA_EventFilter_new(void) {
     return (UA_EventFilter*)UA_new(&UA_TYPES[UA_TYPES_EVENTFILTER]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_EventFilter_copy(const UA_EventFilter *src, UA_EventFilter *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_EVENTFILTER]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_EventFilter_deleteMembers(UA_EventFilter *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_EVENTFILTER]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_EventFilter_clear(UA_EventFilter *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_EVENTFILTER]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_EventFilter_delete(UA_EventFilter *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_EVENTFILTER]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_EventFilter_equal(const UA_EventFilter *p1, const UA_EventFilter *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_EVENTFILTER]) == UA_ORDER_EQ);
 }
@@ -38338,35 +38646,35 @@ UA_EventFilter_equal(const UA_EventFilter *p1, const UA_EventFilter *p2) {
 
 
 /* AggregateConfiguration */
-UA_EXPORT void
+static UA_INLINE void
 UA_AggregateConfiguration_init(UA_AggregateConfiguration *p) {
     memset(p, 0, sizeof(UA_AggregateConfiguration));
 }
 
-UA_EXPORT UA_AggregateConfiguration *
+static UA_INLINE UA_AggregateConfiguration *
 UA_AggregateConfiguration_new(void) {
     return (UA_AggregateConfiguration*)UA_new(&UA_TYPES[UA_TYPES_AGGREGATECONFIGURATION]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_AggregateConfiguration_copy(const UA_AggregateConfiguration *src, UA_AggregateConfiguration *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_AGGREGATECONFIGURATION]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_AggregateConfiguration_deleteMembers(UA_AggregateConfiguration *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_AGGREGATECONFIGURATION]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_AggregateConfiguration_clear(UA_AggregateConfiguration *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_AGGREGATECONFIGURATION]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_AggregateConfiguration_delete(UA_AggregateConfiguration *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_AGGREGATECONFIGURATION]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_AggregateConfiguration_equal(const UA_AggregateConfiguration *p1, const UA_AggregateConfiguration *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_AGGREGATECONFIGURATION]) == UA_ORDER_EQ);
 }
@@ -38374,35 +38682,35 @@ UA_AggregateConfiguration_equal(const UA_AggregateConfiguration *p1, const UA_Ag
 
 
 /* AggregateFilter */
-UA_EXPORT void
+static UA_INLINE void
 UA_AggregateFilter_init(UA_AggregateFilter *p) {
     memset(p, 0, sizeof(UA_AggregateFilter));
 }
 
-UA_EXPORT UA_AggregateFilter *
+static UA_INLINE UA_AggregateFilter *
 UA_AggregateFilter_new(void) {
     return (UA_AggregateFilter*)UA_new(&UA_TYPES[UA_TYPES_AGGREGATEFILTER]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_AggregateFilter_copy(const UA_AggregateFilter *src, UA_AggregateFilter *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_AGGREGATEFILTER]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_AggregateFilter_deleteMembers(UA_AggregateFilter *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_AGGREGATEFILTER]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_AggregateFilter_clear(UA_AggregateFilter *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_AGGREGATEFILTER]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_AggregateFilter_delete(UA_AggregateFilter *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_AGGREGATEFILTER]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_AggregateFilter_equal(const UA_AggregateFilter *p1, const UA_AggregateFilter *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_AGGREGATEFILTER]) == UA_ORDER_EQ);
 }
@@ -38410,35 +38718,35 @@ UA_AggregateFilter_equal(const UA_AggregateFilter *p1, const UA_AggregateFilter 
 
 
 /* EventFilterResult */
-UA_EXPORT void
+static UA_INLINE void
 UA_EventFilterResult_init(UA_EventFilterResult *p) {
     memset(p, 0, sizeof(UA_EventFilterResult));
 }
 
-UA_EXPORT UA_EventFilterResult *
+static UA_INLINE UA_EventFilterResult *
 UA_EventFilterResult_new(void) {
     return (UA_EventFilterResult*)UA_new(&UA_TYPES[UA_TYPES_EVENTFILTERRESULT]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_EventFilterResult_copy(const UA_EventFilterResult *src, UA_EventFilterResult *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_EVENTFILTERRESULT]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_EventFilterResult_deleteMembers(UA_EventFilterResult *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_EVENTFILTERRESULT]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_EventFilterResult_clear(UA_EventFilterResult *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_EVENTFILTERRESULT]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_EventFilterResult_delete(UA_EventFilterResult *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_EVENTFILTERRESULT]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_EventFilterResult_equal(const UA_EventFilterResult *p1, const UA_EventFilterResult *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_EVENTFILTERRESULT]) == UA_ORDER_EQ);
 }
@@ -38446,35 +38754,35 @@ UA_EventFilterResult_equal(const UA_EventFilterResult *p1, const UA_EventFilterR
 
 
 /* AggregateFilterResult */
-UA_EXPORT void
+static UA_INLINE void
 UA_AggregateFilterResult_init(UA_AggregateFilterResult *p) {
     memset(p, 0, sizeof(UA_AggregateFilterResult));
 }
 
-UA_EXPORT UA_AggregateFilterResult *
+static UA_INLINE UA_AggregateFilterResult *
 UA_AggregateFilterResult_new(void) {
     return (UA_AggregateFilterResult*)UA_new(&UA_TYPES[UA_TYPES_AGGREGATEFILTERRESULT]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_AggregateFilterResult_copy(const UA_AggregateFilterResult *src, UA_AggregateFilterResult *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_AGGREGATEFILTERRESULT]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_AggregateFilterResult_deleteMembers(UA_AggregateFilterResult *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_AGGREGATEFILTERRESULT]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_AggregateFilterResult_clear(UA_AggregateFilterResult *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_AGGREGATEFILTERRESULT]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_AggregateFilterResult_delete(UA_AggregateFilterResult *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_AGGREGATEFILTERRESULT]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_AggregateFilterResult_equal(const UA_AggregateFilterResult *p1, const UA_AggregateFilterResult *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_AGGREGATEFILTERRESULT]) == UA_ORDER_EQ);
 }
@@ -38482,35 +38790,35 @@ UA_AggregateFilterResult_equal(const UA_AggregateFilterResult *p1, const UA_Aggr
 
 
 /* MonitoringParameters */
-UA_EXPORT void
+static UA_INLINE void
 UA_MonitoringParameters_init(UA_MonitoringParameters *p) {
     memset(p, 0, sizeof(UA_MonitoringParameters));
 }
 
-UA_EXPORT UA_MonitoringParameters *
+static UA_INLINE UA_MonitoringParameters *
 UA_MonitoringParameters_new(void) {
     return (UA_MonitoringParameters*)UA_new(&UA_TYPES[UA_TYPES_MONITORINGPARAMETERS]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_MonitoringParameters_copy(const UA_MonitoringParameters *src, UA_MonitoringParameters *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_MONITORINGPARAMETERS]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_MonitoringParameters_deleteMembers(UA_MonitoringParameters *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_MONITORINGPARAMETERS]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_MonitoringParameters_clear(UA_MonitoringParameters *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_MONITORINGPARAMETERS]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_MonitoringParameters_delete(UA_MonitoringParameters *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_MONITORINGPARAMETERS]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_MonitoringParameters_equal(const UA_MonitoringParameters *p1, const UA_MonitoringParameters *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_MONITORINGPARAMETERS]) == UA_ORDER_EQ);
 }
@@ -38518,35 +38826,35 @@ UA_MonitoringParameters_equal(const UA_MonitoringParameters *p1, const UA_Monito
 
 
 /* MonitoredItemCreateRequest */
-UA_EXPORT void
+static UA_INLINE void
 UA_MonitoredItemCreateRequest_init(UA_MonitoredItemCreateRequest *p) {
     memset(p, 0, sizeof(UA_MonitoredItemCreateRequest));
 }
 
-UA_EXPORT UA_MonitoredItemCreateRequest *
+static UA_INLINE UA_MonitoredItemCreateRequest *
 UA_MonitoredItemCreateRequest_new(void) {
     return (UA_MonitoredItemCreateRequest*)UA_new(&UA_TYPES[UA_TYPES_MONITOREDITEMCREATEREQUEST]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_MonitoredItemCreateRequest_copy(const UA_MonitoredItemCreateRequest *src, UA_MonitoredItemCreateRequest *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_MONITOREDITEMCREATEREQUEST]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_MonitoredItemCreateRequest_deleteMembers(UA_MonitoredItemCreateRequest *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_MONITOREDITEMCREATEREQUEST]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_MonitoredItemCreateRequest_clear(UA_MonitoredItemCreateRequest *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_MONITOREDITEMCREATEREQUEST]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_MonitoredItemCreateRequest_delete(UA_MonitoredItemCreateRequest *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_MONITOREDITEMCREATEREQUEST]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_MonitoredItemCreateRequest_equal(const UA_MonitoredItemCreateRequest *p1, const UA_MonitoredItemCreateRequest *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_MONITOREDITEMCREATEREQUEST]) == UA_ORDER_EQ);
 }
@@ -38554,35 +38862,35 @@ UA_MonitoredItemCreateRequest_equal(const UA_MonitoredItemCreateRequest *p1, con
 
 
 /* MonitoredItemCreateResult */
-UA_EXPORT void
+static UA_INLINE void
 UA_MonitoredItemCreateResult_init(UA_MonitoredItemCreateResult *p) {
     memset(p, 0, sizeof(UA_MonitoredItemCreateResult));
 }
 
-UA_EXPORT UA_MonitoredItemCreateResult *
+static UA_INLINE UA_MonitoredItemCreateResult *
 UA_MonitoredItemCreateResult_new(void) {
     return (UA_MonitoredItemCreateResult*)UA_new(&UA_TYPES[UA_TYPES_MONITOREDITEMCREATERESULT]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_MonitoredItemCreateResult_copy(const UA_MonitoredItemCreateResult *src, UA_MonitoredItemCreateResult *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_MONITOREDITEMCREATERESULT]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_MonitoredItemCreateResult_deleteMembers(UA_MonitoredItemCreateResult *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_MONITOREDITEMCREATERESULT]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_MonitoredItemCreateResult_clear(UA_MonitoredItemCreateResult *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_MONITOREDITEMCREATERESULT]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_MonitoredItemCreateResult_delete(UA_MonitoredItemCreateResult *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_MONITOREDITEMCREATERESULT]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_MonitoredItemCreateResult_equal(const UA_MonitoredItemCreateResult *p1, const UA_MonitoredItemCreateResult *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_MONITOREDITEMCREATERESULT]) == UA_ORDER_EQ);
 }
@@ -38590,35 +38898,35 @@ UA_MonitoredItemCreateResult_equal(const UA_MonitoredItemCreateResult *p1, const
 
 
 /* CreateMonitoredItemsRequest */
-UA_EXPORT void
+static UA_INLINE void
 UA_CreateMonitoredItemsRequest_init(UA_CreateMonitoredItemsRequest *p) {
     memset(p, 0, sizeof(UA_CreateMonitoredItemsRequest));
 }
 
-UA_EXPORT UA_CreateMonitoredItemsRequest *
+static UA_INLINE UA_CreateMonitoredItemsRequest *
 UA_CreateMonitoredItemsRequest_new(void) {
     return (UA_CreateMonitoredItemsRequest*)UA_new(&UA_TYPES[UA_TYPES_CREATEMONITOREDITEMSREQUEST]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_CreateMonitoredItemsRequest_copy(const UA_CreateMonitoredItemsRequest *src, UA_CreateMonitoredItemsRequest *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_CREATEMONITOREDITEMSREQUEST]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_CreateMonitoredItemsRequest_deleteMembers(UA_CreateMonitoredItemsRequest *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_CREATEMONITOREDITEMSREQUEST]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_CreateMonitoredItemsRequest_clear(UA_CreateMonitoredItemsRequest *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_CREATEMONITOREDITEMSREQUEST]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_CreateMonitoredItemsRequest_delete(UA_CreateMonitoredItemsRequest *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_CREATEMONITOREDITEMSREQUEST]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_CreateMonitoredItemsRequest_equal(const UA_CreateMonitoredItemsRequest *p1, const UA_CreateMonitoredItemsRequest *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_CREATEMONITOREDITEMSREQUEST]) == UA_ORDER_EQ);
 }
@@ -38626,35 +38934,35 @@ UA_CreateMonitoredItemsRequest_equal(const UA_CreateMonitoredItemsRequest *p1, c
 
 
 /* CreateMonitoredItemsResponse */
-UA_EXPORT void
+static UA_INLINE void
 UA_CreateMonitoredItemsResponse_init(UA_CreateMonitoredItemsResponse *p) {
     memset(p, 0, sizeof(UA_CreateMonitoredItemsResponse));
 }
 
-UA_EXPORT UA_CreateMonitoredItemsResponse *
+static UA_INLINE UA_CreateMonitoredItemsResponse *
 UA_CreateMonitoredItemsResponse_new(void) {
     return (UA_CreateMonitoredItemsResponse*)UA_new(&UA_TYPES[UA_TYPES_CREATEMONITOREDITEMSRESPONSE]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_CreateMonitoredItemsResponse_copy(const UA_CreateMonitoredItemsResponse *src, UA_CreateMonitoredItemsResponse *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_CREATEMONITOREDITEMSRESPONSE]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_CreateMonitoredItemsResponse_deleteMembers(UA_CreateMonitoredItemsResponse *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_CREATEMONITOREDITEMSRESPONSE]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_CreateMonitoredItemsResponse_clear(UA_CreateMonitoredItemsResponse *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_CREATEMONITOREDITEMSRESPONSE]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_CreateMonitoredItemsResponse_delete(UA_CreateMonitoredItemsResponse *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_CREATEMONITOREDITEMSRESPONSE]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_CreateMonitoredItemsResponse_equal(const UA_CreateMonitoredItemsResponse *p1, const UA_CreateMonitoredItemsResponse *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_CREATEMONITOREDITEMSRESPONSE]) == UA_ORDER_EQ);
 }
@@ -38662,35 +38970,35 @@ UA_CreateMonitoredItemsResponse_equal(const UA_CreateMonitoredItemsResponse *p1,
 
 
 /* MonitoredItemModifyRequest */
-UA_EXPORT void
+static UA_INLINE void
 UA_MonitoredItemModifyRequest_init(UA_MonitoredItemModifyRequest *p) {
     memset(p, 0, sizeof(UA_MonitoredItemModifyRequest));
 }
 
-UA_EXPORT UA_MonitoredItemModifyRequest *
+static UA_INLINE UA_MonitoredItemModifyRequest *
 UA_MonitoredItemModifyRequest_new(void) {
     return (UA_MonitoredItemModifyRequest*)UA_new(&UA_TYPES[UA_TYPES_MONITOREDITEMMODIFYREQUEST]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_MonitoredItemModifyRequest_copy(const UA_MonitoredItemModifyRequest *src, UA_MonitoredItemModifyRequest *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_MONITOREDITEMMODIFYREQUEST]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_MonitoredItemModifyRequest_deleteMembers(UA_MonitoredItemModifyRequest *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_MONITOREDITEMMODIFYREQUEST]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_MonitoredItemModifyRequest_clear(UA_MonitoredItemModifyRequest *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_MONITOREDITEMMODIFYREQUEST]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_MonitoredItemModifyRequest_delete(UA_MonitoredItemModifyRequest *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_MONITOREDITEMMODIFYREQUEST]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_MonitoredItemModifyRequest_equal(const UA_MonitoredItemModifyRequest *p1, const UA_MonitoredItemModifyRequest *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_MONITOREDITEMMODIFYREQUEST]) == UA_ORDER_EQ);
 }
@@ -38698,35 +39006,35 @@ UA_MonitoredItemModifyRequest_equal(const UA_MonitoredItemModifyRequest *p1, con
 
 
 /* MonitoredItemModifyResult */
-UA_EXPORT void
+static UA_INLINE void
 UA_MonitoredItemModifyResult_init(UA_MonitoredItemModifyResult *p) {
     memset(p, 0, sizeof(UA_MonitoredItemModifyResult));
 }
 
-UA_EXPORT UA_MonitoredItemModifyResult *
+static UA_INLINE UA_MonitoredItemModifyResult *
 UA_MonitoredItemModifyResult_new(void) {
     return (UA_MonitoredItemModifyResult*)UA_new(&UA_TYPES[UA_TYPES_MONITOREDITEMMODIFYRESULT]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_MonitoredItemModifyResult_copy(const UA_MonitoredItemModifyResult *src, UA_MonitoredItemModifyResult *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_MONITOREDITEMMODIFYRESULT]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_MonitoredItemModifyResult_deleteMembers(UA_MonitoredItemModifyResult *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_MONITOREDITEMMODIFYRESULT]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_MonitoredItemModifyResult_clear(UA_MonitoredItemModifyResult *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_MONITOREDITEMMODIFYRESULT]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_MonitoredItemModifyResult_delete(UA_MonitoredItemModifyResult *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_MONITOREDITEMMODIFYRESULT]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_MonitoredItemModifyResult_equal(const UA_MonitoredItemModifyResult *p1, const UA_MonitoredItemModifyResult *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_MONITOREDITEMMODIFYRESULT]) == UA_ORDER_EQ);
 }
@@ -38734,35 +39042,35 @@ UA_MonitoredItemModifyResult_equal(const UA_MonitoredItemModifyResult *p1, const
 
 
 /* ModifyMonitoredItemsRequest */
-UA_EXPORT void
+static UA_INLINE void
 UA_ModifyMonitoredItemsRequest_init(UA_ModifyMonitoredItemsRequest *p) {
     memset(p, 0, sizeof(UA_ModifyMonitoredItemsRequest));
 }
 
-UA_EXPORT UA_ModifyMonitoredItemsRequest *
+static UA_INLINE UA_ModifyMonitoredItemsRequest *
 UA_ModifyMonitoredItemsRequest_new(void) {
     return (UA_ModifyMonitoredItemsRequest*)UA_new(&UA_TYPES[UA_TYPES_MODIFYMONITOREDITEMSREQUEST]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_ModifyMonitoredItemsRequest_copy(const UA_ModifyMonitoredItemsRequest *src, UA_ModifyMonitoredItemsRequest *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_MODIFYMONITOREDITEMSREQUEST]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_ModifyMonitoredItemsRequest_deleteMembers(UA_ModifyMonitoredItemsRequest *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_MODIFYMONITOREDITEMSREQUEST]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_ModifyMonitoredItemsRequest_clear(UA_ModifyMonitoredItemsRequest *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_MODIFYMONITOREDITEMSREQUEST]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_ModifyMonitoredItemsRequest_delete(UA_ModifyMonitoredItemsRequest *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_MODIFYMONITOREDITEMSREQUEST]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_ModifyMonitoredItemsRequest_equal(const UA_ModifyMonitoredItemsRequest *p1, const UA_ModifyMonitoredItemsRequest *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_MODIFYMONITOREDITEMSREQUEST]) == UA_ORDER_EQ);
 }
@@ -38770,35 +39078,35 @@ UA_ModifyMonitoredItemsRequest_equal(const UA_ModifyMonitoredItemsRequest *p1, c
 
 
 /* ModifyMonitoredItemsResponse */
-UA_EXPORT void
+static UA_INLINE void
 UA_ModifyMonitoredItemsResponse_init(UA_ModifyMonitoredItemsResponse *p) {
     memset(p, 0, sizeof(UA_ModifyMonitoredItemsResponse));
 }
 
-UA_EXPORT UA_ModifyMonitoredItemsResponse *
+static UA_INLINE UA_ModifyMonitoredItemsResponse *
 UA_ModifyMonitoredItemsResponse_new(void) {
     return (UA_ModifyMonitoredItemsResponse*)UA_new(&UA_TYPES[UA_TYPES_MODIFYMONITOREDITEMSRESPONSE]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_ModifyMonitoredItemsResponse_copy(const UA_ModifyMonitoredItemsResponse *src, UA_ModifyMonitoredItemsResponse *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_MODIFYMONITOREDITEMSRESPONSE]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_ModifyMonitoredItemsResponse_deleteMembers(UA_ModifyMonitoredItemsResponse *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_MODIFYMONITOREDITEMSRESPONSE]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_ModifyMonitoredItemsResponse_clear(UA_ModifyMonitoredItemsResponse *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_MODIFYMONITOREDITEMSRESPONSE]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_ModifyMonitoredItemsResponse_delete(UA_ModifyMonitoredItemsResponse *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_MODIFYMONITOREDITEMSRESPONSE]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_ModifyMonitoredItemsResponse_equal(const UA_ModifyMonitoredItemsResponse *p1, const UA_ModifyMonitoredItemsResponse *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_MODIFYMONITOREDITEMSRESPONSE]) == UA_ORDER_EQ);
 }
@@ -38806,35 +39114,35 @@ UA_ModifyMonitoredItemsResponse_equal(const UA_ModifyMonitoredItemsResponse *p1,
 
 
 /* SetMonitoringModeRequest */
-UA_EXPORT void
+static UA_INLINE void
 UA_SetMonitoringModeRequest_init(UA_SetMonitoringModeRequest *p) {
     memset(p, 0, sizeof(UA_SetMonitoringModeRequest));
 }
 
-UA_EXPORT UA_SetMonitoringModeRequest *
+static UA_INLINE UA_SetMonitoringModeRequest *
 UA_SetMonitoringModeRequest_new(void) {
     return (UA_SetMonitoringModeRequest*)UA_new(&UA_TYPES[UA_TYPES_SETMONITORINGMODEREQUEST]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_SetMonitoringModeRequest_copy(const UA_SetMonitoringModeRequest *src, UA_SetMonitoringModeRequest *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_SETMONITORINGMODEREQUEST]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_SetMonitoringModeRequest_deleteMembers(UA_SetMonitoringModeRequest *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_SETMONITORINGMODEREQUEST]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_SetMonitoringModeRequest_clear(UA_SetMonitoringModeRequest *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_SETMONITORINGMODEREQUEST]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_SetMonitoringModeRequest_delete(UA_SetMonitoringModeRequest *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_SETMONITORINGMODEREQUEST]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_SetMonitoringModeRequest_equal(const UA_SetMonitoringModeRequest *p1, const UA_SetMonitoringModeRequest *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_SETMONITORINGMODEREQUEST]) == UA_ORDER_EQ);
 }
@@ -38842,35 +39150,35 @@ UA_SetMonitoringModeRequest_equal(const UA_SetMonitoringModeRequest *p1, const U
 
 
 /* SetMonitoringModeResponse */
-UA_EXPORT void
+static UA_INLINE void
 UA_SetMonitoringModeResponse_init(UA_SetMonitoringModeResponse *p) {
     memset(p, 0, sizeof(UA_SetMonitoringModeResponse));
 }
 
-UA_EXPORT UA_SetMonitoringModeResponse *
+static UA_INLINE UA_SetMonitoringModeResponse *
 UA_SetMonitoringModeResponse_new(void) {
     return (UA_SetMonitoringModeResponse*)UA_new(&UA_TYPES[UA_TYPES_SETMONITORINGMODERESPONSE]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_SetMonitoringModeResponse_copy(const UA_SetMonitoringModeResponse *src, UA_SetMonitoringModeResponse *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_SETMONITORINGMODERESPONSE]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_SetMonitoringModeResponse_deleteMembers(UA_SetMonitoringModeResponse *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_SETMONITORINGMODERESPONSE]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_SetMonitoringModeResponse_clear(UA_SetMonitoringModeResponse *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_SETMONITORINGMODERESPONSE]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_SetMonitoringModeResponse_delete(UA_SetMonitoringModeResponse *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_SETMONITORINGMODERESPONSE]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_SetMonitoringModeResponse_equal(const UA_SetMonitoringModeResponse *p1, const UA_SetMonitoringModeResponse *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_SETMONITORINGMODERESPONSE]) == UA_ORDER_EQ);
 }
@@ -38878,35 +39186,35 @@ UA_SetMonitoringModeResponse_equal(const UA_SetMonitoringModeResponse *p1, const
 
 
 /* SetTriggeringRequest */
-UA_EXPORT void
+static UA_INLINE void
 UA_SetTriggeringRequest_init(UA_SetTriggeringRequest *p) {
     memset(p, 0, sizeof(UA_SetTriggeringRequest));
 }
 
-UA_EXPORT UA_SetTriggeringRequest *
+static UA_INLINE UA_SetTriggeringRequest *
 UA_SetTriggeringRequest_new(void) {
     return (UA_SetTriggeringRequest*)UA_new(&UA_TYPES[UA_TYPES_SETTRIGGERINGREQUEST]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_SetTriggeringRequest_copy(const UA_SetTriggeringRequest *src, UA_SetTriggeringRequest *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_SETTRIGGERINGREQUEST]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_SetTriggeringRequest_deleteMembers(UA_SetTriggeringRequest *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_SETTRIGGERINGREQUEST]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_SetTriggeringRequest_clear(UA_SetTriggeringRequest *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_SETTRIGGERINGREQUEST]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_SetTriggeringRequest_delete(UA_SetTriggeringRequest *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_SETTRIGGERINGREQUEST]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_SetTriggeringRequest_equal(const UA_SetTriggeringRequest *p1, const UA_SetTriggeringRequest *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_SETTRIGGERINGREQUEST]) == UA_ORDER_EQ);
 }
@@ -38914,35 +39222,35 @@ UA_SetTriggeringRequest_equal(const UA_SetTriggeringRequest *p1, const UA_SetTri
 
 
 /* SetTriggeringResponse */
-UA_EXPORT void
+static UA_INLINE void
 UA_SetTriggeringResponse_init(UA_SetTriggeringResponse *p) {
     memset(p, 0, sizeof(UA_SetTriggeringResponse));
 }
 
-UA_EXPORT UA_SetTriggeringResponse *
+static UA_INLINE UA_SetTriggeringResponse *
 UA_SetTriggeringResponse_new(void) {
     return (UA_SetTriggeringResponse*)UA_new(&UA_TYPES[UA_TYPES_SETTRIGGERINGRESPONSE]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_SetTriggeringResponse_copy(const UA_SetTriggeringResponse *src, UA_SetTriggeringResponse *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_SETTRIGGERINGRESPONSE]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_SetTriggeringResponse_deleteMembers(UA_SetTriggeringResponse *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_SETTRIGGERINGRESPONSE]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_SetTriggeringResponse_clear(UA_SetTriggeringResponse *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_SETTRIGGERINGRESPONSE]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_SetTriggeringResponse_delete(UA_SetTriggeringResponse *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_SETTRIGGERINGRESPONSE]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_SetTriggeringResponse_equal(const UA_SetTriggeringResponse *p1, const UA_SetTriggeringResponse *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_SETTRIGGERINGRESPONSE]) == UA_ORDER_EQ);
 }
@@ -38950,35 +39258,35 @@ UA_SetTriggeringResponse_equal(const UA_SetTriggeringResponse *p1, const UA_SetT
 
 
 /* DeleteMonitoredItemsRequest */
-UA_EXPORT void
+static UA_INLINE void
 UA_DeleteMonitoredItemsRequest_init(UA_DeleteMonitoredItemsRequest *p) {
     memset(p, 0, sizeof(UA_DeleteMonitoredItemsRequest));
 }
 
-UA_EXPORT UA_DeleteMonitoredItemsRequest *
+static UA_INLINE UA_DeleteMonitoredItemsRequest *
 UA_DeleteMonitoredItemsRequest_new(void) {
     return (UA_DeleteMonitoredItemsRequest*)UA_new(&UA_TYPES[UA_TYPES_DELETEMONITOREDITEMSREQUEST]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_DeleteMonitoredItemsRequest_copy(const UA_DeleteMonitoredItemsRequest *src, UA_DeleteMonitoredItemsRequest *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_DELETEMONITOREDITEMSREQUEST]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_DeleteMonitoredItemsRequest_deleteMembers(UA_DeleteMonitoredItemsRequest *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_DELETEMONITOREDITEMSREQUEST]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_DeleteMonitoredItemsRequest_clear(UA_DeleteMonitoredItemsRequest *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_DELETEMONITOREDITEMSREQUEST]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_DeleteMonitoredItemsRequest_delete(UA_DeleteMonitoredItemsRequest *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_DELETEMONITOREDITEMSREQUEST]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_DeleteMonitoredItemsRequest_equal(const UA_DeleteMonitoredItemsRequest *p1, const UA_DeleteMonitoredItemsRequest *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_DELETEMONITOREDITEMSREQUEST]) == UA_ORDER_EQ);
 }
@@ -38986,35 +39294,35 @@ UA_DeleteMonitoredItemsRequest_equal(const UA_DeleteMonitoredItemsRequest *p1, c
 
 
 /* DeleteMonitoredItemsResponse */
-UA_EXPORT void
+static UA_INLINE void
 UA_DeleteMonitoredItemsResponse_init(UA_DeleteMonitoredItemsResponse *p) {
     memset(p, 0, sizeof(UA_DeleteMonitoredItemsResponse));
 }
 
-UA_EXPORT UA_DeleteMonitoredItemsResponse *
+static UA_INLINE UA_DeleteMonitoredItemsResponse *
 UA_DeleteMonitoredItemsResponse_new(void) {
     return (UA_DeleteMonitoredItemsResponse*)UA_new(&UA_TYPES[UA_TYPES_DELETEMONITOREDITEMSRESPONSE]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_DeleteMonitoredItemsResponse_copy(const UA_DeleteMonitoredItemsResponse *src, UA_DeleteMonitoredItemsResponse *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_DELETEMONITOREDITEMSRESPONSE]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_DeleteMonitoredItemsResponse_deleteMembers(UA_DeleteMonitoredItemsResponse *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_DELETEMONITOREDITEMSRESPONSE]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_DeleteMonitoredItemsResponse_clear(UA_DeleteMonitoredItemsResponse *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_DELETEMONITOREDITEMSRESPONSE]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_DeleteMonitoredItemsResponse_delete(UA_DeleteMonitoredItemsResponse *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_DELETEMONITOREDITEMSRESPONSE]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_DeleteMonitoredItemsResponse_equal(const UA_DeleteMonitoredItemsResponse *p1, const UA_DeleteMonitoredItemsResponse *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_DELETEMONITOREDITEMSRESPONSE]) == UA_ORDER_EQ);
 }
@@ -39022,35 +39330,35 @@ UA_DeleteMonitoredItemsResponse_equal(const UA_DeleteMonitoredItemsResponse *p1,
 
 
 /* CreateSubscriptionRequest */
-UA_EXPORT void
+static UA_INLINE void
 UA_CreateSubscriptionRequest_init(UA_CreateSubscriptionRequest *p) {
     memset(p, 0, sizeof(UA_CreateSubscriptionRequest));
 }
 
-UA_EXPORT UA_CreateSubscriptionRequest *
+static UA_INLINE UA_CreateSubscriptionRequest *
 UA_CreateSubscriptionRequest_new(void) {
     return (UA_CreateSubscriptionRequest*)UA_new(&UA_TYPES[UA_TYPES_CREATESUBSCRIPTIONREQUEST]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_CreateSubscriptionRequest_copy(const UA_CreateSubscriptionRequest *src, UA_CreateSubscriptionRequest *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_CREATESUBSCRIPTIONREQUEST]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_CreateSubscriptionRequest_deleteMembers(UA_CreateSubscriptionRequest *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_CREATESUBSCRIPTIONREQUEST]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_CreateSubscriptionRequest_clear(UA_CreateSubscriptionRequest *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_CREATESUBSCRIPTIONREQUEST]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_CreateSubscriptionRequest_delete(UA_CreateSubscriptionRequest *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_CREATESUBSCRIPTIONREQUEST]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_CreateSubscriptionRequest_equal(const UA_CreateSubscriptionRequest *p1, const UA_CreateSubscriptionRequest *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_CREATESUBSCRIPTIONREQUEST]) == UA_ORDER_EQ);
 }
@@ -39058,35 +39366,35 @@ UA_CreateSubscriptionRequest_equal(const UA_CreateSubscriptionRequest *p1, const
 
 
 /* CreateSubscriptionResponse */
-UA_EXPORT void
+static UA_INLINE void
 UA_CreateSubscriptionResponse_init(UA_CreateSubscriptionResponse *p) {
     memset(p, 0, sizeof(UA_CreateSubscriptionResponse));
 }
 
-UA_EXPORT UA_CreateSubscriptionResponse *
+static UA_INLINE UA_CreateSubscriptionResponse *
 UA_CreateSubscriptionResponse_new(void) {
     return (UA_CreateSubscriptionResponse*)UA_new(&UA_TYPES[UA_TYPES_CREATESUBSCRIPTIONRESPONSE]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_CreateSubscriptionResponse_copy(const UA_CreateSubscriptionResponse *src, UA_CreateSubscriptionResponse *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_CREATESUBSCRIPTIONRESPONSE]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_CreateSubscriptionResponse_deleteMembers(UA_CreateSubscriptionResponse *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_CREATESUBSCRIPTIONRESPONSE]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_CreateSubscriptionResponse_clear(UA_CreateSubscriptionResponse *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_CREATESUBSCRIPTIONRESPONSE]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_CreateSubscriptionResponse_delete(UA_CreateSubscriptionResponse *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_CREATESUBSCRIPTIONRESPONSE]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_CreateSubscriptionResponse_equal(const UA_CreateSubscriptionResponse *p1, const UA_CreateSubscriptionResponse *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_CREATESUBSCRIPTIONRESPONSE]) == UA_ORDER_EQ);
 }
@@ -39094,35 +39402,35 @@ UA_CreateSubscriptionResponse_equal(const UA_CreateSubscriptionResponse *p1, con
 
 
 /* ModifySubscriptionRequest */
-UA_EXPORT void
+static UA_INLINE void
 UA_ModifySubscriptionRequest_init(UA_ModifySubscriptionRequest *p) {
     memset(p, 0, sizeof(UA_ModifySubscriptionRequest));
 }
 
-UA_EXPORT UA_ModifySubscriptionRequest *
+static UA_INLINE UA_ModifySubscriptionRequest *
 UA_ModifySubscriptionRequest_new(void) {
     return (UA_ModifySubscriptionRequest*)UA_new(&UA_TYPES[UA_TYPES_MODIFYSUBSCRIPTIONREQUEST]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_ModifySubscriptionRequest_copy(const UA_ModifySubscriptionRequest *src, UA_ModifySubscriptionRequest *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_MODIFYSUBSCRIPTIONREQUEST]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_ModifySubscriptionRequest_deleteMembers(UA_ModifySubscriptionRequest *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_MODIFYSUBSCRIPTIONREQUEST]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_ModifySubscriptionRequest_clear(UA_ModifySubscriptionRequest *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_MODIFYSUBSCRIPTIONREQUEST]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_ModifySubscriptionRequest_delete(UA_ModifySubscriptionRequest *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_MODIFYSUBSCRIPTIONREQUEST]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_ModifySubscriptionRequest_equal(const UA_ModifySubscriptionRequest *p1, const UA_ModifySubscriptionRequest *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_MODIFYSUBSCRIPTIONREQUEST]) == UA_ORDER_EQ);
 }
@@ -39130,35 +39438,35 @@ UA_ModifySubscriptionRequest_equal(const UA_ModifySubscriptionRequest *p1, const
 
 
 /* ModifySubscriptionResponse */
-UA_EXPORT void
+static UA_INLINE void
 UA_ModifySubscriptionResponse_init(UA_ModifySubscriptionResponse *p) {
     memset(p, 0, sizeof(UA_ModifySubscriptionResponse));
 }
 
-UA_EXPORT UA_ModifySubscriptionResponse *
+static UA_INLINE UA_ModifySubscriptionResponse *
 UA_ModifySubscriptionResponse_new(void) {
     return (UA_ModifySubscriptionResponse*)UA_new(&UA_TYPES[UA_TYPES_MODIFYSUBSCRIPTIONRESPONSE]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_ModifySubscriptionResponse_copy(const UA_ModifySubscriptionResponse *src, UA_ModifySubscriptionResponse *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_MODIFYSUBSCRIPTIONRESPONSE]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_ModifySubscriptionResponse_deleteMembers(UA_ModifySubscriptionResponse *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_MODIFYSUBSCRIPTIONRESPONSE]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_ModifySubscriptionResponse_clear(UA_ModifySubscriptionResponse *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_MODIFYSUBSCRIPTIONRESPONSE]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_ModifySubscriptionResponse_delete(UA_ModifySubscriptionResponse *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_MODIFYSUBSCRIPTIONRESPONSE]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_ModifySubscriptionResponse_equal(const UA_ModifySubscriptionResponse *p1, const UA_ModifySubscriptionResponse *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_MODIFYSUBSCRIPTIONRESPONSE]) == UA_ORDER_EQ);
 }
@@ -39166,35 +39474,35 @@ UA_ModifySubscriptionResponse_equal(const UA_ModifySubscriptionResponse *p1, con
 
 
 /* SetPublishingModeRequest */
-UA_EXPORT void
+static UA_INLINE void
 UA_SetPublishingModeRequest_init(UA_SetPublishingModeRequest *p) {
     memset(p, 0, sizeof(UA_SetPublishingModeRequest));
 }
 
-UA_EXPORT UA_SetPublishingModeRequest *
+static UA_INLINE UA_SetPublishingModeRequest *
 UA_SetPublishingModeRequest_new(void) {
     return (UA_SetPublishingModeRequest*)UA_new(&UA_TYPES[UA_TYPES_SETPUBLISHINGMODEREQUEST]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_SetPublishingModeRequest_copy(const UA_SetPublishingModeRequest *src, UA_SetPublishingModeRequest *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_SETPUBLISHINGMODEREQUEST]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_SetPublishingModeRequest_deleteMembers(UA_SetPublishingModeRequest *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_SETPUBLISHINGMODEREQUEST]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_SetPublishingModeRequest_clear(UA_SetPublishingModeRequest *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_SETPUBLISHINGMODEREQUEST]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_SetPublishingModeRequest_delete(UA_SetPublishingModeRequest *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_SETPUBLISHINGMODEREQUEST]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_SetPublishingModeRequest_equal(const UA_SetPublishingModeRequest *p1, const UA_SetPublishingModeRequest *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_SETPUBLISHINGMODEREQUEST]) == UA_ORDER_EQ);
 }
@@ -39202,35 +39510,35 @@ UA_SetPublishingModeRequest_equal(const UA_SetPublishingModeRequest *p1, const U
 
 
 /* SetPublishingModeResponse */
-UA_EXPORT void
+static UA_INLINE void
 UA_SetPublishingModeResponse_init(UA_SetPublishingModeResponse *p) {
     memset(p, 0, sizeof(UA_SetPublishingModeResponse));
 }
 
-UA_EXPORT UA_SetPublishingModeResponse *
+static UA_INLINE UA_SetPublishingModeResponse *
 UA_SetPublishingModeResponse_new(void) {
     return (UA_SetPublishingModeResponse*)UA_new(&UA_TYPES[UA_TYPES_SETPUBLISHINGMODERESPONSE]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_SetPublishingModeResponse_copy(const UA_SetPublishingModeResponse *src, UA_SetPublishingModeResponse *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_SETPUBLISHINGMODERESPONSE]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_SetPublishingModeResponse_deleteMembers(UA_SetPublishingModeResponse *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_SETPUBLISHINGMODERESPONSE]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_SetPublishingModeResponse_clear(UA_SetPublishingModeResponse *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_SETPUBLISHINGMODERESPONSE]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_SetPublishingModeResponse_delete(UA_SetPublishingModeResponse *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_SETPUBLISHINGMODERESPONSE]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_SetPublishingModeResponse_equal(const UA_SetPublishingModeResponse *p1, const UA_SetPublishingModeResponse *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_SETPUBLISHINGMODERESPONSE]) == UA_ORDER_EQ);
 }
@@ -39238,35 +39546,35 @@ UA_SetPublishingModeResponse_equal(const UA_SetPublishingModeResponse *p1, const
 
 
 /* NotificationMessage */
-UA_EXPORT void
+static UA_INLINE void
 UA_NotificationMessage_init(UA_NotificationMessage *p) {
     memset(p, 0, sizeof(UA_NotificationMessage));
 }
 
-UA_EXPORT UA_NotificationMessage *
+static UA_INLINE UA_NotificationMessage *
 UA_NotificationMessage_new(void) {
     return (UA_NotificationMessage*)UA_new(&UA_TYPES[UA_TYPES_NOTIFICATIONMESSAGE]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_NotificationMessage_copy(const UA_NotificationMessage *src, UA_NotificationMessage *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_NOTIFICATIONMESSAGE]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_NotificationMessage_deleteMembers(UA_NotificationMessage *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_NOTIFICATIONMESSAGE]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_NotificationMessage_clear(UA_NotificationMessage *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_NOTIFICATIONMESSAGE]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_NotificationMessage_delete(UA_NotificationMessage *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_NOTIFICATIONMESSAGE]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_NotificationMessage_equal(const UA_NotificationMessage *p1, const UA_NotificationMessage *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_NOTIFICATIONMESSAGE]) == UA_ORDER_EQ);
 }
@@ -39274,35 +39582,35 @@ UA_NotificationMessage_equal(const UA_NotificationMessage *p1, const UA_Notifica
 
 
 /* MonitoredItemNotification */
-UA_EXPORT void
+static UA_INLINE void
 UA_MonitoredItemNotification_init(UA_MonitoredItemNotification *p) {
     memset(p, 0, sizeof(UA_MonitoredItemNotification));
 }
 
-UA_EXPORT UA_MonitoredItemNotification *
+static UA_INLINE UA_MonitoredItemNotification *
 UA_MonitoredItemNotification_new(void) {
     return (UA_MonitoredItemNotification*)UA_new(&UA_TYPES[UA_TYPES_MONITOREDITEMNOTIFICATION]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_MonitoredItemNotification_copy(const UA_MonitoredItemNotification *src, UA_MonitoredItemNotification *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_MONITOREDITEMNOTIFICATION]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_MonitoredItemNotification_deleteMembers(UA_MonitoredItemNotification *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_MONITOREDITEMNOTIFICATION]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_MonitoredItemNotification_clear(UA_MonitoredItemNotification *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_MONITOREDITEMNOTIFICATION]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_MonitoredItemNotification_delete(UA_MonitoredItemNotification *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_MONITOREDITEMNOTIFICATION]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_MonitoredItemNotification_equal(const UA_MonitoredItemNotification *p1, const UA_MonitoredItemNotification *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_MONITOREDITEMNOTIFICATION]) == UA_ORDER_EQ);
 }
@@ -39310,35 +39618,35 @@ UA_MonitoredItemNotification_equal(const UA_MonitoredItemNotification *p1, const
 
 
 /* EventFieldList */
-UA_EXPORT void
+static UA_INLINE void
 UA_EventFieldList_init(UA_EventFieldList *p) {
     memset(p, 0, sizeof(UA_EventFieldList));
 }
 
-UA_EXPORT UA_EventFieldList *
+static UA_INLINE UA_EventFieldList *
 UA_EventFieldList_new(void) {
     return (UA_EventFieldList*)UA_new(&UA_TYPES[UA_TYPES_EVENTFIELDLIST]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_EventFieldList_copy(const UA_EventFieldList *src, UA_EventFieldList *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_EVENTFIELDLIST]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_EventFieldList_deleteMembers(UA_EventFieldList *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_EVENTFIELDLIST]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_EventFieldList_clear(UA_EventFieldList *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_EVENTFIELDLIST]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_EventFieldList_delete(UA_EventFieldList *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_EVENTFIELDLIST]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_EventFieldList_equal(const UA_EventFieldList *p1, const UA_EventFieldList *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_EVENTFIELDLIST]) == UA_ORDER_EQ);
 }
@@ -39346,35 +39654,35 @@ UA_EventFieldList_equal(const UA_EventFieldList *p1, const UA_EventFieldList *p2
 
 
 /* HistoryEventFieldList */
-UA_EXPORT void
+static UA_INLINE void
 UA_HistoryEventFieldList_init(UA_HistoryEventFieldList *p) {
     memset(p, 0, sizeof(UA_HistoryEventFieldList));
 }
 
-UA_EXPORT UA_HistoryEventFieldList *
+static UA_INLINE UA_HistoryEventFieldList *
 UA_HistoryEventFieldList_new(void) {
     return (UA_HistoryEventFieldList*)UA_new(&UA_TYPES[UA_TYPES_HISTORYEVENTFIELDLIST]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_HistoryEventFieldList_copy(const UA_HistoryEventFieldList *src, UA_HistoryEventFieldList *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_HISTORYEVENTFIELDLIST]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_HistoryEventFieldList_deleteMembers(UA_HistoryEventFieldList *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_HISTORYEVENTFIELDLIST]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_HistoryEventFieldList_clear(UA_HistoryEventFieldList *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_HISTORYEVENTFIELDLIST]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_HistoryEventFieldList_delete(UA_HistoryEventFieldList *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_HISTORYEVENTFIELDLIST]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_HistoryEventFieldList_equal(const UA_HistoryEventFieldList *p1, const UA_HistoryEventFieldList *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_HISTORYEVENTFIELDLIST]) == UA_ORDER_EQ);
 }
@@ -39382,35 +39690,35 @@ UA_HistoryEventFieldList_equal(const UA_HistoryEventFieldList *p1, const UA_Hist
 
 
 /* StatusChangeNotification */
-UA_EXPORT void
+static UA_INLINE void
 UA_StatusChangeNotification_init(UA_StatusChangeNotification *p) {
     memset(p, 0, sizeof(UA_StatusChangeNotification));
 }
 
-UA_EXPORT UA_StatusChangeNotification *
+static UA_INLINE UA_StatusChangeNotification *
 UA_StatusChangeNotification_new(void) {
     return (UA_StatusChangeNotification*)UA_new(&UA_TYPES[UA_TYPES_STATUSCHANGENOTIFICATION]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_StatusChangeNotification_copy(const UA_StatusChangeNotification *src, UA_StatusChangeNotification *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_STATUSCHANGENOTIFICATION]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_StatusChangeNotification_deleteMembers(UA_StatusChangeNotification *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_STATUSCHANGENOTIFICATION]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_StatusChangeNotification_clear(UA_StatusChangeNotification *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_STATUSCHANGENOTIFICATION]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_StatusChangeNotification_delete(UA_StatusChangeNotification *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_STATUSCHANGENOTIFICATION]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_StatusChangeNotification_equal(const UA_StatusChangeNotification *p1, const UA_StatusChangeNotification *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_STATUSCHANGENOTIFICATION]) == UA_ORDER_EQ);
 }
@@ -39418,35 +39726,35 @@ UA_StatusChangeNotification_equal(const UA_StatusChangeNotification *p1, const U
 
 
 /* SubscriptionAcknowledgement */
-UA_EXPORT void
+static UA_INLINE void
 UA_SubscriptionAcknowledgement_init(UA_SubscriptionAcknowledgement *p) {
     memset(p, 0, sizeof(UA_SubscriptionAcknowledgement));
 }
 
-UA_EXPORT UA_SubscriptionAcknowledgement *
+static UA_INLINE UA_SubscriptionAcknowledgement *
 UA_SubscriptionAcknowledgement_new(void) {
     return (UA_SubscriptionAcknowledgement*)UA_new(&UA_TYPES[UA_TYPES_SUBSCRIPTIONACKNOWLEDGEMENT]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_SubscriptionAcknowledgement_copy(const UA_SubscriptionAcknowledgement *src, UA_SubscriptionAcknowledgement *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_SUBSCRIPTIONACKNOWLEDGEMENT]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_SubscriptionAcknowledgement_deleteMembers(UA_SubscriptionAcknowledgement *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_SUBSCRIPTIONACKNOWLEDGEMENT]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_SubscriptionAcknowledgement_clear(UA_SubscriptionAcknowledgement *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_SUBSCRIPTIONACKNOWLEDGEMENT]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_SubscriptionAcknowledgement_delete(UA_SubscriptionAcknowledgement *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_SUBSCRIPTIONACKNOWLEDGEMENT]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_SubscriptionAcknowledgement_equal(const UA_SubscriptionAcknowledgement *p1, const UA_SubscriptionAcknowledgement *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_SUBSCRIPTIONACKNOWLEDGEMENT]) == UA_ORDER_EQ);
 }
@@ -39454,35 +39762,35 @@ UA_SubscriptionAcknowledgement_equal(const UA_SubscriptionAcknowledgement *p1, c
 
 
 /* PublishRequest */
-UA_EXPORT void
+static UA_INLINE void
 UA_PublishRequest_init(UA_PublishRequest *p) {
     memset(p, 0, sizeof(UA_PublishRequest));
 }
 
-UA_EXPORT UA_PublishRequest *
+static UA_INLINE UA_PublishRequest *
 UA_PublishRequest_new(void) {
     return (UA_PublishRequest*)UA_new(&UA_TYPES[UA_TYPES_PUBLISHREQUEST]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_PublishRequest_copy(const UA_PublishRequest *src, UA_PublishRequest *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_PUBLISHREQUEST]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_PublishRequest_deleteMembers(UA_PublishRequest *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_PUBLISHREQUEST]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_PublishRequest_clear(UA_PublishRequest *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_PUBLISHREQUEST]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_PublishRequest_delete(UA_PublishRequest *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_PUBLISHREQUEST]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_PublishRequest_equal(const UA_PublishRequest *p1, const UA_PublishRequest *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_PUBLISHREQUEST]) == UA_ORDER_EQ);
 }
@@ -39490,35 +39798,35 @@ UA_PublishRequest_equal(const UA_PublishRequest *p1, const UA_PublishRequest *p2
 
 
 /* PublishResponse */
-UA_EXPORT void
+static UA_INLINE void
 UA_PublishResponse_init(UA_PublishResponse *p) {
     memset(p, 0, sizeof(UA_PublishResponse));
 }
 
-UA_EXPORT UA_PublishResponse *
+static UA_INLINE UA_PublishResponse *
 UA_PublishResponse_new(void) {
     return (UA_PublishResponse*)UA_new(&UA_TYPES[UA_TYPES_PUBLISHRESPONSE]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_PublishResponse_copy(const UA_PublishResponse *src, UA_PublishResponse *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_PUBLISHRESPONSE]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_PublishResponse_deleteMembers(UA_PublishResponse *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_PUBLISHRESPONSE]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_PublishResponse_clear(UA_PublishResponse *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_PUBLISHRESPONSE]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_PublishResponse_delete(UA_PublishResponse *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_PUBLISHRESPONSE]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_PublishResponse_equal(const UA_PublishResponse *p1, const UA_PublishResponse *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_PUBLISHRESPONSE]) == UA_ORDER_EQ);
 }
@@ -39526,35 +39834,35 @@ UA_PublishResponse_equal(const UA_PublishResponse *p1, const UA_PublishResponse 
 
 
 /* RepublishRequest */
-UA_EXPORT void
+static UA_INLINE void
 UA_RepublishRequest_init(UA_RepublishRequest *p) {
     memset(p, 0, sizeof(UA_RepublishRequest));
 }
 
-UA_EXPORT UA_RepublishRequest *
+static UA_INLINE UA_RepublishRequest *
 UA_RepublishRequest_new(void) {
     return (UA_RepublishRequest*)UA_new(&UA_TYPES[UA_TYPES_REPUBLISHREQUEST]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_RepublishRequest_copy(const UA_RepublishRequest *src, UA_RepublishRequest *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_REPUBLISHREQUEST]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_RepublishRequest_deleteMembers(UA_RepublishRequest *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_REPUBLISHREQUEST]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_RepublishRequest_clear(UA_RepublishRequest *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_REPUBLISHREQUEST]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_RepublishRequest_delete(UA_RepublishRequest *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_REPUBLISHREQUEST]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_RepublishRequest_equal(const UA_RepublishRequest *p1, const UA_RepublishRequest *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_REPUBLISHREQUEST]) == UA_ORDER_EQ);
 }
@@ -39562,35 +39870,35 @@ UA_RepublishRequest_equal(const UA_RepublishRequest *p1, const UA_RepublishReque
 
 
 /* RepublishResponse */
-UA_EXPORT void
+static UA_INLINE void
 UA_RepublishResponse_init(UA_RepublishResponse *p) {
     memset(p, 0, sizeof(UA_RepublishResponse));
 }
 
-UA_EXPORT UA_RepublishResponse *
+static UA_INLINE UA_RepublishResponse *
 UA_RepublishResponse_new(void) {
     return (UA_RepublishResponse*)UA_new(&UA_TYPES[UA_TYPES_REPUBLISHRESPONSE]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_RepublishResponse_copy(const UA_RepublishResponse *src, UA_RepublishResponse *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_REPUBLISHRESPONSE]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_RepublishResponse_deleteMembers(UA_RepublishResponse *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_REPUBLISHRESPONSE]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_RepublishResponse_clear(UA_RepublishResponse *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_REPUBLISHRESPONSE]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_RepublishResponse_delete(UA_RepublishResponse *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_REPUBLISHRESPONSE]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_RepublishResponse_equal(const UA_RepublishResponse *p1, const UA_RepublishResponse *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_REPUBLISHRESPONSE]) == UA_ORDER_EQ);
 }
@@ -39598,35 +39906,35 @@ UA_RepublishResponse_equal(const UA_RepublishResponse *p1, const UA_RepublishRes
 
 
 /* TransferResult */
-UA_EXPORT void
+static UA_INLINE void
 UA_TransferResult_init(UA_TransferResult *p) {
     memset(p, 0, sizeof(UA_TransferResult));
 }
 
-UA_EXPORT UA_TransferResult *
+static UA_INLINE UA_TransferResult *
 UA_TransferResult_new(void) {
     return (UA_TransferResult*)UA_new(&UA_TYPES[UA_TYPES_TRANSFERRESULT]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_TransferResult_copy(const UA_TransferResult *src, UA_TransferResult *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_TRANSFERRESULT]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_TransferResult_deleteMembers(UA_TransferResult *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_TRANSFERRESULT]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_TransferResult_clear(UA_TransferResult *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_TRANSFERRESULT]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_TransferResult_delete(UA_TransferResult *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_TRANSFERRESULT]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_TransferResult_equal(const UA_TransferResult *p1, const UA_TransferResult *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_TRANSFERRESULT]) == UA_ORDER_EQ);
 }
@@ -39634,35 +39942,35 @@ UA_TransferResult_equal(const UA_TransferResult *p1, const UA_TransferResult *p2
 
 
 /* TransferSubscriptionsRequest */
-UA_EXPORT void
+static UA_INLINE void
 UA_TransferSubscriptionsRequest_init(UA_TransferSubscriptionsRequest *p) {
     memset(p, 0, sizeof(UA_TransferSubscriptionsRequest));
 }
 
-UA_EXPORT UA_TransferSubscriptionsRequest *
+static UA_INLINE UA_TransferSubscriptionsRequest *
 UA_TransferSubscriptionsRequest_new(void) {
     return (UA_TransferSubscriptionsRequest*)UA_new(&UA_TYPES[UA_TYPES_TRANSFERSUBSCRIPTIONSREQUEST]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_TransferSubscriptionsRequest_copy(const UA_TransferSubscriptionsRequest *src, UA_TransferSubscriptionsRequest *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_TRANSFERSUBSCRIPTIONSREQUEST]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_TransferSubscriptionsRequest_deleteMembers(UA_TransferSubscriptionsRequest *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_TRANSFERSUBSCRIPTIONSREQUEST]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_TransferSubscriptionsRequest_clear(UA_TransferSubscriptionsRequest *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_TRANSFERSUBSCRIPTIONSREQUEST]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_TransferSubscriptionsRequest_delete(UA_TransferSubscriptionsRequest *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_TRANSFERSUBSCRIPTIONSREQUEST]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_TransferSubscriptionsRequest_equal(const UA_TransferSubscriptionsRequest *p1, const UA_TransferSubscriptionsRequest *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_TRANSFERSUBSCRIPTIONSREQUEST]) == UA_ORDER_EQ);
 }
@@ -39670,35 +39978,35 @@ UA_TransferSubscriptionsRequest_equal(const UA_TransferSubscriptionsRequest *p1,
 
 
 /* TransferSubscriptionsResponse */
-UA_EXPORT void
+static UA_INLINE void
 UA_TransferSubscriptionsResponse_init(UA_TransferSubscriptionsResponse *p) {
     memset(p, 0, sizeof(UA_TransferSubscriptionsResponse));
 }
 
-UA_EXPORT UA_TransferSubscriptionsResponse *
+static UA_INLINE UA_TransferSubscriptionsResponse *
 UA_TransferSubscriptionsResponse_new(void) {
     return (UA_TransferSubscriptionsResponse*)UA_new(&UA_TYPES[UA_TYPES_TRANSFERSUBSCRIPTIONSRESPONSE]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_TransferSubscriptionsResponse_copy(const UA_TransferSubscriptionsResponse *src, UA_TransferSubscriptionsResponse *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_TRANSFERSUBSCRIPTIONSRESPONSE]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_TransferSubscriptionsResponse_deleteMembers(UA_TransferSubscriptionsResponse *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_TRANSFERSUBSCRIPTIONSRESPONSE]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_TransferSubscriptionsResponse_clear(UA_TransferSubscriptionsResponse *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_TRANSFERSUBSCRIPTIONSRESPONSE]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_TransferSubscriptionsResponse_delete(UA_TransferSubscriptionsResponse *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_TRANSFERSUBSCRIPTIONSRESPONSE]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_TransferSubscriptionsResponse_equal(const UA_TransferSubscriptionsResponse *p1, const UA_TransferSubscriptionsResponse *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_TRANSFERSUBSCRIPTIONSRESPONSE]) == UA_ORDER_EQ);
 }
@@ -39706,35 +40014,35 @@ UA_TransferSubscriptionsResponse_equal(const UA_TransferSubscriptionsResponse *p
 
 
 /* DeleteSubscriptionsRequest */
-UA_EXPORT void
+static UA_INLINE void
 UA_DeleteSubscriptionsRequest_init(UA_DeleteSubscriptionsRequest *p) {
     memset(p, 0, sizeof(UA_DeleteSubscriptionsRequest));
 }
 
-UA_EXPORT UA_DeleteSubscriptionsRequest *
+static UA_INLINE UA_DeleteSubscriptionsRequest *
 UA_DeleteSubscriptionsRequest_new(void) {
     return (UA_DeleteSubscriptionsRequest*)UA_new(&UA_TYPES[UA_TYPES_DELETESUBSCRIPTIONSREQUEST]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_DeleteSubscriptionsRequest_copy(const UA_DeleteSubscriptionsRequest *src, UA_DeleteSubscriptionsRequest *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_DELETESUBSCRIPTIONSREQUEST]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_DeleteSubscriptionsRequest_deleteMembers(UA_DeleteSubscriptionsRequest *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_DELETESUBSCRIPTIONSREQUEST]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_DeleteSubscriptionsRequest_clear(UA_DeleteSubscriptionsRequest *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_DELETESUBSCRIPTIONSREQUEST]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_DeleteSubscriptionsRequest_delete(UA_DeleteSubscriptionsRequest *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_DELETESUBSCRIPTIONSREQUEST]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_DeleteSubscriptionsRequest_equal(const UA_DeleteSubscriptionsRequest *p1, const UA_DeleteSubscriptionsRequest *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_DELETESUBSCRIPTIONSREQUEST]) == UA_ORDER_EQ);
 }
@@ -39742,35 +40050,35 @@ UA_DeleteSubscriptionsRequest_equal(const UA_DeleteSubscriptionsRequest *p1, con
 
 
 /* DeleteSubscriptionsResponse */
-UA_EXPORT void
+static UA_INLINE void
 UA_DeleteSubscriptionsResponse_init(UA_DeleteSubscriptionsResponse *p) {
     memset(p, 0, sizeof(UA_DeleteSubscriptionsResponse));
 }
 
-UA_EXPORT UA_DeleteSubscriptionsResponse *
+static UA_INLINE UA_DeleteSubscriptionsResponse *
 UA_DeleteSubscriptionsResponse_new(void) {
     return (UA_DeleteSubscriptionsResponse*)UA_new(&UA_TYPES[UA_TYPES_DELETESUBSCRIPTIONSRESPONSE]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_DeleteSubscriptionsResponse_copy(const UA_DeleteSubscriptionsResponse *src, UA_DeleteSubscriptionsResponse *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_DELETESUBSCRIPTIONSRESPONSE]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_DeleteSubscriptionsResponse_deleteMembers(UA_DeleteSubscriptionsResponse *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_DELETESUBSCRIPTIONSRESPONSE]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_DeleteSubscriptionsResponse_clear(UA_DeleteSubscriptionsResponse *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_DELETESUBSCRIPTIONSRESPONSE]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_DeleteSubscriptionsResponse_delete(UA_DeleteSubscriptionsResponse *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_DELETESUBSCRIPTIONSRESPONSE]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_DeleteSubscriptionsResponse_equal(const UA_DeleteSubscriptionsResponse *p1, const UA_DeleteSubscriptionsResponse *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_DELETESUBSCRIPTIONSRESPONSE]) == UA_ORDER_EQ);
 }
@@ -39778,35 +40086,35 @@ UA_DeleteSubscriptionsResponse_equal(const UA_DeleteSubscriptionsResponse *p1, c
 
 
 /* BuildInfo */
-UA_EXPORT void
+static UA_INLINE void
 UA_BuildInfo_init(UA_BuildInfo *p) {
     memset(p, 0, sizeof(UA_BuildInfo));
 }
 
-UA_EXPORT UA_BuildInfo *
+static UA_INLINE UA_BuildInfo *
 UA_BuildInfo_new(void) {
     return (UA_BuildInfo*)UA_new(&UA_TYPES[UA_TYPES_BUILDINFO]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_BuildInfo_copy(const UA_BuildInfo *src, UA_BuildInfo *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_BUILDINFO]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_BuildInfo_deleteMembers(UA_BuildInfo *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_BUILDINFO]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_BuildInfo_clear(UA_BuildInfo *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_BUILDINFO]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_BuildInfo_delete(UA_BuildInfo *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_BUILDINFO]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_BuildInfo_equal(const UA_BuildInfo *p1, const UA_BuildInfo *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_BUILDINFO]) == UA_ORDER_EQ);
 }
@@ -39814,35 +40122,35 @@ UA_BuildInfo_equal(const UA_BuildInfo *p1, const UA_BuildInfo *p2) {
 
 
 /* RedundancySupport */
-UA_EXPORT void
+static UA_INLINE void
 UA_RedundancySupport_init(UA_RedundancySupport *p) {
     memset(p, 0, sizeof(UA_RedundancySupport));
 }
 
-UA_EXPORT UA_RedundancySupport *
+static UA_INLINE UA_RedundancySupport *
 UA_RedundancySupport_new(void) {
     return (UA_RedundancySupport*)UA_new(&UA_TYPES[UA_TYPES_REDUNDANCYSUPPORT]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_RedundancySupport_copy(const UA_RedundancySupport *src, UA_RedundancySupport *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_REDUNDANCYSUPPORT]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_RedundancySupport_deleteMembers(UA_RedundancySupport *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_REDUNDANCYSUPPORT]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_RedundancySupport_clear(UA_RedundancySupport *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_REDUNDANCYSUPPORT]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_RedundancySupport_delete(UA_RedundancySupport *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_REDUNDANCYSUPPORT]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_RedundancySupport_equal(const UA_RedundancySupport *p1, const UA_RedundancySupport *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_REDUNDANCYSUPPORT]) == UA_ORDER_EQ);
 }
@@ -39850,35 +40158,35 @@ UA_RedundancySupport_equal(const UA_RedundancySupport *p1, const UA_RedundancySu
 
 
 /* ServerState */
-UA_EXPORT void
+static UA_INLINE void
 UA_ServerState_init(UA_ServerState *p) {
     memset(p, 0, sizeof(UA_ServerState));
 }
 
-UA_EXPORT UA_ServerState *
+static UA_INLINE UA_ServerState *
 UA_ServerState_new(void) {
     return (UA_ServerState*)UA_new(&UA_TYPES[UA_TYPES_SERVERSTATE]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_ServerState_copy(const UA_ServerState *src, UA_ServerState *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_SERVERSTATE]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_ServerState_deleteMembers(UA_ServerState *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_SERVERSTATE]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_ServerState_clear(UA_ServerState *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_SERVERSTATE]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_ServerState_delete(UA_ServerState *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_SERVERSTATE]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_ServerState_equal(const UA_ServerState *p1, const UA_ServerState *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_SERVERSTATE]) == UA_ORDER_EQ);
 }
@@ -39886,35 +40194,35 @@ UA_ServerState_equal(const UA_ServerState *p1, const UA_ServerState *p2) {
 
 
 /* RedundantServerDataType */
-UA_EXPORT void
+static UA_INLINE void
 UA_RedundantServerDataType_init(UA_RedundantServerDataType *p) {
     memset(p, 0, sizeof(UA_RedundantServerDataType));
 }
 
-UA_EXPORT UA_RedundantServerDataType *
+static UA_INLINE UA_RedundantServerDataType *
 UA_RedundantServerDataType_new(void) {
     return (UA_RedundantServerDataType*)UA_new(&UA_TYPES[UA_TYPES_REDUNDANTSERVERDATATYPE]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_RedundantServerDataType_copy(const UA_RedundantServerDataType *src, UA_RedundantServerDataType *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_REDUNDANTSERVERDATATYPE]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_RedundantServerDataType_deleteMembers(UA_RedundantServerDataType *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_REDUNDANTSERVERDATATYPE]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_RedundantServerDataType_clear(UA_RedundantServerDataType *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_REDUNDANTSERVERDATATYPE]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_RedundantServerDataType_delete(UA_RedundantServerDataType *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_REDUNDANTSERVERDATATYPE]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_RedundantServerDataType_equal(const UA_RedundantServerDataType *p1, const UA_RedundantServerDataType *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_REDUNDANTSERVERDATATYPE]) == UA_ORDER_EQ);
 }
@@ -39922,35 +40230,35 @@ UA_RedundantServerDataType_equal(const UA_RedundantServerDataType *p1, const UA_
 
 
 /* EndpointUrlListDataType */
-UA_EXPORT void
+static UA_INLINE void
 UA_EndpointUrlListDataType_init(UA_EndpointUrlListDataType *p) {
     memset(p, 0, sizeof(UA_EndpointUrlListDataType));
 }
 
-UA_EXPORT UA_EndpointUrlListDataType *
+static UA_INLINE UA_EndpointUrlListDataType *
 UA_EndpointUrlListDataType_new(void) {
     return (UA_EndpointUrlListDataType*)UA_new(&UA_TYPES[UA_TYPES_ENDPOINTURLLISTDATATYPE]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_EndpointUrlListDataType_copy(const UA_EndpointUrlListDataType *src, UA_EndpointUrlListDataType *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_ENDPOINTURLLISTDATATYPE]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_EndpointUrlListDataType_deleteMembers(UA_EndpointUrlListDataType *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_ENDPOINTURLLISTDATATYPE]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_EndpointUrlListDataType_clear(UA_EndpointUrlListDataType *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_ENDPOINTURLLISTDATATYPE]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_EndpointUrlListDataType_delete(UA_EndpointUrlListDataType *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_ENDPOINTURLLISTDATATYPE]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_EndpointUrlListDataType_equal(const UA_EndpointUrlListDataType *p1, const UA_EndpointUrlListDataType *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_ENDPOINTURLLISTDATATYPE]) == UA_ORDER_EQ);
 }
@@ -39958,35 +40266,35 @@ UA_EndpointUrlListDataType_equal(const UA_EndpointUrlListDataType *p1, const UA_
 
 
 /* NetworkGroupDataType */
-UA_EXPORT void
+static UA_INLINE void
 UA_NetworkGroupDataType_init(UA_NetworkGroupDataType *p) {
     memset(p, 0, sizeof(UA_NetworkGroupDataType));
 }
 
-UA_EXPORT UA_NetworkGroupDataType *
+static UA_INLINE UA_NetworkGroupDataType *
 UA_NetworkGroupDataType_new(void) {
     return (UA_NetworkGroupDataType*)UA_new(&UA_TYPES[UA_TYPES_NETWORKGROUPDATATYPE]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_NetworkGroupDataType_copy(const UA_NetworkGroupDataType *src, UA_NetworkGroupDataType *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_NETWORKGROUPDATATYPE]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_NetworkGroupDataType_deleteMembers(UA_NetworkGroupDataType *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_NETWORKGROUPDATATYPE]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_NetworkGroupDataType_clear(UA_NetworkGroupDataType *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_NETWORKGROUPDATATYPE]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_NetworkGroupDataType_delete(UA_NetworkGroupDataType *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_NETWORKGROUPDATATYPE]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_NetworkGroupDataType_equal(const UA_NetworkGroupDataType *p1, const UA_NetworkGroupDataType *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_NETWORKGROUPDATATYPE]) == UA_ORDER_EQ);
 }
@@ -39994,35 +40302,35 @@ UA_NetworkGroupDataType_equal(const UA_NetworkGroupDataType *p1, const UA_Networ
 
 
 /* SamplingIntervalDiagnosticsDataType */
-UA_EXPORT void
+static UA_INLINE void
 UA_SamplingIntervalDiagnosticsDataType_init(UA_SamplingIntervalDiagnosticsDataType *p) {
     memset(p, 0, sizeof(UA_SamplingIntervalDiagnosticsDataType));
 }
 
-UA_EXPORT UA_SamplingIntervalDiagnosticsDataType *
+static UA_INLINE UA_SamplingIntervalDiagnosticsDataType *
 UA_SamplingIntervalDiagnosticsDataType_new(void) {
     return (UA_SamplingIntervalDiagnosticsDataType*)UA_new(&UA_TYPES[UA_TYPES_SAMPLINGINTERVALDIAGNOSTICSDATATYPE]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_SamplingIntervalDiagnosticsDataType_copy(const UA_SamplingIntervalDiagnosticsDataType *src, UA_SamplingIntervalDiagnosticsDataType *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_SAMPLINGINTERVALDIAGNOSTICSDATATYPE]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_SamplingIntervalDiagnosticsDataType_deleteMembers(UA_SamplingIntervalDiagnosticsDataType *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_SAMPLINGINTERVALDIAGNOSTICSDATATYPE]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_SamplingIntervalDiagnosticsDataType_clear(UA_SamplingIntervalDiagnosticsDataType *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_SAMPLINGINTERVALDIAGNOSTICSDATATYPE]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_SamplingIntervalDiagnosticsDataType_delete(UA_SamplingIntervalDiagnosticsDataType *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_SAMPLINGINTERVALDIAGNOSTICSDATATYPE]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_SamplingIntervalDiagnosticsDataType_equal(const UA_SamplingIntervalDiagnosticsDataType *p1, const UA_SamplingIntervalDiagnosticsDataType *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_SAMPLINGINTERVALDIAGNOSTICSDATATYPE]) == UA_ORDER_EQ);
 }
@@ -40030,35 +40338,35 @@ UA_SamplingIntervalDiagnosticsDataType_equal(const UA_SamplingIntervalDiagnostic
 
 
 /* ServerDiagnosticsSummaryDataType */
-UA_EXPORT void
+static UA_INLINE void
 UA_ServerDiagnosticsSummaryDataType_init(UA_ServerDiagnosticsSummaryDataType *p) {
     memset(p, 0, sizeof(UA_ServerDiagnosticsSummaryDataType));
 }
 
-UA_EXPORT UA_ServerDiagnosticsSummaryDataType *
+static UA_INLINE UA_ServerDiagnosticsSummaryDataType *
 UA_ServerDiagnosticsSummaryDataType_new(void) {
     return (UA_ServerDiagnosticsSummaryDataType*)UA_new(&UA_TYPES[UA_TYPES_SERVERDIAGNOSTICSSUMMARYDATATYPE]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_ServerDiagnosticsSummaryDataType_copy(const UA_ServerDiagnosticsSummaryDataType *src, UA_ServerDiagnosticsSummaryDataType *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_SERVERDIAGNOSTICSSUMMARYDATATYPE]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_ServerDiagnosticsSummaryDataType_deleteMembers(UA_ServerDiagnosticsSummaryDataType *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_SERVERDIAGNOSTICSSUMMARYDATATYPE]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_ServerDiagnosticsSummaryDataType_clear(UA_ServerDiagnosticsSummaryDataType *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_SERVERDIAGNOSTICSSUMMARYDATATYPE]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_ServerDiagnosticsSummaryDataType_delete(UA_ServerDiagnosticsSummaryDataType *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_SERVERDIAGNOSTICSSUMMARYDATATYPE]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_ServerDiagnosticsSummaryDataType_equal(const UA_ServerDiagnosticsSummaryDataType *p1, const UA_ServerDiagnosticsSummaryDataType *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_SERVERDIAGNOSTICSSUMMARYDATATYPE]) == UA_ORDER_EQ);
 }
@@ -40066,35 +40374,35 @@ UA_ServerDiagnosticsSummaryDataType_equal(const UA_ServerDiagnosticsSummaryDataT
 
 
 /* ServerStatusDataType */
-UA_EXPORT void
+static UA_INLINE void
 UA_ServerStatusDataType_init(UA_ServerStatusDataType *p) {
     memset(p, 0, sizeof(UA_ServerStatusDataType));
 }
 
-UA_EXPORT UA_ServerStatusDataType *
+static UA_INLINE UA_ServerStatusDataType *
 UA_ServerStatusDataType_new(void) {
     return (UA_ServerStatusDataType*)UA_new(&UA_TYPES[UA_TYPES_SERVERSTATUSDATATYPE]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_ServerStatusDataType_copy(const UA_ServerStatusDataType *src, UA_ServerStatusDataType *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_SERVERSTATUSDATATYPE]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_ServerStatusDataType_deleteMembers(UA_ServerStatusDataType *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_SERVERSTATUSDATATYPE]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_ServerStatusDataType_clear(UA_ServerStatusDataType *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_SERVERSTATUSDATATYPE]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_ServerStatusDataType_delete(UA_ServerStatusDataType *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_SERVERSTATUSDATATYPE]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_ServerStatusDataType_equal(const UA_ServerStatusDataType *p1, const UA_ServerStatusDataType *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_SERVERSTATUSDATATYPE]) == UA_ORDER_EQ);
 }
@@ -40102,35 +40410,35 @@ UA_ServerStatusDataType_equal(const UA_ServerStatusDataType *p1, const UA_Server
 
 
 /* SessionSecurityDiagnosticsDataType */
-UA_EXPORT void
+static UA_INLINE void
 UA_SessionSecurityDiagnosticsDataType_init(UA_SessionSecurityDiagnosticsDataType *p) {
     memset(p, 0, sizeof(UA_SessionSecurityDiagnosticsDataType));
 }
 
-UA_EXPORT UA_SessionSecurityDiagnosticsDataType *
+static UA_INLINE UA_SessionSecurityDiagnosticsDataType *
 UA_SessionSecurityDiagnosticsDataType_new(void) {
     return (UA_SessionSecurityDiagnosticsDataType*)UA_new(&UA_TYPES[UA_TYPES_SESSIONSECURITYDIAGNOSTICSDATATYPE]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_SessionSecurityDiagnosticsDataType_copy(const UA_SessionSecurityDiagnosticsDataType *src, UA_SessionSecurityDiagnosticsDataType *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_SESSIONSECURITYDIAGNOSTICSDATATYPE]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_SessionSecurityDiagnosticsDataType_deleteMembers(UA_SessionSecurityDiagnosticsDataType *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_SESSIONSECURITYDIAGNOSTICSDATATYPE]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_SessionSecurityDiagnosticsDataType_clear(UA_SessionSecurityDiagnosticsDataType *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_SESSIONSECURITYDIAGNOSTICSDATATYPE]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_SessionSecurityDiagnosticsDataType_delete(UA_SessionSecurityDiagnosticsDataType *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_SESSIONSECURITYDIAGNOSTICSDATATYPE]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_SessionSecurityDiagnosticsDataType_equal(const UA_SessionSecurityDiagnosticsDataType *p1, const UA_SessionSecurityDiagnosticsDataType *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_SESSIONSECURITYDIAGNOSTICSDATATYPE]) == UA_ORDER_EQ);
 }
@@ -40138,35 +40446,35 @@ UA_SessionSecurityDiagnosticsDataType_equal(const UA_SessionSecurityDiagnosticsD
 
 
 /* ServiceCounterDataType */
-UA_EXPORT void
+static UA_INLINE void
 UA_ServiceCounterDataType_init(UA_ServiceCounterDataType *p) {
     memset(p, 0, sizeof(UA_ServiceCounterDataType));
 }
 
-UA_EXPORT UA_ServiceCounterDataType *
+static UA_INLINE UA_ServiceCounterDataType *
 UA_ServiceCounterDataType_new(void) {
     return (UA_ServiceCounterDataType*)UA_new(&UA_TYPES[UA_TYPES_SERVICECOUNTERDATATYPE]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_ServiceCounterDataType_copy(const UA_ServiceCounterDataType *src, UA_ServiceCounterDataType *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_SERVICECOUNTERDATATYPE]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_ServiceCounterDataType_deleteMembers(UA_ServiceCounterDataType *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_SERVICECOUNTERDATATYPE]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_ServiceCounterDataType_clear(UA_ServiceCounterDataType *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_SERVICECOUNTERDATATYPE]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_ServiceCounterDataType_delete(UA_ServiceCounterDataType *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_SERVICECOUNTERDATATYPE]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_ServiceCounterDataType_equal(const UA_ServiceCounterDataType *p1, const UA_ServiceCounterDataType *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_SERVICECOUNTERDATATYPE]) == UA_ORDER_EQ);
 }
@@ -40174,35 +40482,35 @@ UA_ServiceCounterDataType_equal(const UA_ServiceCounterDataType *p1, const UA_Se
 
 
 /* StatusResult */
-UA_EXPORT void
+static UA_INLINE void
 UA_StatusResult_init(UA_StatusResult *p) {
     memset(p, 0, sizeof(UA_StatusResult));
 }
 
-UA_EXPORT UA_StatusResult *
+static UA_INLINE UA_StatusResult *
 UA_StatusResult_new(void) {
     return (UA_StatusResult*)UA_new(&UA_TYPES[UA_TYPES_STATUSRESULT]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_StatusResult_copy(const UA_StatusResult *src, UA_StatusResult *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_STATUSRESULT]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_StatusResult_deleteMembers(UA_StatusResult *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_STATUSRESULT]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_StatusResult_clear(UA_StatusResult *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_STATUSRESULT]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_StatusResult_delete(UA_StatusResult *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_STATUSRESULT]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_StatusResult_equal(const UA_StatusResult *p1, const UA_StatusResult *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_STATUSRESULT]) == UA_ORDER_EQ);
 }
@@ -40210,35 +40518,35 @@ UA_StatusResult_equal(const UA_StatusResult *p1, const UA_StatusResult *p2) {
 
 
 /* SubscriptionDiagnosticsDataType */
-UA_EXPORT void
+static UA_INLINE void
 UA_SubscriptionDiagnosticsDataType_init(UA_SubscriptionDiagnosticsDataType *p) {
     memset(p, 0, sizeof(UA_SubscriptionDiagnosticsDataType));
 }
 
-UA_EXPORT UA_SubscriptionDiagnosticsDataType *
+static UA_INLINE UA_SubscriptionDiagnosticsDataType *
 UA_SubscriptionDiagnosticsDataType_new(void) {
     return (UA_SubscriptionDiagnosticsDataType*)UA_new(&UA_TYPES[UA_TYPES_SUBSCRIPTIONDIAGNOSTICSDATATYPE]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_SubscriptionDiagnosticsDataType_copy(const UA_SubscriptionDiagnosticsDataType *src, UA_SubscriptionDiagnosticsDataType *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_SUBSCRIPTIONDIAGNOSTICSDATATYPE]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_SubscriptionDiagnosticsDataType_deleteMembers(UA_SubscriptionDiagnosticsDataType *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_SUBSCRIPTIONDIAGNOSTICSDATATYPE]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_SubscriptionDiagnosticsDataType_clear(UA_SubscriptionDiagnosticsDataType *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_SUBSCRIPTIONDIAGNOSTICSDATATYPE]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_SubscriptionDiagnosticsDataType_delete(UA_SubscriptionDiagnosticsDataType *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_SUBSCRIPTIONDIAGNOSTICSDATATYPE]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_SubscriptionDiagnosticsDataType_equal(const UA_SubscriptionDiagnosticsDataType *p1, const UA_SubscriptionDiagnosticsDataType *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_SUBSCRIPTIONDIAGNOSTICSDATATYPE]) == UA_ORDER_EQ);
 }
@@ -40246,35 +40554,35 @@ UA_SubscriptionDiagnosticsDataType_equal(const UA_SubscriptionDiagnosticsDataTyp
 
 
 /* ModelChangeStructureVerbMask */
-UA_EXPORT void
+static UA_INLINE void
 UA_ModelChangeStructureVerbMask_init(UA_ModelChangeStructureVerbMask *p) {
     memset(p, 0, sizeof(UA_ModelChangeStructureVerbMask));
 }
 
-UA_EXPORT UA_ModelChangeStructureVerbMask *
+static UA_INLINE UA_ModelChangeStructureVerbMask *
 UA_ModelChangeStructureVerbMask_new(void) {
     return (UA_ModelChangeStructureVerbMask*)UA_new(&UA_TYPES[UA_TYPES_MODELCHANGESTRUCTUREVERBMASK]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_ModelChangeStructureVerbMask_copy(const UA_ModelChangeStructureVerbMask *src, UA_ModelChangeStructureVerbMask *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_MODELCHANGESTRUCTUREVERBMASK]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_ModelChangeStructureVerbMask_deleteMembers(UA_ModelChangeStructureVerbMask *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_MODELCHANGESTRUCTUREVERBMASK]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_ModelChangeStructureVerbMask_clear(UA_ModelChangeStructureVerbMask *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_MODELCHANGESTRUCTUREVERBMASK]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_ModelChangeStructureVerbMask_delete(UA_ModelChangeStructureVerbMask *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_MODELCHANGESTRUCTUREVERBMASK]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_ModelChangeStructureVerbMask_equal(const UA_ModelChangeStructureVerbMask *p1, const UA_ModelChangeStructureVerbMask *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_MODELCHANGESTRUCTUREVERBMASK]) == UA_ORDER_EQ);
 }
@@ -40282,35 +40590,35 @@ UA_ModelChangeStructureVerbMask_equal(const UA_ModelChangeStructureVerbMask *p1,
 
 
 /* ModelChangeStructureDataType */
-UA_EXPORT void
+static UA_INLINE void
 UA_ModelChangeStructureDataType_init(UA_ModelChangeStructureDataType *p) {
     memset(p, 0, sizeof(UA_ModelChangeStructureDataType));
 }
 
-UA_EXPORT UA_ModelChangeStructureDataType *
+static UA_INLINE UA_ModelChangeStructureDataType *
 UA_ModelChangeStructureDataType_new(void) {
     return (UA_ModelChangeStructureDataType*)UA_new(&UA_TYPES[UA_TYPES_MODELCHANGESTRUCTUREDATATYPE]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_ModelChangeStructureDataType_copy(const UA_ModelChangeStructureDataType *src, UA_ModelChangeStructureDataType *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_MODELCHANGESTRUCTUREDATATYPE]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_ModelChangeStructureDataType_deleteMembers(UA_ModelChangeStructureDataType *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_MODELCHANGESTRUCTUREDATATYPE]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_ModelChangeStructureDataType_clear(UA_ModelChangeStructureDataType *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_MODELCHANGESTRUCTUREDATATYPE]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_ModelChangeStructureDataType_delete(UA_ModelChangeStructureDataType *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_MODELCHANGESTRUCTUREDATATYPE]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_ModelChangeStructureDataType_equal(const UA_ModelChangeStructureDataType *p1, const UA_ModelChangeStructureDataType *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_MODELCHANGESTRUCTUREDATATYPE]) == UA_ORDER_EQ);
 }
@@ -40318,35 +40626,35 @@ UA_ModelChangeStructureDataType_equal(const UA_ModelChangeStructureDataType *p1,
 
 
 /* SemanticChangeStructureDataType */
-UA_EXPORT void
+static UA_INLINE void
 UA_SemanticChangeStructureDataType_init(UA_SemanticChangeStructureDataType *p) {
     memset(p, 0, sizeof(UA_SemanticChangeStructureDataType));
 }
 
-UA_EXPORT UA_SemanticChangeStructureDataType *
+static UA_INLINE UA_SemanticChangeStructureDataType *
 UA_SemanticChangeStructureDataType_new(void) {
     return (UA_SemanticChangeStructureDataType*)UA_new(&UA_TYPES[UA_TYPES_SEMANTICCHANGESTRUCTUREDATATYPE]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_SemanticChangeStructureDataType_copy(const UA_SemanticChangeStructureDataType *src, UA_SemanticChangeStructureDataType *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_SEMANTICCHANGESTRUCTUREDATATYPE]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_SemanticChangeStructureDataType_deleteMembers(UA_SemanticChangeStructureDataType *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_SEMANTICCHANGESTRUCTUREDATATYPE]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_SemanticChangeStructureDataType_clear(UA_SemanticChangeStructureDataType *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_SEMANTICCHANGESTRUCTUREDATATYPE]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_SemanticChangeStructureDataType_delete(UA_SemanticChangeStructureDataType *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_SEMANTICCHANGESTRUCTUREDATATYPE]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_SemanticChangeStructureDataType_equal(const UA_SemanticChangeStructureDataType *p1, const UA_SemanticChangeStructureDataType *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_SEMANTICCHANGESTRUCTUREDATATYPE]) == UA_ORDER_EQ);
 }
@@ -40354,35 +40662,35 @@ UA_SemanticChangeStructureDataType_equal(const UA_SemanticChangeStructureDataTyp
 
 
 /* Range */
-UA_EXPORT void
+static UA_INLINE void
 UA_Range_init(UA_Range *p) {
     memset(p, 0, sizeof(UA_Range));
 }
 
-UA_EXPORT UA_Range *
+static UA_INLINE UA_Range *
 UA_Range_new(void) {
     return (UA_Range*)UA_new(&UA_TYPES[UA_TYPES_RANGE]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_Range_copy(const UA_Range *src, UA_Range *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_RANGE]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_Range_deleteMembers(UA_Range *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_RANGE]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_Range_clear(UA_Range *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_RANGE]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_Range_delete(UA_Range *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_RANGE]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_Range_equal(const UA_Range *p1, const UA_Range *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_RANGE]) == UA_ORDER_EQ);
 }
@@ -40390,35 +40698,35 @@ UA_Range_equal(const UA_Range *p1, const UA_Range *p2) {
 
 
 /* EUInformation */
-UA_EXPORT void
+static UA_INLINE void
 UA_EUInformation_init(UA_EUInformation *p) {
     memset(p, 0, sizeof(UA_EUInformation));
 }
 
-UA_EXPORT UA_EUInformation *
+static UA_INLINE UA_EUInformation *
 UA_EUInformation_new(void) {
     return (UA_EUInformation*)UA_new(&UA_TYPES[UA_TYPES_EUINFORMATION]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_EUInformation_copy(const UA_EUInformation *src, UA_EUInformation *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_EUINFORMATION]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_EUInformation_deleteMembers(UA_EUInformation *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_EUINFORMATION]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_EUInformation_clear(UA_EUInformation *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_EUINFORMATION]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_EUInformation_delete(UA_EUInformation *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_EUINFORMATION]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_EUInformation_equal(const UA_EUInformation *p1, const UA_EUInformation *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_EUINFORMATION]) == UA_ORDER_EQ);
 }
@@ -40426,35 +40734,35 @@ UA_EUInformation_equal(const UA_EUInformation *p1, const UA_EUInformation *p2) {
 
 
 /* AxisScaleEnumeration */
-UA_EXPORT void
+static UA_INLINE void
 UA_AxisScaleEnumeration_init(UA_AxisScaleEnumeration *p) {
     memset(p, 0, sizeof(UA_AxisScaleEnumeration));
 }
 
-UA_EXPORT UA_AxisScaleEnumeration *
+static UA_INLINE UA_AxisScaleEnumeration *
 UA_AxisScaleEnumeration_new(void) {
     return (UA_AxisScaleEnumeration*)UA_new(&UA_TYPES[UA_TYPES_AXISSCALEENUMERATION]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_AxisScaleEnumeration_copy(const UA_AxisScaleEnumeration *src, UA_AxisScaleEnumeration *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_AXISSCALEENUMERATION]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_AxisScaleEnumeration_deleteMembers(UA_AxisScaleEnumeration *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_AXISSCALEENUMERATION]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_AxisScaleEnumeration_clear(UA_AxisScaleEnumeration *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_AXISSCALEENUMERATION]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_AxisScaleEnumeration_delete(UA_AxisScaleEnumeration *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_AXISSCALEENUMERATION]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_AxisScaleEnumeration_equal(const UA_AxisScaleEnumeration *p1, const UA_AxisScaleEnumeration *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_AXISSCALEENUMERATION]) == UA_ORDER_EQ);
 }
@@ -40462,35 +40770,35 @@ UA_AxisScaleEnumeration_equal(const UA_AxisScaleEnumeration *p1, const UA_AxisSc
 
 
 /* ComplexNumberType */
-UA_EXPORT void
+static UA_INLINE void
 UA_ComplexNumberType_init(UA_ComplexNumberType *p) {
     memset(p, 0, sizeof(UA_ComplexNumberType));
 }
 
-UA_EXPORT UA_ComplexNumberType *
+static UA_INLINE UA_ComplexNumberType *
 UA_ComplexNumberType_new(void) {
     return (UA_ComplexNumberType*)UA_new(&UA_TYPES[UA_TYPES_COMPLEXNUMBERTYPE]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_ComplexNumberType_copy(const UA_ComplexNumberType *src, UA_ComplexNumberType *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_COMPLEXNUMBERTYPE]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_ComplexNumberType_deleteMembers(UA_ComplexNumberType *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_COMPLEXNUMBERTYPE]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_ComplexNumberType_clear(UA_ComplexNumberType *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_COMPLEXNUMBERTYPE]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_ComplexNumberType_delete(UA_ComplexNumberType *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_COMPLEXNUMBERTYPE]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_ComplexNumberType_equal(const UA_ComplexNumberType *p1, const UA_ComplexNumberType *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_COMPLEXNUMBERTYPE]) == UA_ORDER_EQ);
 }
@@ -40498,35 +40806,35 @@ UA_ComplexNumberType_equal(const UA_ComplexNumberType *p1, const UA_ComplexNumbe
 
 
 /* DoubleComplexNumberType */
-UA_EXPORT void
+static UA_INLINE void
 UA_DoubleComplexNumberType_init(UA_DoubleComplexNumberType *p) {
     memset(p, 0, sizeof(UA_DoubleComplexNumberType));
 }
 
-UA_EXPORT UA_DoubleComplexNumberType *
+static UA_INLINE UA_DoubleComplexNumberType *
 UA_DoubleComplexNumberType_new(void) {
     return (UA_DoubleComplexNumberType*)UA_new(&UA_TYPES[UA_TYPES_DOUBLECOMPLEXNUMBERTYPE]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_DoubleComplexNumberType_copy(const UA_DoubleComplexNumberType *src, UA_DoubleComplexNumberType *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_DOUBLECOMPLEXNUMBERTYPE]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_DoubleComplexNumberType_deleteMembers(UA_DoubleComplexNumberType *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_DOUBLECOMPLEXNUMBERTYPE]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_DoubleComplexNumberType_clear(UA_DoubleComplexNumberType *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_DOUBLECOMPLEXNUMBERTYPE]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_DoubleComplexNumberType_delete(UA_DoubleComplexNumberType *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_DOUBLECOMPLEXNUMBERTYPE]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_DoubleComplexNumberType_equal(const UA_DoubleComplexNumberType *p1, const UA_DoubleComplexNumberType *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_DOUBLECOMPLEXNUMBERTYPE]) == UA_ORDER_EQ);
 }
@@ -40534,35 +40842,35 @@ UA_DoubleComplexNumberType_equal(const UA_DoubleComplexNumberType *p1, const UA_
 
 
 /* AxisInformation */
-UA_EXPORT void
+static UA_INLINE void
 UA_AxisInformation_init(UA_AxisInformation *p) {
     memset(p, 0, sizeof(UA_AxisInformation));
 }
 
-UA_EXPORT UA_AxisInformation *
+static UA_INLINE UA_AxisInformation *
 UA_AxisInformation_new(void) {
     return (UA_AxisInformation*)UA_new(&UA_TYPES[UA_TYPES_AXISINFORMATION]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_AxisInformation_copy(const UA_AxisInformation *src, UA_AxisInformation *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_AXISINFORMATION]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_AxisInformation_deleteMembers(UA_AxisInformation *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_AXISINFORMATION]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_AxisInformation_clear(UA_AxisInformation *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_AXISINFORMATION]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_AxisInformation_delete(UA_AxisInformation *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_AXISINFORMATION]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_AxisInformation_equal(const UA_AxisInformation *p1, const UA_AxisInformation *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_AXISINFORMATION]) == UA_ORDER_EQ);
 }
@@ -40570,35 +40878,35 @@ UA_AxisInformation_equal(const UA_AxisInformation *p1, const UA_AxisInformation 
 
 
 /* XVType */
-UA_EXPORT void
+static UA_INLINE void
 UA_XVType_init(UA_XVType *p) {
     memset(p, 0, sizeof(UA_XVType));
 }
 
-UA_EXPORT UA_XVType *
+static UA_INLINE UA_XVType *
 UA_XVType_new(void) {
     return (UA_XVType*)UA_new(&UA_TYPES[UA_TYPES_XVTYPE]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_XVType_copy(const UA_XVType *src, UA_XVType *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_XVTYPE]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_XVType_deleteMembers(UA_XVType *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_XVTYPE]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_XVType_clear(UA_XVType *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_XVTYPE]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_XVType_delete(UA_XVType *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_XVTYPE]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_XVType_equal(const UA_XVType *p1, const UA_XVType *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_XVTYPE]) == UA_ORDER_EQ);
 }
@@ -40606,35 +40914,35 @@ UA_XVType_equal(const UA_XVType *p1, const UA_XVType *p2) {
 
 
 /* ProgramDiagnosticDataType */
-UA_EXPORT void
+static UA_INLINE void
 UA_ProgramDiagnosticDataType_init(UA_ProgramDiagnosticDataType *p) {
     memset(p, 0, sizeof(UA_ProgramDiagnosticDataType));
 }
 
-UA_EXPORT UA_ProgramDiagnosticDataType *
+static UA_INLINE UA_ProgramDiagnosticDataType *
 UA_ProgramDiagnosticDataType_new(void) {
     return (UA_ProgramDiagnosticDataType*)UA_new(&UA_TYPES[UA_TYPES_PROGRAMDIAGNOSTICDATATYPE]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_ProgramDiagnosticDataType_copy(const UA_ProgramDiagnosticDataType *src, UA_ProgramDiagnosticDataType *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_PROGRAMDIAGNOSTICDATATYPE]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_ProgramDiagnosticDataType_deleteMembers(UA_ProgramDiagnosticDataType *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_PROGRAMDIAGNOSTICDATATYPE]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_ProgramDiagnosticDataType_clear(UA_ProgramDiagnosticDataType *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_PROGRAMDIAGNOSTICDATATYPE]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_ProgramDiagnosticDataType_delete(UA_ProgramDiagnosticDataType *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_PROGRAMDIAGNOSTICDATATYPE]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_ProgramDiagnosticDataType_equal(const UA_ProgramDiagnosticDataType *p1, const UA_ProgramDiagnosticDataType *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_PROGRAMDIAGNOSTICDATATYPE]) == UA_ORDER_EQ);
 }
@@ -40642,35 +40950,35 @@ UA_ProgramDiagnosticDataType_equal(const UA_ProgramDiagnosticDataType *p1, const
 
 
 /* ProgramDiagnostic2DataType */
-UA_EXPORT void
+static UA_INLINE void
 UA_ProgramDiagnostic2DataType_init(UA_ProgramDiagnostic2DataType *p) {
     memset(p, 0, sizeof(UA_ProgramDiagnostic2DataType));
 }
 
-UA_EXPORT UA_ProgramDiagnostic2DataType *
+static UA_INLINE UA_ProgramDiagnostic2DataType *
 UA_ProgramDiagnostic2DataType_new(void) {
     return (UA_ProgramDiagnostic2DataType*)UA_new(&UA_TYPES[UA_TYPES_PROGRAMDIAGNOSTIC2DATATYPE]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_ProgramDiagnostic2DataType_copy(const UA_ProgramDiagnostic2DataType *src, UA_ProgramDiagnostic2DataType *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_PROGRAMDIAGNOSTIC2DATATYPE]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_ProgramDiagnostic2DataType_deleteMembers(UA_ProgramDiagnostic2DataType *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_PROGRAMDIAGNOSTIC2DATATYPE]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_ProgramDiagnostic2DataType_clear(UA_ProgramDiagnostic2DataType *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_PROGRAMDIAGNOSTIC2DATATYPE]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_ProgramDiagnostic2DataType_delete(UA_ProgramDiagnostic2DataType *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_PROGRAMDIAGNOSTIC2DATATYPE]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_ProgramDiagnostic2DataType_equal(const UA_ProgramDiagnostic2DataType *p1, const UA_ProgramDiagnostic2DataType *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_PROGRAMDIAGNOSTIC2DATATYPE]) == UA_ORDER_EQ);
 }
@@ -40678,35 +40986,35 @@ UA_ProgramDiagnostic2DataType_equal(const UA_ProgramDiagnostic2DataType *p1, con
 
 
 /* Annotation */
-UA_EXPORT void
+static UA_INLINE void
 UA_Annotation_init(UA_Annotation *p) {
     memset(p, 0, sizeof(UA_Annotation));
 }
 
-UA_EXPORT UA_Annotation *
+static UA_INLINE UA_Annotation *
 UA_Annotation_new(void) {
     return (UA_Annotation*)UA_new(&UA_TYPES[UA_TYPES_ANNOTATION]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_Annotation_copy(const UA_Annotation *src, UA_Annotation *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_ANNOTATION]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_Annotation_deleteMembers(UA_Annotation *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_ANNOTATION]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_Annotation_clear(UA_Annotation *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_ANNOTATION]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_Annotation_delete(UA_Annotation *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_ANNOTATION]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_Annotation_equal(const UA_Annotation *p1, const UA_Annotation *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_ANNOTATION]) == UA_ORDER_EQ);
 }
@@ -40714,35 +41022,35 @@ UA_Annotation_equal(const UA_Annotation *p1, const UA_Annotation *p2) {
 
 
 /* ExceptionDeviationFormat */
-UA_EXPORT void
+static UA_INLINE void
 UA_ExceptionDeviationFormat_init(UA_ExceptionDeviationFormat *p) {
     memset(p, 0, sizeof(UA_ExceptionDeviationFormat));
 }
 
-UA_EXPORT UA_ExceptionDeviationFormat *
+static UA_INLINE UA_ExceptionDeviationFormat *
 UA_ExceptionDeviationFormat_new(void) {
     return (UA_ExceptionDeviationFormat*)UA_new(&UA_TYPES[UA_TYPES_EXCEPTIONDEVIATIONFORMAT]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_ExceptionDeviationFormat_copy(const UA_ExceptionDeviationFormat *src, UA_ExceptionDeviationFormat *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_EXCEPTIONDEVIATIONFORMAT]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_ExceptionDeviationFormat_deleteMembers(UA_ExceptionDeviationFormat *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_EXCEPTIONDEVIATIONFORMAT]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_ExceptionDeviationFormat_clear(UA_ExceptionDeviationFormat *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_EXCEPTIONDEVIATIONFORMAT]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_ExceptionDeviationFormat_delete(UA_ExceptionDeviationFormat *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_EXCEPTIONDEVIATIONFORMAT]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_ExceptionDeviationFormat_equal(const UA_ExceptionDeviationFormat *p1, const UA_ExceptionDeviationFormat *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_EXCEPTIONDEVIATIONFORMAT]) == UA_ORDER_EQ);
 }
@@ -40750,35 +41058,35 @@ UA_ExceptionDeviationFormat_equal(const UA_ExceptionDeviationFormat *p1, const U
 
 
 /* EndpointType */
-UA_EXPORT void
+static UA_INLINE void
 UA_EndpointType_init(UA_EndpointType *p) {
     memset(p, 0, sizeof(UA_EndpointType));
 }
 
-UA_EXPORT UA_EndpointType *
+static UA_INLINE UA_EndpointType *
 UA_EndpointType_new(void) {
     return (UA_EndpointType*)UA_new(&UA_TYPES[UA_TYPES_ENDPOINTTYPE]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_EndpointType_copy(const UA_EndpointType *src, UA_EndpointType *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_ENDPOINTTYPE]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_EndpointType_deleteMembers(UA_EndpointType *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_ENDPOINTTYPE]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_EndpointType_clear(UA_EndpointType *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_ENDPOINTTYPE]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_EndpointType_delete(UA_EndpointType *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_ENDPOINTTYPE]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_EndpointType_equal(const UA_EndpointType *p1, const UA_EndpointType *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_ENDPOINTTYPE]) == UA_ORDER_EQ);
 }
@@ -40786,35 +41094,35 @@ UA_EndpointType_equal(const UA_EndpointType *p1, const UA_EndpointType *p2) {
 
 
 /* StructureDescription */
-UA_EXPORT void
+static UA_INLINE void
 UA_StructureDescription_init(UA_StructureDescription *p) {
     memset(p, 0, sizeof(UA_StructureDescription));
 }
 
-UA_EXPORT UA_StructureDescription *
+static UA_INLINE UA_StructureDescription *
 UA_StructureDescription_new(void) {
     return (UA_StructureDescription*)UA_new(&UA_TYPES[UA_TYPES_STRUCTUREDESCRIPTION]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_StructureDescription_copy(const UA_StructureDescription *src, UA_StructureDescription *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_STRUCTUREDESCRIPTION]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_StructureDescription_deleteMembers(UA_StructureDescription *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_STRUCTUREDESCRIPTION]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_StructureDescription_clear(UA_StructureDescription *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_STRUCTUREDESCRIPTION]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_StructureDescription_delete(UA_StructureDescription *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_STRUCTUREDESCRIPTION]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_StructureDescription_equal(const UA_StructureDescription *p1, const UA_StructureDescription *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_STRUCTUREDESCRIPTION]) == UA_ORDER_EQ);
 }
@@ -40822,35 +41130,35 @@ UA_StructureDescription_equal(const UA_StructureDescription *p1, const UA_Struct
 
 
 /* FieldMetaData */
-UA_EXPORT void
+static UA_INLINE void
 UA_FieldMetaData_init(UA_FieldMetaData *p) {
     memset(p, 0, sizeof(UA_FieldMetaData));
 }
 
-UA_EXPORT UA_FieldMetaData *
+static UA_INLINE UA_FieldMetaData *
 UA_FieldMetaData_new(void) {
     return (UA_FieldMetaData*)UA_new(&UA_TYPES[UA_TYPES_FIELDMETADATA]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_FieldMetaData_copy(const UA_FieldMetaData *src, UA_FieldMetaData *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_FIELDMETADATA]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_FieldMetaData_deleteMembers(UA_FieldMetaData *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_FIELDMETADATA]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_FieldMetaData_clear(UA_FieldMetaData *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_FIELDMETADATA]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_FieldMetaData_delete(UA_FieldMetaData *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_FIELDMETADATA]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_FieldMetaData_equal(const UA_FieldMetaData *p1, const UA_FieldMetaData *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_FIELDMETADATA]) == UA_ORDER_EQ);
 }
@@ -40858,35 +41166,35 @@ UA_FieldMetaData_equal(const UA_FieldMetaData *p1, const UA_FieldMetaData *p2) {
 
 
 /* PublishedEventsDataType */
-UA_EXPORT void
+static UA_INLINE void
 UA_PublishedEventsDataType_init(UA_PublishedEventsDataType *p) {
     memset(p, 0, sizeof(UA_PublishedEventsDataType));
 }
 
-UA_EXPORT UA_PublishedEventsDataType *
+static UA_INLINE UA_PublishedEventsDataType *
 UA_PublishedEventsDataType_new(void) {
     return (UA_PublishedEventsDataType*)UA_new(&UA_TYPES[UA_TYPES_PUBLISHEDEVENTSDATATYPE]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_PublishedEventsDataType_copy(const UA_PublishedEventsDataType *src, UA_PublishedEventsDataType *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_PUBLISHEDEVENTSDATATYPE]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_PublishedEventsDataType_deleteMembers(UA_PublishedEventsDataType *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_PUBLISHEDEVENTSDATATYPE]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_PublishedEventsDataType_clear(UA_PublishedEventsDataType *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_PUBLISHEDEVENTSDATATYPE]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_PublishedEventsDataType_delete(UA_PublishedEventsDataType *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_PUBLISHEDEVENTSDATATYPE]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_PublishedEventsDataType_equal(const UA_PublishedEventsDataType *p1, const UA_PublishedEventsDataType *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_PUBLISHEDEVENTSDATATYPE]) == UA_ORDER_EQ);
 }
@@ -40894,35 +41202,35 @@ UA_PublishedEventsDataType_equal(const UA_PublishedEventsDataType *p1, const UA_
 
 
 /* PubSubGroupDataType */
-UA_EXPORT void
+static UA_INLINE void
 UA_PubSubGroupDataType_init(UA_PubSubGroupDataType *p) {
     memset(p, 0, sizeof(UA_PubSubGroupDataType));
 }
 
-UA_EXPORT UA_PubSubGroupDataType *
+static UA_INLINE UA_PubSubGroupDataType *
 UA_PubSubGroupDataType_new(void) {
     return (UA_PubSubGroupDataType*)UA_new(&UA_TYPES[UA_TYPES_PUBSUBGROUPDATATYPE]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_PubSubGroupDataType_copy(const UA_PubSubGroupDataType *src, UA_PubSubGroupDataType *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_PUBSUBGROUPDATATYPE]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_PubSubGroupDataType_deleteMembers(UA_PubSubGroupDataType *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_PUBSUBGROUPDATATYPE]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_PubSubGroupDataType_clear(UA_PubSubGroupDataType *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_PUBSUBGROUPDATATYPE]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_PubSubGroupDataType_delete(UA_PubSubGroupDataType *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_PUBSUBGROUPDATATYPE]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_PubSubGroupDataType_equal(const UA_PubSubGroupDataType *p1, const UA_PubSubGroupDataType *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_PUBSUBGROUPDATATYPE]) == UA_ORDER_EQ);
 }
@@ -40930,35 +41238,35 @@ UA_PubSubGroupDataType_equal(const UA_PubSubGroupDataType *p1, const UA_PubSubGr
 
 
 /* WriterGroupDataType */
-UA_EXPORT void
+static UA_INLINE void
 UA_WriterGroupDataType_init(UA_WriterGroupDataType *p) {
     memset(p, 0, sizeof(UA_WriterGroupDataType));
 }
 
-UA_EXPORT UA_WriterGroupDataType *
+static UA_INLINE UA_WriterGroupDataType *
 UA_WriterGroupDataType_new(void) {
     return (UA_WriterGroupDataType*)UA_new(&UA_TYPES[UA_TYPES_WRITERGROUPDATATYPE]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_WriterGroupDataType_copy(const UA_WriterGroupDataType *src, UA_WriterGroupDataType *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_WRITERGROUPDATATYPE]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_WriterGroupDataType_deleteMembers(UA_WriterGroupDataType *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_WRITERGROUPDATATYPE]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_WriterGroupDataType_clear(UA_WriterGroupDataType *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_WRITERGROUPDATATYPE]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_WriterGroupDataType_delete(UA_WriterGroupDataType *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_WRITERGROUPDATATYPE]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_WriterGroupDataType_equal(const UA_WriterGroupDataType *p1, const UA_WriterGroupDataType *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_WRITERGROUPDATATYPE]) == UA_ORDER_EQ);
 }
@@ -40966,35 +41274,35 @@ UA_WriterGroupDataType_equal(const UA_WriterGroupDataType *p1, const UA_WriterGr
 
 
 /* FieldTargetDataType */
-UA_EXPORT void
+static UA_INLINE void
 UA_FieldTargetDataType_init(UA_FieldTargetDataType *p) {
     memset(p, 0, sizeof(UA_FieldTargetDataType));
 }
 
-UA_EXPORT UA_FieldTargetDataType *
+static UA_INLINE UA_FieldTargetDataType *
 UA_FieldTargetDataType_new(void) {
     return (UA_FieldTargetDataType*)UA_new(&UA_TYPES[UA_TYPES_FIELDTARGETDATATYPE]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_FieldTargetDataType_copy(const UA_FieldTargetDataType *src, UA_FieldTargetDataType *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_FIELDTARGETDATATYPE]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_FieldTargetDataType_deleteMembers(UA_FieldTargetDataType *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_FIELDTARGETDATATYPE]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_FieldTargetDataType_clear(UA_FieldTargetDataType *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_FIELDTARGETDATATYPE]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_FieldTargetDataType_delete(UA_FieldTargetDataType *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_FIELDTARGETDATATYPE]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_FieldTargetDataType_equal(const UA_FieldTargetDataType *p1, const UA_FieldTargetDataType *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_FIELDTARGETDATATYPE]) == UA_ORDER_EQ);
 }
@@ -41002,35 +41310,35 @@ UA_FieldTargetDataType_equal(const UA_FieldTargetDataType *p1, const UA_FieldTar
 
 
 /* SubscribedDataSetMirrorDataType */
-UA_EXPORT void
+static UA_INLINE void
 UA_SubscribedDataSetMirrorDataType_init(UA_SubscribedDataSetMirrorDataType *p) {
     memset(p, 0, sizeof(UA_SubscribedDataSetMirrorDataType));
 }
 
-UA_EXPORT UA_SubscribedDataSetMirrorDataType *
+static UA_INLINE UA_SubscribedDataSetMirrorDataType *
 UA_SubscribedDataSetMirrorDataType_new(void) {
     return (UA_SubscribedDataSetMirrorDataType*)UA_new(&UA_TYPES[UA_TYPES_SUBSCRIBEDDATASETMIRRORDATATYPE]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_SubscribedDataSetMirrorDataType_copy(const UA_SubscribedDataSetMirrorDataType *src, UA_SubscribedDataSetMirrorDataType *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_SUBSCRIBEDDATASETMIRRORDATATYPE]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_SubscribedDataSetMirrorDataType_deleteMembers(UA_SubscribedDataSetMirrorDataType *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_SUBSCRIBEDDATASETMIRRORDATATYPE]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_SubscribedDataSetMirrorDataType_clear(UA_SubscribedDataSetMirrorDataType *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_SUBSCRIBEDDATASETMIRRORDATATYPE]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_SubscribedDataSetMirrorDataType_delete(UA_SubscribedDataSetMirrorDataType *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_SUBSCRIBEDDATASETMIRRORDATATYPE]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_SubscribedDataSetMirrorDataType_equal(const UA_SubscribedDataSetMirrorDataType *p1, const UA_SubscribedDataSetMirrorDataType *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_SUBSCRIBEDDATASETMIRRORDATATYPE]) == UA_ORDER_EQ);
 }
@@ -41038,35 +41346,35 @@ UA_SubscribedDataSetMirrorDataType_equal(const UA_SubscribedDataSetMirrorDataTyp
 
 
 /* SecurityGroupDataType */
-UA_EXPORT void
+static UA_INLINE void
 UA_SecurityGroupDataType_init(UA_SecurityGroupDataType *p) {
     memset(p, 0, sizeof(UA_SecurityGroupDataType));
 }
 
-UA_EXPORT UA_SecurityGroupDataType *
+static UA_INLINE UA_SecurityGroupDataType *
 UA_SecurityGroupDataType_new(void) {
     return (UA_SecurityGroupDataType*)UA_new(&UA_TYPES[UA_TYPES_SECURITYGROUPDATATYPE]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_SecurityGroupDataType_copy(const UA_SecurityGroupDataType *src, UA_SecurityGroupDataType *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_SECURITYGROUPDATATYPE]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_SecurityGroupDataType_deleteMembers(UA_SecurityGroupDataType *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_SECURITYGROUPDATATYPE]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_SecurityGroupDataType_clear(UA_SecurityGroupDataType *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_SECURITYGROUPDATATYPE]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_SecurityGroupDataType_delete(UA_SecurityGroupDataType *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_SECURITYGROUPDATATYPE]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_SecurityGroupDataType_equal(const UA_SecurityGroupDataType *p1, const UA_SecurityGroupDataType *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_SECURITYGROUPDATATYPE]) == UA_ORDER_EQ);
 }
@@ -41074,35 +41382,35 @@ UA_SecurityGroupDataType_equal(const UA_SecurityGroupDataType *p1, const UA_Secu
 
 
 /* PubSubKeyPushTargetDataType */
-UA_EXPORT void
+static UA_INLINE void
 UA_PubSubKeyPushTargetDataType_init(UA_PubSubKeyPushTargetDataType *p) {
     memset(p, 0, sizeof(UA_PubSubKeyPushTargetDataType));
 }
 
-UA_EXPORT UA_PubSubKeyPushTargetDataType *
+static UA_INLINE UA_PubSubKeyPushTargetDataType *
 UA_PubSubKeyPushTargetDataType_new(void) {
     return (UA_PubSubKeyPushTargetDataType*)UA_new(&UA_TYPES[UA_TYPES_PUBSUBKEYPUSHTARGETDATATYPE]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_PubSubKeyPushTargetDataType_copy(const UA_PubSubKeyPushTargetDataType *src, UA_PubSubKeyPushTargetDataType *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_PUBSUBKEYPUSHTARGETDATATYPE]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_PubSubKeyPushTargetDataType_deleteMembers(UA_PubSubKeyPushTargetDataType *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_PUBSUBKEYPUSHTARGETDATATYPE]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_PubSubKeyPushTargetDataType_clear(UA_PubSubKeyPushTargetDataType *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_PUBSUBKEYPUSHTARGETDATATYPE]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_PubSubKeyPushTargetDataType_delete(UA_PubSubKeyPushTargetDataType *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_PUBSUBKEYPUSHTARGETDATATYPE]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_PubSubKeyPushTargetDataType_equal(const UA_PubSubKeyPushTargetDataType *p1, const UA_PubSubKeyPushTargetDataType *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_PUBSUBKEYPUSHTARGETDATATYPE]) == UA_ORDER_EQ);
 }
@@ -41110,35 +41418,35 @@ UA_PubSubKeyPushTargetDataType_equal(const UA_PubSubKeyPushTargetDataType *p1, c
 
 
 /* EnumDefinition */
-UA_EXPORT void
+static UA_INLINE void
 UA_EnumDefinition_init(UA_EnumDefinition *p) {
     memset(p, 0, sizeof(UA_EnumDefinition));
 }
 
-UA_EXPORT UA_EnumDefinition *
+static UA_INLINE UA_EnumDefinition *
 UA_EnumDefinition_new(void) {
     return (UA_EnumDefinition*)UA_new(&UA_TYPES[UA_TYPES_ENUMDEFINITION]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_EnumDefinition_copy(const UA_EnumDefinition *src, UA_EnumDefinition *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_ENUMDEFINITION]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_EnumDefinition_deleteMembers(UA_EnumDefinition *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_ENUMDEFINITION]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_EnumDefinition_clear(UA_EnumDefinition *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_ENUMDEFINITION]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_EnumDefinition_delete(UA_EnumDefinition *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_ENUMDEFINITION]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_EnumDefinition_equal(const UA_EnumDefinition *p1, const UA_EnumDefinition *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_ENUMDEFINITION]) == UA_ORDER_EQ);
 }
@@ -41146,35 +41454,35 @@ UA_EnumDefinition_equal(const UA_EnumDefinition *p1, const UA_EnumDefinition *p2
 
 
 /* ReadEventDetails */
-UA_EXPORT void
+static UA_INLINE void
 UA_ReadEventDetails_init(UA_ReadEventDetails *p) {
     memset(p, 0, sizeof(UA_ReadEventDetails));
 }
 
-UA_EXPORT UA_ReadEventDetails *
+static UA_INLINE UA_ReadEventDetails *
 UA_ReadEventDetails_new(void) {
     return (UA_ReadEventDetails*)UA_new(&UA_TYPES[UA_TYPES_READEVENTDETAILS]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_ReadEventDetails_copy(const UA_ReadEventDetails *src, UA_ReadEventDetails *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_READEVENTDETAILS]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_ReadEventDetails_deleteMembers(UA_ReadEventDetails *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_READEVENTDETAILS]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_ReadEventDetails_clear(UA_ReadEventDetails *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_READEVENTDETAILS]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_ReadEventDetails_delete(UA_ReadEventDetails *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_READEVENTDETAILS]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_ReadEventDetails_equal(const UA_ReadEventDetails *p1, const UA_ReadEventDetails *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_READEVENTDETAILS]) == UA_ORDER_EQ);
 }
@@ -41182,35 +41490,35 @@ UA_ReadEventDetails_equal(const UA_ReadEventDetails *p1, const UA_ReadEventDetai
 
 
 /* ReadProcessedDetails */
-UA_EXPORT void
+static UA_INLINE void
 UA_ReadProcessedDetails_init(UA_ReadProcessedDetails *p) {
     memset(p, 0, sizeof(UA_ReadProcessedDetails));
 }
 
-UA_EXPORT UA_ReadProcessedDetails *
+static UA_INLINE UA_ReadProcessedDetails *
 UA_ReadProcessedDetails_new(void) {
     return (UA_ReadProcessedDetails*)UA_new(&UA_TYPES[UA_TYPES_READPROCESSEDDETAILS]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_ReadProcessedDetails_copy(const UA_ReadProcessedDetails *src, UA_ReadProcessedDetails *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_READPROCESSEDDETAILS]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_ReadProcessedDetails_deleteMembers(UA_ReadProcessedDetails *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_READPROCESSEDDETAILS]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_ReadProcessedDetails_clear(UA_ReadProcessedDetails *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_READPROCESSEDDETAILS]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_ReadProcessedDetails_delete(UA_ReadProcessedDetails *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_READPROCESSEDDETAILS]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_ReadProcessedDetails_equal(const UA_ReadProcessedDetails *p1, const UA_ReadProcessedDetails *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_READPROCESSEDDETAILS]) == UA_ORDER_EQ);
 }
@@ -41218,35 +41526,35 @@ UA_ReadProcessedDetails_equal(const UA_ReadProcessedDetails *p1, const UA_ReadPr
 
 
 /* ModificationInfo */
-UA_EXPORT void
+static UA_INLINE void
 UA_ModificationInfo_init(UA_ModificationInfo *p) {
     memset(p, 0, sizeof(UA_ModificationInfo));
 }
 
-UA_EXPORT UA_ModificationInfo *
+static UA_INLINE UA_ModificationInfo *
 UA_ModificationInfo_new(void) {
     return (UA_ModificationInfo*)UA_new(&UA_TYPES[UA_TYPES_MODIFICATIONINFO]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_ModificationInfo_copy(const UA_ModificationInfo *src, UA_ModificationInfo *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_MODIFICATIONINFO]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_ModificationInfo_deleteMembers(UA_ModificationInfo *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_MODIFICATIONINFO]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_ModificationInfo_clear(UA_ModificationInfo *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_MODIFICATIONINFO]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_ModificationInfo_delete(UA_ModificationInfo *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_MODIFICATIONINFO]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_ModificationInfo_equal(const UA_ModificationInfo *p1, const UA_ModificationInfo *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_MODIFICATIONINFO]) == UA_ORDER_EQ);
 }
@@ -41254,35 +41562,35 @@ UA_ModificationInfo_equal(const UA_ModificationInfo *p1, const UA_ModificationIn
 
 
 /* HistoryModifiedData */
-UA_EXPORT void
+static UA_INLINE void
 UA_HistoryModifiedData_init(UA_HistoryModifiedData *p) {
     memset(p, 0, sizeof(UA_HistoryModifiedData));
 }
 
-UA_EXPORT UA_HistoryModifiedData *
+static UA_INLINE UA_HistoryModifiedData *
 UA_HistoryModifiedData_new(void) {
     return (UA_HistoryModifiedData*)UA_new(&UA_TYPES[UA_TYPES_HISTORYMODIFIEDDATA]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_HistoryModifiedData_copy(const UA_HistoryModifiedData *src, UA_HistoryModifiedData *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_HISTORYMODIFIEDDATA]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_HistoryModifiedData_deleteMembers(UA_HistoryModifiedData *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_HISTORYMODIFIEDDATA]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_HistoryModifiedData_clear(UA_HistoryModifiedData *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_HISTORYMODIFIEDDATA]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_HistoryModifiedData_delete(UA_HistoryModifiedData *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_HISTORYMODIFIEDDATA]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_HistoryModifiedData_equal(const UA_HistoryModifiedData *p1, const UA_HistoryModifiedData *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_HISTORYMODIFIEDDATA]) == UA_ORDER_EQ);
 }
@@ -41290,35 +41598,35 @@ UA_HistoryModifiedData_equal(const UA_HistoryModifiedData *p1, const UA_HistoryM
 
 
 /* HistoryEvent */
-UA_EXPORT void
+static UA_INLINE void
 UA_HistoryEvent_init(UA_HistoryEvent *p) {
     memset(p, 0, sizeof(UA_HistoryEvent));
 }
 
-UA_EXPORT UA_HistoryEvent *
+static UA_INLINE UA_HistoryEvent *
 UA_HistoryEvent_new(void) {
     return (UA_HistoryEvent*)UA_new(&UA_TYPES[UA_TYPES_HISTORYEVENT]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_HistoryEvent_copy(const UA_HistoryEvent *src, UA_HistoryEvent *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_HISTORYEVENT]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_HistoryEvent_deleteMembers(UA_HistoryEvent *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_HISTORYEVENT]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_HistoryEvent_clear(UA_HistoryEvent *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_HISTORYEVENT]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_HistoryEvent_delete(UA_HistoryEvent *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_HISTORYEVENT]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_HistoryEvent_equal(const UA_HistoryEvent *p1, const UA_HistoryEvent *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_HISTORYEVENT]) == UA_ORDER_EQ);
 }
@@ -41326,35 +41634,35 @@ UA_HistoryEvent_equal(const UA_HistoryEvent *p1, const UA_HistoryEvent *p2) {
 
 
 /* UpdateEventDetails */
-UA_EXPORT void
+static UA_INLINE void
 UA_UpdateEventDetails_init(UA_UpdateEventDetails *p) {
     memset(p, 0, sizeof(UA_UpdateEventDetails));
 }
 
-UA_EXPORT UA_UpdateEventDetails *
+static UA_INLINE UA_UpdateEventDetails *
 UA_UpdateEventDetails_new(void) {
     return (UA_UpdateEventDetails*)UA_new(&UA_TYPES[UA_TYPES_UPDATEEVENTDETAILS]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_UpdateEventDetails_copy(const UA_UpdateEventDetails *src, UA_UpdateEventDetails *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_UPDATEEVENTDETAILS]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_UpdateEventDetails_deleteMembers(UA_UpdateEventDetails *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_UPDATEEVENTDETAILS]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_UpdateEventDetails_clear(UA_UpdateEventDetails *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_UPDATEEVENTDETAILS]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_UpdateEventDetails_delete(UA_UpdateEventDetails *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_UPDATEEVENTDETAILS]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_UpdateEventDetails_equal(const UA_UpdateEventDetails *p1, const UA_UpdateEventDetails *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_UPDATEEVENTDETAILS]) == UA_ORDER_EQ);
 }
@@ -41362,35 +41670,35 @@ UA_UpdateEventDetails_equal(const UA_UpdateEventDetails *p1, const UA_UpdateEven
 
 
 /* DataChangeNotification */
-UA_EXPORT void
+static UA_INLINE void
 UA_DataChangeNotification_init(UA_DataChangeNotification *p) {
     memset(p, 0, sizeof(UA_DataChangeNotification));
 }
 
-UA_EXPORT UA_DataChangeNotification *
+static UA_INLINE UA_DataChangeNotification *
 UA_DataChangeNotification_new(void) {
     return (UA_DataChangeNotification*)UA_new(&UA_TYPES[UA_TYPES_DATACHANGENOTIFICATION]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_DataChangeNotification_copy(const UA_DataChangeNotification *src, UA_DataChangeNotification *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_DATACHANGENOTIFICATION]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_DataChangeNotification_deleteMembers(UA_DataChangeNotification *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_DATACHANGENOTIFICATION]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_DataChangeNotification_clear(UA_DataChangeNotification *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_DATACHANGENOTIFICATION]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_DataChangeNotification_delete(UA_DataChangeNotification *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_DATACHANGENOTIFICATION]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_DataChangeNotification_equal(const UA_DataChangeNotification *p1, const UA_DataChangeNotification *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_DATACHANGENOTIFICATION]) == UA_ORDER_EQ);
 }
@@ -41398,35 +41706,35 @@ UA_DataChangeNotification_equal(const UA_DataChangeNotification *p1, const UA_Da
 
 
 /* EventNotificationList */
-UA_EXPORT void
+static UA_INLINE void
 UA_EventNotificationList_init(UA_EventNotificationList *p) {
     memset(p, 0, sizeof(UA_EventNotificationList));
 }
 
-UA_EXPORT UA_EventNotificationList *
+static UA_INLINE UA_EventNotificationList *
 UA_EventNotificationList_new(void) {
     return (UA_EventNotificationList*)UA_new(&UA_TYPES[UA_TYPES_EVENTNOTIFICATIONLIST]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_EventNotificationList_copy(const UA_EventNotificationList *src, UA_EventNotificationList *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_EVENTNOTIFICATIONLIST]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_EventNotificationList_deleteMembers(UA_EventNotificationList *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_EVENTNOTIFICATIONLIST]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_EventNotificationList_clear(UA_EventNotificationList *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_EVENTNOTIFICATIONLIST]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_EventNotificationList_delete(UA_EventNotificationList *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_EVENTNOTIFICATIONLIST]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_EventNotificationList_equal(const UA_EventNotificationList *p1, const UA_EventNotificationList *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_EVENTNOTIFICATIONLIST]) == UA_ORDER_EQ);
 }
@@ -41434,35 +41742,35 @@ UA_EventNotificationList_equal(const UA_EventNotificationList *p1, const UA_Even
 
 
 /* SessionDiagnosticsDataType */
-UA_EXPORT void
+static UA_INLINE void
 UA_SessionDiagnosticsDataType_init(UA_SessionDiagnosticsDataType *p) {
     memset(p, 0, sizeof(UA_SessionDiagnosticsDataType));
 }
 
-UA_EXPORT UA_SessionDiagnosticsDataType *
+static UA_INLINE UA_SessionDiagnosticsDataType *
 UA_SessionDiagnosticsDataType_new(void) {
     return (UA_SessionDiagnosticsDataType*)UA_new(&UA_TYPES[UA_TYPES_SESSIONDIAGNOSTICSDATATYPE]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_SessionDiagnosticsDataType_copy(const UA_SessionDiagnosticsDataType *src, UA_SessionDiagnosticsDataType *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_SESSIONDIAGNOSTICSDATATYPE]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_SessionDiagnosticsDataType_deleteMembers(UA_SessionDiagnosticsDataType *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_SESSIONDIAGNOSTICSDATATYPE]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_SessionDiagnosticsDataType_clear(UA_SessionDiagnosticsDataType *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_SESSIONDIAGNOSTICSDATATYPE]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_SessionDiagnosticsDataType_delete(UA_SessionDiagnosticsDataType *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_SESSIONDIAGNOSTICSDATATYPE]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_SessionDiagnosticsDataType_equal(const UA_SessionDiagnosticsDataType *p1, const UA_SessionDiagnosticsDataType *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_SESSIONDIAGNOSTICSDATATYPE]) == UA_ORDER_EQ);
 }
@@ -41470,35 +41778,35 @@ UA_SessionDiagnosticsDataType_equal(const UA_SessionDiagnosticsDataType *p1, con
 
 
 /* EnumDescription */
-UA_EXPORT void
+static UA_INLINE void
 UA_EnumDescription_init(UA_EnumDescription *p) {
     memset(p, 0, sizeof(UA_EnumDescription));
 }
 
-UA_EXPORT UA_EnumDescription *
+static UA_INLINE UA_EnumDescription *
 UA_EnumDescription_new(void) {
     return (UA_EnumDescription*)UA_new(&UA_TYPES[UA_TYPES_ENUMDESCRIPTION]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_EnumDescription_copy(const UA_EnumDescription *src, UA_EnumDescription *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_ENUMDESCRIPTION]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_EnumDescription_deleteMembers(UA_EnumDescription *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_ENUMDESCRIPTION]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_EnumDescription_clear(UA_EnumDescription *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_ENUMDESCRIPTION]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_EnumDescription_delete(UA_EnumDescription *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_ENUMDESCRIPTION]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_EnumDescription_equal(const UA_EnumDescription *p1, const UA_EnumDescription *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_ENUMDESCRIPTION]) == UA_ORDER_EQ);
 }
@@ -41506,35 +41814,35 @@ UA_EnumDescription_equal(const UA_EnumDescription *p1, const UA_EnumDescription 
 
 
 /* UABinaryFileDataType */
-UA_EXPORT void
+static UA_INLINE void
 UA_UABinaryFileDataType_init(UA_UABinaryFileDataType *p) {
     memset(p, 0, sizeof(UA_UABinaryFileDataType));
 }
 
-UA_EXPORT UA_UABinaryFileDataType *
+static UA_INLINE UA_UABinaryFileDataType *
 UA_UABinaryFileDataType_new(void) {
     return (UA_UABinaryFileDataType*)UA_new(&UA_TYPES[UA_TYPES_UABINARYFILEDATATYPE]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_UABinaryFileDataType_copy(const UA_UABinaryFileDataType *src, UA_UABinaryFileDataType *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_UABINARYFILEDATATYPE]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_UABinaryFileDataType_deleteMembers(UA_UABinaryFileDataType *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_UABINARYFILEDATATYPE]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_UABinaryFileDataType_clear(UA_UABinaryFileDataType *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_UABINARYFILEDATATYPE]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_UABinaryFileDataType_delete(UA_UABinaryFileDataType *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_UABINARYFILEDATATYPE]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_UABinaryFileDataType_equal(const UA_UABinaryFileDataType *p1, const UA_UABinaryFileDataType *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_UABINARYFILEDATATYPE]) == UA_ORDER_EQ);
 }
@@ -41542,35 +41850,35 @@ UA_UABinaryFileDataType_equal(const UA_UABinaryFileDataType *p1, const UA_UABina
 
 
 /* DataSetMetaDataType */
-UA_EXPORT void
+static UA_INLINE void
 UA_DataSetMetaDataType_init(UA_DataSetMetaDataType *p) {
     memset(p, 0, sizeof(UA_DataSetMetaDataType));
 }
 
-UA_EXPORT UA_DataSetMetaDataType *
+static UA_INLINE UA_DataSetMetaDataType *
 UA_DataSetMetaDataType_new(void) {
     return (UA_DataSetMetaDataType*)UA_new(&UA_TYPES[UA_TYPES_DATASETMETADATATYPE]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_DataSetMetaDataType_copy(const UA_DataSetMetaDataType *src, UA_DataSetMetaDataType *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_DATASETMETADATATYPE]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_DataSetMetaDataType_deleteMembers(UA_DataSetMetaDataType *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_DATASETMETADATATYPE]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_DataSetMetaDataType_clear(UA_DataSetMetaDataType *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_DATASETMETADATATYPE]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_DataSetMetaDataType_delete(UA_DataSetMetaDataType *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_DATASETMETADATATYPE]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_DataSetMetaDataType_equal(const UA_DataSetMetaDataType *p1, const UA_DataSetMetaDataType *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_DATASETMETADATATYPE]) == UA_ORDER_EQ);
 }
@@ -41578,35 +41886,35 @@ UA_DataSetMetaDataType_equal(const UA_DataSetMetaDataType *p1, const UA_DataSetM
 
 
 /* PublishedDataSetDataType */
-UA_EXPORT void
+static UA_INLINE void
 UA_PublishedDataSetDataType_init(UA_PublishedDataSetDataType *p) {
     memset(p, 0, sizeof(UA_PublishedDataSetDataType));
 }
 
-UA_EXPORT UA_PublishedDataSetDataType *
+static UA_INLINE UA_PublishedDataSetDataType *
 UA_PublishedDataSetDataType_new(void) {
     return (UA_PublishedDataSetDataType*)UA_new(&UA_TYPES[UA_TYPES_PUBLISHEDDATASETDATATYPE]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_PublishedDataSetDataType_copy(const UA_PublishedDataSetDataType *src, UA_PublishedDataSetDataType *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_PUBLISHEDDATASETDATATYPE]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_PublishedDataSetDataType_deleteMembers(UA_PublishedDataSetDataType *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_PUBLISHEDDATASETDATATYPE]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_PublishedDataSetDataType_clear(UA_PublishedDataSetDataType *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_PUBLISHEDDATASETDATATYPE]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_PublishedDataSetDataType_delete(UA_PublishedDataSetDataType *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_PUBLISHEDDATASETDATATYPE]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_PublishedDataSetDataType_equal(const UA_PublishedDataSetDataType *p1, const UA_PublishedDataSetDataType *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_PUBLISHEDDATASETDATATYPE]) == UA_ORDER_EQ);
 }
@@ -41614,35 +41922,35 @@ UA_PublishedDataSetDataType_equal(const UA_PublishedDataSetDataType *p1, const U
 
 
 /* DataSetReaderDataType */
-UA_EXPORT void
+static UA_INLINE void
 UA_DataSetReaderDataType_init(UA_DataSetReaderDataType *p) {
     memset(p, 0, sizeof(UA_DataSetReaderDataType));
 }
 
-UA_EXPORT UA_DataSetReaderDataType *
+static UA_INLINE UA_DataSetReaderDataType *
 UA_DataSetReaderDataType_new(void) {
     return (UA_DataSetReaderDataType*)UA_new(&UA_TYPES[UA_TYPES_DATASETREADERDATATYPE]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_DataSetReaderDataType_copy(const UA_DataSetReaderDataType *src, UA_DataSetReaderDataType *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_DATASETREADERDATATYPE]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_DataSetReaderDataType_deleteMembers(UA_DataSetReaderDataType *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_DATASETREADERDATATYPE]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_DataSetReaderDataType_clear(UA_DataSetReaderDataType *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_DATASETREADERDATATYPE]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_DataSetReaderDataType_delete(UA_DataSetReaderDataType *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_DATASETREADERDATATYPE]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_DataSetReaderDataType_equal(const UA_DataSetReaderDataType *p1, const UA_DataSetReaderDataType *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_DATASETREADERDATATYPE]) == UA_ORDER_EQ);
 }
@@ -41650,35 +41958,35 @@ UA_DataSetReaderDataType_equal(const UA_DataSetReaderDataType *p1, const UA_Data
 
 
 /* TargetVariablesDataType */
-UA_EXPORT void
+static UA_INLINE void
 UA_TargetVariablesDataType_init(UA_TargetVariablesDataType *p) {
     memset(p, 0, sizeof(UA_TargetVariablesDataType));
 }
 
-UA_EXPORT UA_TargetVariablesDataType *
+static UA_INLINE UA_TargetVariablesDataType *
 UA_TargetVariablesDataType_new(void) {
     return (UA_TargetVariablesDataType*)UA_new(&UA_TYPES[UA_TYPES_TARGETVARIABLESDATATYPE]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_TargetVariablesDataType_copy(const UA_TargetVariablesDataType *src, UA_TargetVariablesDataType *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_TARGETVARIABLESDATATYPE]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_TargetVariablesDataType_deleteMembers(UA_TargetVariablesDataType *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_TARGETVARIABLESDATATYPE]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_TargetVariablesDataType_clear(UA_TargetVariablesDataType *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_TARGETVARIABLESDATATYPE]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_TargetVariablesDataType_delete(UA_TargetVariablesDataType *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_TARGETVARIABLESDATATYPE]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_TargetVariablesDataType_equal(const UA_TargetVariablesDataType *p1, const UA_TargetVariablesDataType *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_TARGETVARIABLESDATATYPE]) == UA_ORDER_EQ);
 }
@@ -41686,35 +41994,35 @@ UA_TargetVariablesDataType_equal(const UA_TargetVariablesDataType *p1, const UA_
 
 
 /* StandaloneSubscribedDataSetDataType */
-UA_EXPORT void
+static UA_INLINE void
 UA_StandaloneSubscribedDataSetDataType_init(UA_StandaloneSubscribedDataSetDataType *p) {
     memset(p, 0, sizeof(UA_StandaloneSubscribedDataSetDataType));
 }
 
-UA_EXPORT UA_StandaloneSubscribedDataSetDataType *
+static UA_INLINE UA_StandaloneSubscribedDataSetDataType *
 UA_StandaloneSubscribedDataSetDataType_new(void) {
     return (UA_StandaloneSubscribedDataSetDataType*)UA_new(&UA_TYPES[UA_TYPES_STANDALONESUBSCRIBEDDATASETDATATYPE]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_StandaloneSubscribedDataSetDataType_copy(const UA_StandaloneSubscribedDataSetDataType *src, UA_StandaloneSubscribedDataSetDataType *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_STANDALONESUBSCRIBEDDATASETDATATYPE]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_StandaloneSubscribedDataSetDataType_deleteMembers(UA_StandaloneSubscribedDataSetDataType *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_STANDALONESUBSCRIBEDDATASETDATATYPE]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_StandaloneSubscribedDataSetDataType_clear(UA_StandaloneSubscribedDataSetDataType *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_STANDALONESUBSCRIBEDDATASETDATATYPE]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_StandaloneSubscribedDataSetDataType_delete(UA_StandaloneSubscribedDataSetDataType *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_STANDALONESUBSCRIBEDDATASETDATATYPE]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_StandaloneSubscribedDataSetDataType_equal(const UA_StandaloneSubscribedDataSetDataType *p1, const UA_StandaloneSubscribedDataSetDataType *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_STANDALONESUBSCRIBEDDATASETDATATYPE]) == UA_ORDER_EQ);
 }
@@ -41722,35 +42030,35 @@ UA_StandaloneSubscribedDataSetDataType_equal(const UA_StandaloneSubscribedDataSe
 
 
 /* DataTypeSchemaHeader */
-UA_EXPORT void
+static UA_INLINE void
 UA_DataTypeSchemaHeader_init(UA_DataTypeSchemaHeader *p) {
     memset(p, 0, sizeof(UA_DataTypeSchemaHeader));
 }
 
-UA_EXPORT UA_DataTypeSchemaHeader *
+static UA_INLINE UA_DataTypeSchemaHeader *
 UA_DataTypeSchemaHeader_new(void) {
     return (UA_DataTypeSchemaHeader*)UA_new(&UA_TYPES[UA_TYPES_DATATYPESCHEMAHEADER]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_DataTypeSchemaHeader_copy(const UA_DataTypeSchemaHeader *src, UA_DataTypeSchemaHeader *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_DATATYPESCHEMAHEADER]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_DataTypeSchemaHeader_deleteMembers(UA_DataTypeSchemaHeader *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_DATATYPESCHEMAHEADER]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_DataTypeSchemaHeader_clear(UA_DataTypeSchemaHeader *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_DATATYPESCHEMAHEADER]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_DataTypeSchemaHeader_delete(UA_DataTypeSchemaHeader *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_DATATYPESCHEMAHEADER]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_DataTypeSchemaHeader_equal(const UA_DataTypeSchemaHeader *p1, const UA_DataTypeSchemaHeader *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_DATATYPESCHEMAHEADER]) == UA_ORDER_EQ);
 }
@@ -41758,35 +42066,35 @@ UA_DataTypeSchemaHeader_equal(const UA_DataTypeSchemaHeader *p1, const UA_DataTy
 
 
 /* ReaderGroupDataType */
-UA_EXPORT void
+static UA_INLINE void
 UA_ReaderGroupDataType_init(UA_ReaderGroupDataType *p) {
     memset(p, 0, sizeof(UA_ReaderGroupDataType));
 }
 
-UA_EXPORT UA_ReaderGroupDataType *
+static UA_INLINE UA_ReaderGroupDataType *
 UA_ReaderGroupDataType_new(void) {
     return (UA_ReaderGroupDataType*)UA_new(&UA_TYPES[UA_TYPES_READERGROUPDATATYPE]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_ReaderGroupDataType_copy(const UA_ReaderGroupDataType *src, UA_ReaderGroupDataType *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_READERGROUPDATATYPE]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_ReaderGroupDataType_deleteMembers(UA_ReaderGroupDataType *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_READERGROUPDATATYPE]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_ReaderGroupDataType_clear(UA_ReaderGroupDataType *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_READERGROUPDATATYPE]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_ReaderGroupDataType_delete(UA_ReaderGroupDataType *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_READERGROUPDATATYPE]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_ReaderGroupDataType_equal(const UA_ReaderGroupDataType *p1, const UA_ReaderGroupDataType *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_READERGROUPDATATYPE]) == UA_ORDER_EQ);
 }
@@ -41794,35 +42102,35 @@ UA_ReaderGroupDataType_equal(const UA_ReaderGroupDataType *p1, const UA_ReaderGr
 
 
 /* PubSubConnectionDataType */
-UA_EXPORT void
+static UA_INLINE void
 UA_PubSubConnectionDataType_init(UA_PubSubConnectionDataType *p) {
     memset(p, 0, sizeof(UA_PubSubConnectionDataType));
 }
 
-UA_EXPORT UA_PubSubConnectionDataType *
+static UA_INLINE UA_PubSubConnectionDataType *
 UA_PubSubConnectionDataType_new(void) {
     return (UA_PubSubConnectionDataType*)UA_new(&UA_TYPES[UA_TYPES_PUBSUBCONNECTIONDATATYPE]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_PubSubConnectionDataType_copy(const UA_PubSubConnectionDataType *src, UA_PubSubConnectionDataType *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_PUBSUBCONNECTIONDATATYPE]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_PubSubConnectionDataType_deleteMembers(UA_PubSubConnectionDataType *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_PUBSUBCONNECTIONDATATYPE]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_PubSubConnectionDataType_clear(UA_PubSubConnectionDataType *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_PUBSUBCONNECTIONDATATYPE]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_PubSubConnectionDataType_delete(UA_PubSubConnectionDataType *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_PUBSUBCONNECTIONDATATYPE]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_PubSubConnectionDataType_equal(const UA_PubSubConnectionDataType *p1, const UA_PubSubConnectionDataType *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_PUBSUBCONNECTIONDATATYPE]) == UA_ORDER_EQ);
 }
@@ -41830,35 +42138,35 @@ UA_PubSubConnectionDataType_equal(const UA_PubSubConnectionDataType *p1, const U
 
 
 /* PubSubConfigurationDataType */
-UA_EXPORT void
+static UA_INLINE void
 UA_PubSubConfigurationDataType_init(UA_PubSubConfigurationDataType *p) {
     memset(p, 0, sizeof(UA_PubSubConfigurationDataType));
 }
 
-UA_EXPORT UA_PubSubConfigurationDataType *
+static UA_INLINE UA_PubSubConfigurationDataType *
 UA_PubSubConfigurationDataType_new(void) {
     return (UA_PubSubConfigurationDataType*)UA_new(&UA_TYPES[UA_TYPES_PUBSUBCONFIGURATIONDATATYPE]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_PubSubConfigurationDataType_copy(const UA_PubSubConfigurationDataType *src, UA_PubSubConfigurationDataType *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_PUBSUBCONFIGURATIONDATATYPE]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_PubSubConfigurationDataType_deleteMembers(UA_PubSubConfigurationDataType *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_PUBSUBCONFIGURATIONDATATYPE]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_PubSubConfigurationDataType_clear(UA_PubSubConfigurationDataType *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_PUBSUBCONFIGURATIONDATATYPE]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_PubSubConfigurationDataType_delete(UA_PubSubConfigurationDataType *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_PUBSUBCONFIGURATIONDATATYPE]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_PubSubConfigurationDataType_equal(const UA_PubSubConfigurationDataType *p1, const UA_PubSubConfigurationDataType *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_PUBSUBCONFIGURATIONDATATYPE]) == UA_ORDER_EQ);
 }
@@ -41866,35 +42174,35 @@ UA_PubSubConfigurationDataType_equal(const UA_PubSubConfigurationDataType *p1, c
 
 
 /* PubSubConfiguration2DataType */
-UA_EXPORT void
+static UA_INLINE void
 UA_PubSubConfiguration2DataType_init(UA_PubSubConfiguration2DataType *p) {
     memset(p, 0, sizeof(UA_PubSubConfiguration2DataType));
 }
 
-UA_EXPORT UA_PubSubConfiguration2DataType *
+static UA_INLINE UA_PubSubConfiguration2DataType *
 UA_PubSubConfiguration2DataType_new(void) {
     return (UA_PubSubConfiguration2DataType*)UA_new(&UA_TYPES[UA_TYPES_PUBSUBCONFIGURATION2DATATYPE]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_PubSubConfiguration2DataType_copy(const UA_PubSubConfiguration2DataType *src, UA_PubSubConfiguration2DataType *dst) {
     return UA_copy(src, dst, &UA_TYPES[UA_TYPES_PUBSUBCONFIGURATION2DATATYPE]);
 }
 
-UA_DEPRECATED UA_EXPORT void
+UA_DEPRECATED static UA_INLINE void
 UA_PubSubConfiguration2DataType_deleteMembers(UA_PubSubConfiguration2DataType *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_PUBSUBCONFIGURATION2DATATYPE]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_PubSubConfiguration2DataType_clear(UA_PubSubConfiguration2DataType *p) {
     UA_clear(p, &UA_TYPES[UA_TYPES_PUBSUBCONFIGURATION2DATATYPE]);
 }
 
-UA_EXPORT void
+static UA_INLINE void
 UA_PubSubConfiguration2DataType_delete(UA_PubSubConfiguration2DataType *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_PUBSUBCONFIGURATION2DATATYPE]);
-}UA_EXPORT UA_Boolean
+}static UA_INLINE UA_Boolean
 UA_PubSubConfiguration2DataType_equal(const UA_PubSubConfiguration2DataType *p1, const UA_PubSubConfiguration2DataType *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_PUBSUBCONFIGURATION2DATATYPE]) == UA_ORDER_EQ);
 }
@@ -42265,7 +42573,7 @@ typedef struct UA_Logger {
     void (*clear)(struct UA_Logger *logger); /* Clean up the logger plugin */
 } UA_Logger;
 
-UA_EXPORT UA_FORMAT(3,4) void
+static UA_INLINE UA_FORMAT(3,4) void
 UA_LOG_TRACE(const UA_Logger *logger, UA_LogCategory category, const char *msg, ...) {
 #if UA_LOGLEVEL <= 100
     if(!logger || !logger->log)
@@ -42280,7 +42588,7 @@ UA_LOG_TRACE(const UA_Logger *logger, UA_LogCategory category, const char *msg, 
 #endif
 }
 
-UA_EXPORT UA_FORMAT(3,4) void
+static UA_INLINE UA_FORMAT(3,4) void
 UA_LOG_DEBUG(const UA_Logger *logger, UA_LogCategory category, const char *msg, ...) {
 #if UA_LOGLEVEL <= 200
     if(!logger || !logger->log)
@@ -42295,7 +42603,7 @@ UA_LOG_DEBUG(const UA_Logger *logger, UA_LogCategory category, const char *msg, 
 #endif
 }
 
-UA_EXPORT UA_FORMAT(3,4) void
+static UA_INLINE UA_FORMAT(3,4) void
 UA_LOG_INFO(const UA_Logger *logger, UA_LogCategory category, const char *msg, ...) {
 #if UA_LOGLEVEL <= 300
     if(!logger || !logger->log)
@@ -42310,7 +42618,7 @@ UA_LOG_INFO(const UA_Logger *logger, UA_LogCategory category, const char *msg, .
 #endif
 }
 
-UA_EXPORT UA_FORMAT(3,4) void
+static UA_INLINE UA_FORMAT(3,4) void
 UA_LOG_WARNING(const UA_Logger *logger, UA_LogCategory category, const char *msg, ...) {
 #if UA_LOGLEVEL <= 400
     if(!logger || !logger->log)
@@ -42325,7 +42633,7 @@ UA_LOG_WARNING(const UA_Logger *logger, UA_LogCategory category, const char *msg
 #endif
 }
 
-UA_EXPORT UA_FORMAT(3,4) void
+static UA_INLINE UA_FORMAT(3,4) void
 UA_LOG_ERROR(const UA_Logger *logger, UA_LogCategory category, const char *msg, ...) {
 #if UA_LOGLEVEL <= 500
     if(!logger || !logger->log)
@@ -42340,7 +42648,7 @@ UA_LOG_ERROR(const UA_Logger *logger, UA_LogCategory category, const char *msg, 
 #endif
 }
 
-UA_EXPORT UA_FORMAT(3,4) void
+static UA_INLINE UA_FORMAT(3,4) void
 UA_LOG_FATAL(const UA_Logger *logger, UA_LogCategory category, const char *msg, ...) {
 #if UA_LOGLEVEL <= 600
     if(!logger || !logger->log)
@@ -43828,12 +44136,12 @@ typedef struct {
 UA_EXPORT extern const UA_ReferenceTypeSet UA_REFERENCETYPESET_NONE;
 UA_EXPORT extern const UA_ReferenceTypeSet UA_REFERENCETYPESET_ALL;
 
-UA_EXPORT void
+static UA_INLINE void
 UA_ReferenceTypeSet_init(UA_ReferenceTypeSet *set) {
     memset(set, 0, sizeof(UA_ReferenceTypeSet));
 }
 
-UA_EXPORT UA_ReferenceTypeSet
+static UA_INLINE UA_ReferenceTypeSet
 UA_REFTYPESET(UA_Byte index) {
     UA_Byte i = index / 32, j = index % 32;
     UA_ReferenceTypeSet set;
@@ -43842,7 +44150,7 @@ UA_REFTYPESET(UA_Byte index) {
     return set;
 }
 
-UA_EXPORT UA_ReferenceTypeSet
+static UA_INLINE UA_ReferenceTypeSet
 UA_ReferenceTypeSet_union(const UA_ReferenceTypeSet setA,
                           const UA_ReferenceTypeSet setB) {
     UA_ReferenceTypeSet set;
@@ -43851,7 +44159,7 @@ UA_ReferenceTypeSet_union(const UA_ReferenceTypeSet setA,
     return set;
 }
 
-UA_EXPORT UA_Boolean
+static UA_INLINE UA_Boolean
 UA_ReferenceTypeSet_contains(const UA_ReferenceTypeSet *set, UA_Byte index) {
     UA_Byte i = index / 32, j = index % 32;
     return !!(set->bits[i] & (((UA_UInt32)1) << j));
@@ -43889,7 +44197,7 @@ typedef union {
 
 /* Sets the pointer to an immediate NodeId "ns=0;i=0" similar to a freshly
  * initialized UA_NodeId */
-UA_EXPORT void
+static UA_INLINE void
 UA_NodePointer_init(UA_NodePointer *np) { np->immediate = 0; }
 
 /* NodeId and ExpandedNodeId targets are freed */
@@ -43907,7 +44215,7 @@ UA_NodePointer_isLocal(UA_NodePointer np);
 UA_Order UA_EXPORT
 UA_NodePointer_order(UA_NodePointer p1, UA_NodePointer p2);
 
-UA_EXPORT UA_Boolean
+static UA_INLINE UA_Boolean
 UA_NodePointer_equal(UA_NodePointer p1, UA_NodePointer p2) {
     return (UA_NodePointer_order(p1, p2) == UA_ORDER_EQ);
 }
@@ -45907,7 +46215,7 @@ UA_ClientConfig_clear(UA_ClientConfig *config);
  * UA_ClientConfig_setAuthenticationCert for x509-based authentication, which is
  * implemented as a plugin (as it can be based on different crypto
  * libraries). */
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_ClientConfig_setAuthenticationUsername(UA_ClientConfig *config,
                                           const char *username,
                                           const char *password) {
@@ -45956,7 +46264,7 @@ UA_EXPORT UA_ClientConfig *
 UA_Client_getConfig(UA_Client *client);
 
 /* Get the client context */
-UA_EXPORT void *
+static UA_INLINE void *
 UA_Client_getContext(UA_Client *client) {
     return UA_Client_getConfig(client)->clientContext; /* Cannot fail */
 }
@@ -46029,7 +46337,7 @@ __UA_Client_connect(UA_Client *client, UA_Boolean async);
  * @param client to use
  * @param endpointURL to connect (for example "opc.tcp://localhost:4840")
  * @return Indicates whether the operation succeeded or returns an error code */
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_Client_connect(UA_Client *client, const char *endpointUrl) {
     /* Update the configuration */
     UA_ClientConfig *cc = UA_Client_getConfig(client);
@@ -46046,7 +46354,7 @@ UA_Client_connect(UA_Client *client, const char *endpointUrl) {
  * established. You can set a callback to client->config.stateCallback to be
  * notified when the connection status changes. Or use UA_Client_getState to get
  * the state manually. */
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_Client_connectAsync(UA_Client *client, const char *endpointUrl) {
     /* Update the configuration */
     UA_ClientConfig *cc = UA_Client_getConfig(client);
@@ -46063,7 +46371,7 @@ UA_Client_connectAsync(UA_Client *client, const char *endpointUrl) {
  * @param client to use
  * @param endpointURL to connect (for example "opc.tcp://localhost:4840")
  * @return Indicates whether the operation succeeded or returns an error code */
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_Client_connectSecureChannel(UA_Client *client, const char *endpointUrl) {
     /* Update the configuration */
     UA_ClientConfig *cc = UA_Client_getConfig(client);
@@ -46076,7 +46384,7 @@ UA_Client_connectSecureChannel(UA_Client *client, const char *endpointUrl) {
 }
 
 /* Connect async (non-blocking) only the SecureChannel */
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_Client_connectSecureChannelAsync(UA_Client *client, const char *endpointUrl) {
     /* Update the configuration */
     UA_ClientConfig *cc = UA_Client_getConfig(client);
@@ -46091,7 +46399,7 @@ UA_Client_connectSecureChannelAsync(UA_Client *client, const char *endpointUrl) 
 /* Connect to the server and create+activate a Session with the given username
  * and password. This first set the UserIdentityToken in the client config and
  * then calls the regular connect method. */
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_Client_connectUsername(UA_Client *client, const char *endpointUrl,
                           const char *username, const char *password) {
     /* Set the user identity token */
@@ -46271,7 +46579,7 @@ __UA_Client_Service(UA_Client *client, const void *request,
 /*
  * Attribute Service Set
  * ^^^^^^^^^^^^^^^^^^^^^ */
-UA_EXPORT UA_THREADSAFE UA_ReadResponse
+static UA_INLINE UA_THREADSAFE UA_ReadResponse
 UA_Client_Service_read(UA_Client *client, const UA_ReadRequest request) {
     UA_ReadResponse response;
     __UA_Client_Service(client, &request, &UA_TYPES[UA_TYPES_READREQUEST],
@@ -46279,7 +46587,7 @@ UA_Client_Service_read(UA_Client *client, const UA_ReadRequest request) {
     return response;
 }
 
-UA_EXPORT UA_THREADSAFE UA_WriteResponse
+static UA_INLINE UA_THREADSAFE UA_WriteResponse
 UA_Client_Service_write(UA_Client *client, const UA_WriteRequest request) {
     UA_WriteResponse response;
     __UA_Client_Service(client, &request, &UA_TYPES[UA_TYPES_WRITEREQUEST],
@@ -46290,7 +46598,7 @@ UA_Client_Service_write(UA_Client *client, const UA_WriteRequest request) {
 /*
  * Historical Access Service Set
  * ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ */
-UA_EXPORT UA_THREADSAFE UA_HistoryReadResponse
+static UA_INLINE UA_THREADSAFE UA_HistoryReadResponse
 UA_Client_Service_historyRead(UA_Client *client,
                               const UA_HistoryReadRequest request) {
     UA_HistoryReadResponse response;
@@ -46300,7 +46608,7 @@ UA_Client_Service_historyRead(UA_Client *client,
     return response;
 }
 
-UA_EXPORT UA_THREADSAFE UA_HistoryUpdateResponse
+static UA_INLINE UA_THREADSAFE UA_HistoryUpdateResponse
 UA_Client_Service_historyUpdate(UA_Client *client,
                                 const UA_HistoryUpdateRequest request) {
     UA_HistoryUpdateResponse response;
@@ -46313,7 +46621,7 @@ UA_Client_Service_historyUpdate(UA_Client *client,
 /*
  * Method Service Set
  * ^^^^^^^^^^^^^^^^^^ */
-UA_EXPORT UA_THREADSAFE UA_CallResponse
+static UA_INLINE UA_THREADSAFE UA_CallResponse
 UA_Client_Service_call(UA_Client *client,
                        const UA_CallRequest request) {
     UA_CallResponse response;
@@ -46326,7 +46634,7 @@ UA_Client_Service_call(UA_Client *client,
 /*
  * NodeManagement Service Set
  * ^^^^^^^^^^^^^^^^^^^^^^^^^^ */
-UA_EXPORT UA_THREADSAFE UA_AddNodesResponse
+static UA_INLINE UA_THREADSAFE UA_AddNodesResponse
 UA_Client_Service_addNodes(UA_Client *client,
                            const UA_AddNodesRequest request) {
     UA_AddNodesResponse response;
@@ -46336,7 +46644,7 @@ UA_Client_Service_addNodes(UA_Client *client,
     return response;
 }
 
-UA_EXPORT UA_THREADSAFE UA_AddReferencesResponse
+static UA_INLINE UA_THREADSAFE UA_AddReferencesResponse
 UA_Client_Service_addReferences(UA_Client *client,
                                 const UA_AddReferencesRequest request) {
     UA_AddReferencesResponse response;
@@ -46346,7 +46654,7 @@ UA_Client_Service_addReferences(UA_Client *client,
     return response;
 }
 
-UA_EXPORT UA_THREADSAFE UA_DeleteNodesResponse
+static UA_INLINE UA_THREADSAFE UA_DeleteNodesResponse
 UA_Client_Service_deleteNodes(UA_Client *client,
                               const UA_DeleteNodesRequest request) {
     UA_DeleteNodesResponse response;
@@ -46356,7 +46664,7 @@ UA_Client_Service_deleteNodes(UA_Client *client,
     return response;
 }
 
-UA_EXPORT UA_THREADSAFE UA_DeleteReferencesResponse
+static UA_INLINE UA_THREADSAFE UA_DeleteReferencesResponse
 UA_Client_Service_deleteReferences(
     UA_Client *client, const UA_DeleteReferencesRequest request) {
     UA_DeleteReferencesResponse response;
@@ -46369,7 +46677,7 @@ UA_Client_Service_deleteReferences(
 /*
  * View Service Set
  * ^^^^^^^^^^^^^^^^ */
-UA_EXPORT UA_THREADSAFE UA_BrowseResponse
+static UA_INLINE UA_THREADSAFE UA_BrowseResponse
 UA_Client_Service_browse(UA_Client *client,
                          const UA_BrowseRequest request) {
     UA_BrowseResponse response;
@@ -46379,7 +46687,7 @@ UA_Client_Service_browse(UA_Client *client,
     return response;
 }
 
-UA_EXPORT UA_THREADSAFE UA_BrowseNextResponse
+static UA_INLINE UA_THREADSAFE UA_BrowseNextResponse
 UA_Client_Service_browseNext(UA_Client *client,
                              const UA_BrowseNextRequest request) {
     UA_BrowseNextResponse response;
@@ -46389,7 +46697,7 @@ UA_Client_Service_browseNext(UA_Client *client,
     return response;
 }
 
-UA_EXPORT UA_THREADSAFE UA_TranslateBrowsePathsToNodeIdsResponse
+static UA_INLINE UA_THREADSAFE UA_TranslateBrowsePathsToNodeIdsResponse
 UA_Client_Service_translateBrowsePathsToNodeIds(
     UA_Client *client,
     const UA_TranslateBrowsePathsToNodeIdsRequest request) {
@@ -46402,7 +46710,7 @@ UA_Client_Service_translateBrowsePathsToNodeIds(
     return response;
 }
 
-UA_EXPORT UA_THREADSAFE UA_RegisterNodesResponse
+static UA_INLINE UA_THREADSAFE UA_RegisterNodesResponse
 UA_Client_Service_registerNodes(UA_Client *client,
                                 const UA_RegisterNodesRequest request) {
     UA_RegisterNodesResponse response;
@@ -46412,7 +46720,7 @@ UA_Client_Service_registerNodes(UA_Client *client,
     return response;
 }
 
-UA_EXPORT UA_THREADSAFE UA_UnregisterNodesResponse
+static UA_INLINE UA_THREADSAFE UA_UnregisterNodesResponse
 UA_Client_Service_unregisterNodes(
     UA_Client *client, const UA_UnregisterNodesRequest request) {
     UA_UnregisterNodesResponse response;
@@ -46427,7 +46735,7 @@ UA_Client_Service_unregisterNodes(
  * ^^^^^^^^^^^^^^^^^ */
 #ifdef UA_ENABLE_QUERY
 
-UA_EXPORT UA_THREADSAFE UA_QueryFirstResponse
+static UA_INLINE UA_THREADSAFE UA_QueryFirstResponse
 UA_Client_Service_queryFirst(UA_Client *client,
                              const UA_QueryFirstRequest request) {
     UA_QueryFirstResponse response;
@@ -46437,7 +46745,7 @@ UA_Client_Service_queryFirst(UA_Client *client,
     return response;
 }
 
-UA_EXPORT UA_THREADSAFE UA_QueryNextResponse
+static UA_INLINE UA_THREADSAFE UA_QueryNextResponse
 UA_Client_Service_queryNext(UA_Client *client,
                             const UA_QueryNextRequest request) {
     UA_QueryNextResponse response;
@@ -47240,96 +47548,96 @@ UA_StatusCode UA_EXPORT UA_THREADSAFE
 __UA_Server_read(UA_Server *server, const UA_NodeId *nodeId,
                  UA_AttributeId attributeId, void *v);
 
-UA_EXPORT UA_THREADSAFE UA_StatusCode
+static UA_INLINE UA_THREADSAFE UA_StatusCode
 UA_Server_readNodeId(UA_Server *server, const UA_NodeId nodeId,
                      UA_NodeId *outNodeId) {
     return __UA_Server_read(server, &nodeId, UA_ATTRIBUTEID_NODEID, outNodeId);
 }
 
-UA_EXPORT UA_THREADSAFE UA_StatusCode
+static UA_INLINE UA_THREADSAFE UA_StatusCode
 UA_Server_readNodeClass(UA_Server *server, const UA_NodeId nodeId,
                         UA_NodeClass *outNodeClass) {
     return __UA_Server_read(server, &nodeId, UA_ATTRIBUTEID_NODECLASS,
                             outNodeClass);
 }
 
-UA_EXPORT UA_THREADSAFE UA_StatusCode
+static UA_INLINE UA_THREADSAFE UA_StatusCode
 UA_Server_readBrowseName(UA_Server *server, const UA_NodeId nodeId,
                          UA_QualifiedName *outBrowseName) {
     return __UA_Server_read(server, &nodeId, UA_ATTRIBUTEID_BROWSENAME,
                             outBrowseName);
 }
 
-UA_EXPORT UA_THREADSAFE UA_StatusCode
+static UA_INLINE UA_THREADSAFE UA_StatusCode
 UA_Server_readDisplayName(UA_Server *server, const UA_NodeId nodeId,
                           UA_LocalizedText *outDisplayName) {
     return __UA_Server_read(server, &nodeId, UA_ATTRIBUTEID_DISPLAYNAME,
                             outDisplayName);
 }
 
-UA_EXPORT UA_THREADSAFE UA_StatusCode
+static UA_INLINE UA_THREADSAFE UA_StatusCode
 UA_Server_readDescription(UA_Server *server, const UA_NodeId nodeId,
                           UA_LocalizedText *outDescription) {
     return __UA_Server_read(server, &nodeId, UA_ATTRIBUTEID_DESCRIPTION,
                             outDescription);
 }
 
-UA_EXPORT UA_THREADSAFE UA_StatusCode
+static UA_INLINE UA_THREADSAFE UA_StatusCode
 UA_Server_readWriteMask(UA_Server *server, const UA_NodeId nodeId,
                         UA_UInt32 *outWriteMask) {
     return __UA_Server_read(server, &nodeId, UA_ATTRIBUTEID_WRITEMASK,
                             outWriteMask);
 }
 
-UA_EXPORT UA_THREADSAFE UA_StatusCode
+static UA_INLINE UA_THREADSAFE UA_StatusCode
 UA_Server_readIsAbstract(UA_Server *server, const UA_NodeId nodeId,
                          UA_Boolean *outIsAbstract) {
     return __UA_Server_read(server, &nodeId, UA_ATTRIBUTEID_ISABSTRACT,
                             outIsAbstract);
 }
 
-UA_EXPORT UA_THREADSAFE UA_StatusCode
+static UA_INLINE UA_THREADSAFE UA_StatusCode
 UA_Server_readSymmetric(UA_Server *server, const UA_NodeId nodeId,
                         UA_Boolean *outSymmetric) {
     return __UA_Server_read(server, &nodeId, UA_ATTRIBUTEID_SYMMETRIC,
                             outSymmetric);
 }
 
-UA_EXPORT UA_THREADSAFE UA_StatusCode
+static UA_INLINE UA_THREADSAFE UA_StatusCode
 UA_Server_readInverseName(UA_Server *server, const UA_NodeId nodeId,
                           UA_LocalizedText *outInverseName) {
     return __UA_Server_read(server, &nodeId, UA_ATTRIBUTEID_INVERSENAME,
                             outInverseName);
 }
 
-UA_EXPORT UA_THREADSAFE UA_StatusCode
+static UA_INLINE UA_THREADSAFE UA_StatusCode
 UA_Server_readContainsNoLoops(UA_Server *server, const UA_NodeId nodeId,
                               UA_Boolean *outContainsNoLoops) {
     return __UA_Server_read(server, &nodeId, UA_ATTRIBUTEID_CONTAINSNOLOOPS,
                             outContainsNoLoops);
 }
 
-UA_EXPORT UA_THREADSAFE UA_StatusCode
+static UA_INLINE UA_THREADSAFE UA_StatusCode
 UA_Server_readEventNotifier(UA_Server *server, const UA_NodeId nodeId,
                             UA_Byte *outEventNotifier) {
     return __UA_Server_read(server, &nodeId, UA_ATTRIBUTEID_EVENTNOTIFIER,
                             outEventNotifier);
 }
 
-UA_EXPORT UA_THREADSAFE UA_StatusCode
+static UA_INLINE UA_THREADSAFE UA_StatusCode
 UA_Server_readValue(UA_Server *server, const UA_NodeId nodeId,
                     UA_Variant *outValue) {
     return __UA_Server_read(server, &nodeId, UA_ATTRIBUTEID_VALUE, outValue);
 }
 
-UA_EXPORT UA_THREADSAFE UA_StatusCode
+static UA_INLINE UA_THREADSAFE UA_StatusCode
 UA_Server_readDataType(UA_Server *server, const UA_NodeId nodeId,
                        UA_NodeId *outDataType) {
     return __UA_Server_read(server, &nodeId, UA_ATTRIBUTEID_DATATYPE,
                             outDataType);
 }
 
-UA_EXPORT UA_THREADSAFE UA_StatusCode
+static UA_INLINE UA_THREADSAFE UA_StatusCode
 UA_Server_readValueRank(UA_Server *server, const UA_NodeId nodeId,
                         UA_Int32 *outValueRank) {
     return __UA_Server_read(server, &nodeId, UA_ATTRIBUTEID_VALUERANK,
@@ -47337,28 +47645,28 @@ UA_Server_readValueRank(UA_Server *server, const UA_NodeId nodeId,
 }
 
 /* Returns a variant with an int32 array */
-UA_EXPORT UA_THREADSAFE UA_StatusCode
+static UA_INLINE UA_THREADSAFE UA_StatusCode
 UA_Server_readArrayDimensions(UA_Server *server, const UA_NodeId nodeId,
                               UA_Variant *outArrayDimensions) {
     return __UA_Server_read(server, &nodeId, UA_ATTRIBUTEID_ARRAYDIMENSIONS,
                             outArrayDimensions);
 }
 
-UA_EXPORT UA_THREADSAFE UA_StatusCode
+static UA_INLINE UA_THREADSAFE UA_StatusCode
 UA_Server_readAccessLevel(UA_Server *server, const UA_NodeId nodeId,
                           UA_Byte *outAccessLevel) {
     return __UA_Server_read(server, &nodeId, UA_ATTRIBUTEID_ACCESSLEVEL,
                             outAccessLevel);
 }
 
-UA_EXPORT UA_THREADSAFE UA_StatusCode
+static UA_INLINE UA_THREADSAFE UA_StatusCode
 UA_Server_readAccessLevelEx(UA_Server *server, const UA_NodeId nodeId,
                             UA_UInt32 *outAccessLevelEx) {
     return __UA_Server_read(server, &nodeId, UA_ATTRIBUTEID_ACCESSLEVELEX,
                             outAccessLevelEx);
 }
 
-UA_EXPORT UA_THREADSAFE UA_StatusCode
+static UA_INLINE UA_THREADSAFE UA_StatusCode
 UA_Server_readMinimumSamplingInterval(UA_Server *server, const UA_NodeId nodeId,
                                       UA_Double *outMinimumSamplingInterval) {
     return __UA_Server_read(server, &nodeId,
@@ -47366,14 +47674,14 @@ UA_Server_readMinimumSamplingInterval(UA_Server *server, const UA_NodeId nodeId,
                             outMinimumSamplingInterval);
 }
 
-UA_EXPORT UA_THREADSAFE UA_StatusCode
+static UA_INLINE UA_THREADSAFE UA_StatusCode
 UA_Server_readHistorizing(UA_Server *server, const UA_NodeId nodeId,
                           UA_Boolean *outHistorizing) {
     return __UA_Server_read(server, &nodeId, UA_ATTRIBUTEID_HISTORIZING,
                             outHistorizing);
 }
 
-UA_EXPORT UA_THREADSAFE UA_StatusCode
+static UA_INLINE UA_THREADSAFE UA_StatusCode
 UA_Server_readExecutable(UA_Server *server, const UA_NodeId nodeId,
                          UA_Boolean *outExecutable) {
     return __UA_Server_read(server, &nodeId, UA_ATTRIBUTEID_EXECUTABLE,
@@ -47416,56 +47724,56 @@ __UA_Server_write(UA_Server *server, const UA_NodeId *nodeId,
                   const UA_AttributeId attributeId,
                   const UA_DataType *attr_type, const void *attr);
 
-UA_EXPORT UA_THREADSAFE UA_StatusCode
+static UA_INLINE UA_THREADSAFE UA_StatusCode
 UA_Server_writeBrowseName(UA_Server *server, const UA_NodeId nodeId,
                           const UA_QualifiedName browseName) {
     return __UA_Server_write(server, &nodeId, UA_ATTRIBUTEID_BROWSENAME,
                              &UA_TYPES[UA_TYPES_QUALIFIEDNAME], &browseName);
 }
 
-UA_EXPORT UA_THREADSAFE UA_StatusCode
+static UA_INLINE UA_THREADSAFE UA_StatusCode
 UA_Server_writeDisplayName(UA_Server *server, const UA_NodeId nodeId,
                            const UA_LocalizedText displayName) {
     return __UA_Server_write(server, &nodeId, UA_ATTRIBUTEID_DISPLAYNAME,
                              &UA_TYPES[UA_TYPES_LOCALIZEDTEXT], &displayName);
 }
 
-UA_EXPORT UA_THREADSAFE UA_StatusCode
+static UA_INLINE UA_THREADSAFE UA_StatusCode
 UA_Server_writeDescription(UA_Server *server, const UA_NodeId nodeId,
                            const UA_LocalizedText description) {
     return __UA_Server_write(server, &nodeId, UA_ATTRIBUTEID_DESCRIPTION,
                              &UA_TYPES[UA_TYPES_LOCALIZEDTEXT], &description);
 }
 
-UA_EXPORT UA_THREADSAFE UA_StatusCode
+static UA_INLINE UA_THREADSAFE UA_StatusCode
 UA_Server_writeWriteMask(UA_Server *server, const UA_NodeId nodeId,
                          const UA_UInt32 writeMask) {
     return __UA_Server_write(server, &nodeId, UA_ATTRIBUTEID_WRITEMASK,
                              &UA_TYPES[UA_TYPES_UINT32], &writeMask);
 }
 
-UA_EXPORT UA_THREADSAFE UA_StatusCode
+static UA_INLINE UA_THREADSAFE UA_StatusCode
 UA_Server_writeIsAbstract(UA_Server *server, const UA_NodeId nodeId,
                           const UA_Boolean isAbstract) {
     return __UA_Server_write(server, &nodeId, UA_ATTRIBUTEID_ISABSTRACT,
                              &UA_TYPES[UA_TYPES_BOOLEAN], &isAbstract);
 }
 
-UA_EXPORT UA_THREADSAFE UA_StatusCode
+static UA_INLINE UA_THREADSAFE UA_StatusCode
 UA_Server_writeInverseName(UA_Server *server, const UA_NodeId nodeId,
                            const UA_LocalizedText inverseName) {
     return __UA_Server_write(server, &nodeId, UA_ATTRIBUTEID_INVERSENAME,
                              &UA_TYPES[UA_TYPES_LOCALIZEDTEXT], &inverseName);
 }
 
-UA_EXPORT UA_THREADSAFE UA_StatusCode
+static UA_INLINE UA_THREADSAFE UA_StatusCode
 UA_Server_writeEventNotifier(UA_Server *server, const UA_NodeId nodeId,
                              const UA_Byte eventNotifier) {
     return __UA_Server_write(server, &nodeId, UA_ATTRIBUTEID_EVENTNOTIFIER,
                              &UA_TYPES[UA_TYPES_BYTE], &eventNotifier);
 }
 
-UA_EXPORT UA_THREADSAFE UA_StatusCode
+static UA_INLINE UA_THREADSAFE UA_StatusCode
 UA_Server_writeValue(UA_Server *server, const UA_NodeId nodeId,
                      const UA_Variant value) {
     return __UA_Server_write(server, &nodeId, UA_ATTRIBUTEID_VALUE,
@@ -47475,49 +47783,49 @@ UA_Server_writeValue(UA_Server *server, const UA_NodeId nodeId,
 /* Writes an UA_DataValue to a variable/variableType node. In contrast to
  * UA_Server_writeValue, this functions can also write SourceTimestamp,
  * ServerTimestamp and StatusCode. */
-UA_EXPORT UA_THREADSAFE UA_StatusCode
+static UA_INLINE UA_THREADSAFE UA_StatusCode
 UA_Server_writeDataValue(UA_Server *server, const UA_NodeId nodeId,
                          const UA_DataValue value) {
     return __UA_Server_write(server, &nodeId, UA_ATTRIBUTEID_VALUE,
                              &UA_TYPES[UA_TYPES_DATAVALUE], &value);
 }
 
-UA_EXPORT UA_THREADSAFE UA_StatusCode
+static UA_INLINE UA_THREADSAFE UA_StatusCode
 UA_Server_writeDataType(UA_Server *server, const UA_NodeId nodeId,
                         const UA_NodeId dataType) {
     return __UA_Server_write(server, &nodeId, UA_ATTRIBUTEID_DATATYPE,
                              &UA_TYPES[UA_TYPES_NODEID], &dataType);
 }
 
-UA_EXPORT UA_THREADSAFE UA_StatusCode
+static UA_INLINE UA_THREADSAFE UA_StatusCode
 UA_Server_writeValueRank(UA_Server *server, const UA_NodeId nodeId,
                          const UA_Int32 valueRank) {
     return __UA_Server_write(server, &nodeId, UA_ATTRIBUTEID_VALUERANK,
                              &UA_TYPES[UA_TYPES_INT32], &valueRank);
 }
 
-UA_EXPORT UA_THREADSAFE UA_StatusCode
+static UA_INLINE UA_THREADSAFE UA_StatusCode
 UA_Server_writeArrayDimensions(UA_Server *server, const UA_NodeId nodeId,
                                const UA_Variant arrayDimensions) {
     return __UA_Server_write(server, &nodeId, UA_ATTRIBUTEID_ARRAYDIMENSIONS,
                              &UA_TYPES[UA_TYPES_VARIANT], &arrayDimensions);
 }
 
-UA_EXPORT UA_THREADSAFE UA_StatusCode
+static UA_INLINE UA_THREADSAFE UA_StatusCode
 UA_Server_writeAccessLevel(UA_Server *server, const UA_NodeId nodeId,
                            const UA_Byte accessLevel) {
     return __UA_Server_write(server, &nodeId, UA_ATTRIBUTEID_ACCESSLEVEL,
                              &UA_TYPES[UA_TYPES_BYTE], &accessLevel);
 }
 
-UA_EXPORT UA_THREADSAFE UA_StatusCode
+static UA_INLINE UA_THREADSAFE UA_StatusCode
 UA_Server_writeAccessLevelEx(UA_Server *server, const UA_NodeId nodeId,
                              const UA_UInt32 accessLevelEx) {
     return __UA_Server_write(server, &nodeId, UA_ATTRIBUTEID_ACCESSLEVELEX,
                              &UA_TYPES[UA_TYPES_UINT32], &accessLevelEx);
 }
 
-UA_EXPORT UA_THREADSAFE UA_StatusCode
+static UA_INLINE UA_THREADSAFE UA_StatusCode
 UA_Server_writeMinimumSamplingInterval(UA_Server *server, const UA_NodeId nodeId,
                                        const UA_Double miniumSamplingInterval) {
     return __UA_Server_write(server, &nodeId,
@@ -47526,7 +47834,7 @@ UA_Server_writeMinimumSamplingInterval(UA_Server *server, const UA_NodeId nodeId
                              &miniumSamplingInterval);
 }
 
-UA_EXPORT UA_THREADSAFE UA_StatusCode
+static UA_INLINE UA_THREADSAFE UA_StatusCode
 UA_Server_writeHistorizing(UA_Server *server, const UA_NodeId nodeId,
                           const UA_Boolean historizing) {
     return __UA_Server_write(server, &nodeId,
@@ -47535,7 +47843,7 @@ UA_Server_writeHistorizing(UA_Server *server, const UA_NodeId nodeId,
                              &historizing);
 }
 
-UA_EXPORT UA_THREADSAFE UA_StatusCode
+static UA_INLINE UA_THREADSAFE UA_StatusCode
 UA_Server_writeExecutable(UA_Server *server, const UA_NodeId nodeId,
                           const UA_Boolean executable) {
     return __UA_Server_write(server, &nodeId, UA_ATTRIBUTEID_EXECUTABLE,
@@ -47908,7 +48216,7 @@ __UA_Server_addNode(UA_Server *server, const UA_NodeClass nodeClass,
                     const UA_DataType *attributeType,
                     void *nodeContext, UA_NodeId *outNewNodeId);
 
-UA_EXPORT UA_THREADSAFE UA_StatusCode
+static UA_INLINE UA_THREADSAFE UA_StatusCode
 UA_Server_addVariableNode(UA_Server *server, const UA_NodeId requestedNewNodeId,
                           const UA_NodeId parentNodeId,
                           const UA_NodeId referenceTypeId,
@@ -47923,7 +48231,7 @@ UA_Server_addVariableNode(UA_Server *server, const UA_NodeId requestedNewNodeId,
                                nodeContext, outNewNodeId);
 }
 
-UA_EXPORT UA_THREADSAFE UA_StatusCode
+static UA_INLINE UA_THREADSAFE UA_StatusCode
 UA_Server_addVariableTypeNode(UA_Server *server,
                               const UA_NodeId requestedNewNodeId,
                               const UA_NodeId parentNodeId,
@@ -47940,7 +48248,7 @@ UA_Server_addVariableTypeNode(UA_Server *server,
                                nodeContext, outNewNodeId);
 }
 
-UA_EXPORT UA_THREADSAFE UA_StatusCode
+static UA_INLINE UA_THREADSAFE UA_StatusCode
 UA_Server_addObjectNode(UA_Server *server, const UA_NodeId requestedNewNodeId,
                         const UA_NodeId parentNodeId,
                         const UA_NodeId referenceTypeId,
@@ -47955,7 +48263,7 @@ UA_Server_addObjectNode(UA_Server *server, const UA_NodeId requestedNewNodeId,
                                nodeContext, outNewNodeId);
 }
 
-UA_EXPORT UA_THREADSAFE UA_StatusCode
+static UA_INLINE UA_THREADSAFE UA_StatusCode
 UA_Server_addObjectTypeNode(UA_Server *server, const UA_NodeId requestedNewNodeId,
                             const UA_NodeId parentNodeId,
                             const UA_NodeId referenceTypeId,
@@ -47969,7 +48277,7 @@ UA_Server_addObjectTypeNode(UA_Server *server, const UA_NodeId requestedNewNodeI
                                nodeContext, outNewNodeId);
 }
 
-UA_EXPORT UA_THREADSAFE UA_StatusCode
+static UA_INLINE UA_THREADSAFE UA_StatusCode
 UA_Server_addViewNode(UA_Server *server, const UA_NodeId requestedNewNodeId,
                       const UA_NodeId parentNodeId,
                       const UA_NodeId referenceTypeId,
@@ -47983,7 +48291,7 @@ UA_Server_addViewNode(UA_Server *server, const UA_NodeId requestedNewNodeId,
                                nodeContext, outNewNodeId);
 }
 
-UA_EXPORT UA_THREADSAFE UA_StatusCode
+static UA_INLINE UA_THREADSAFE UA_StatusCode
 UA_Server_addReferenceTypeNode(UA_Server *server,
                                const UA_NodeId requestedNewNodeId,
                                const UA_NodeId parentNodeId,
@@ -47999,7 +48307,7 @@ UA_Server_addReferenceTypeNode(UA_Server *server,
                                nodeContext, outNewNodeId);
 }
 
-UA_EXPORT UA_THREADSAFE UA_StatusCode
+static UA_INLINE UA_THREADSAFE UA_StatusCode
 UA_Server_addDataTypeNode(UA_Server *server,
                           const UA_NodeId requestedNewNodeId,
                           const UA_NodeId parentNodeId,
@@ -48048,7 +48356,7 @@ UA_Server_addMethodNodeEx(UA_Server *server, const UA_NodeId requestedNewNodeId,
                           UA_NodeId *outputArgumentsOutNewNodeId,
                           void *nodeContext, UA_NodeId *outNewNodeId);
 
-UA_EXPORT UA_THREADSAFE UA_StatusCode
+static UA_INLINE UA_THREADSAFE UA_StatusCode
 UA_Server_addMethodNode(UA_Server *server, const UA_NodeId requestedNewNodeId,
                         const UA_NodeId parentNodeId, const UA_NodeId referenceTypeId,
                         const UA_QualifiedName browseName, const UA_MethodAttributes attr,
@@ -48626,21 +48934,21 @@ __UA_Client_readAttribute(UA_Client *client, const UA_NodeId *nodeId,
                           UA_AttributeId attributeId, void *out,
                           const UA_DataType *outDataType);
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_Client_readNodeIdAttribute(UA_Client *client, const UA_NodeId nodeId,
                               UA_NodeId *outNodeId) {
     return __UA_Client_readAttribute(client, &nodeId, UA_ATTRIBUTEID_NODEID,
                                      outNodeId, &UA_TYPES[UA_TYPES_NODEID]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_Client_readNodeClassAttribute(UA_Client *client, const UA_NodeId nodeId,
                                  UA_NodeClass *outNodeClass) {
     return __UA_Client_readAttribute(client, &nodeId, UA_ATTRIBUTEID_NODECLASS,
                                      outNodeClass, &UA_TYPES[UA_TYPES_NODECLASS]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_Client_readBrowseNameAttribute(UA_Client *client, const UA_NodeId nodeId,
                                   UA_QualifiedName *outBrowseName) {
     return __UA_Client_readAttribute(client, &nodeId, UA_ATTRIBUTEID_BROWSENAME,
@@ -48648,7 +48956,7 @@ UA_Client_readBrowseNameAttribute(UA_Client *client, const UA_NodeId nodeId,
                                      &UA_TYPES[UA_TYPES_QUALIFIEDNAME]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_Client_readDisplayNameAttribute(UA_Client *client, const UA_NodeId nodeId,
                                    UA_LocalizedText *outDisplayName) {
     return __UA_Client_readAttribute(client, &nodeId, UA_ATTRIBUTEID_DISPLAYNAME,
@@ -48656,7 +48964,7 @@ UA_Client_readDisplayNameAttribute(UA_Client *client, const UA_NodeId nodeId,
                                      &UA_TYPES[UA_TYPES_LOCALIZEDTEXT]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_Client_readDescriptionAttribute(UA_Client *client, const UA_NodeId nodeId,
                                    UA_LocalizedText *outDescription) {
     return __UA_Client_readAttribute(client, &nodeId, UA_ATTRIBUTEID_DESCRIPTION,
@@ -48664,14 +48972,14 @@ UA_Client_readDescriptionAttribute(UA_Client *client, const UA_NodeId nodeId,
                                      &UA_TYPES[UA_TYPES_LOCALIZEDTEXT]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_Client_readWriteMaskAttribute(UA_Client *client, const UA_NodeId nodeId,
                                  UA_UInt32 *outWriteMask) {
     return __UA_Client_readAttribute(client, &nodeId, UA_ATTRIBUTEID_WRITEMASK,
                                      outWriteMask, &UA_TYPES[UA_TYPES_UINT32]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_Client_readUserWriteMaskAttribute(UA_Client *client, const UA_NodeId nodeId,
                                      UA_UInt32 *outUserWriteMask) {
     return __UA_Client_readAttribute(client, &nodeId,
@@ -48680,21 +48988,21 @@ UA_Client_readUserWriteMaskAttribute(UA_Client *client, const UA_NodeId nodeId,
                                      &UA_TYPES[UA_TYPES_UINT32]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_Client_readIsAbstractAttribute(UA_Client *client, const UA_NodeId nodeId,
                                   UA_Boolean *outIsAbstract) {
     return __UA_Client_readAttribute(client, &nodeId, UA_ATTRIBUTEID_ISABSTRACT,
                                      outIsAbstract, &UA_TYPES[UA_TYPES_BOOLEAN]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_Client_readSymmetricAttribute(UA_Client *client, const UA_NodeId nodeId,
                                  UA_Boolean *outSymmetric) {
     return __UA_Client_readAttribute(client, &nodeId, UA_ATTRIBUTEID_SYMMETRIC,
                                      outSymmetric, &UA_TYPES[UA_TYPES_BOOLEAN]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_Client_readInverseNameAttribute(UA_Client *client, const UA_NodeId nodeId,
                                    UA_LocalizedText *outInverseName) {
     return __UA_Client_readAttribute(client, &nodeId, UA_ATTRIBUTEID_INVERSENAME,
@@ -48702,7 +49010,7 @@ UA_Client_readInverseNameAttribute(UA_Client *client, const UA_NodeId nodeId,
                                      &UA_TYPES[UA_TYPES_LOCALIZEDTEXT]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_Client_readContainsNoLoopsAttribute(UA_Client *client, const UA_NodeId nodeId,
                                        UA_Boolean *outContainsNoLoops) {
     return __UA_Client_readAttribute(client, &nodeId,
@@ -48711,38 +49019,28 @@ UA_Client_readContainsNoLoopsAttribute(UA_Client *client, const UA_NodeId nodeId
                                      &UA_TYPES[UA_TYPES_BOOLEAN]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_Client_readEventNotifierAttribute(UA_Client *client, const UA_NodeId nodeId,
                                      UA_Byte *outEventNotifier) {
     return __UA_Client_readAttribute(client, &nodeId, UA_ATTRIBUTEID_EVENTNOTIFIER,
                                      outEventNotifier, &UA_TYPES[UA_TYPES_BYTE]);
 }
 
-UA_EXPORT UA_StatusCode
-
-
-
-
-
-
-
-
-
-
-(UA_Client *client, const UA_NodeId nodeId,
+static UA_INLINE UA_StatusCode
+UA_Client_readValueAttribute(UA_Client *client, const UA_NodeId nodeId,
                              UA_Variant *outValue) {
     return __UA_Client_readAttribute(client, &nodeId, UA_ATTRIBUTEID_VALUE,
                                      outValue, &UA_TYPES[UA_TYPES_VARIANT]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_Client_readDataTypeAttribute(UA_Client *client, const UA_NodeId nodeId,
                                 UA_NodeId *outDataType) {
     return __UA_Client_readAttribute(client, &nodeId, UA_ATTRIBUTEID_DATATYPE,
                                      outDataType, &UA_TYPES[UA_TYPES_NODEID]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_Client_readValueRankAttribute(UA_Client *client, const UA_NodeId nodeId,
                                  UA_Int32 *outValueRank) {
     return __UA_Client_readAttribute(client, &nodeId, UA_ATTRIBUTEID_VALUERANK,
@@ -48754,21 +49052,21 @@ UA_Client_readArrayDimensionsAttribute(UA_Client *client, const UA_NodeId nodeId
                                        size_t *outArrayDimensionsSize,
                                        UA_UInt32 **outArrayDimensions);
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_Client_readAccessLevelAttribute(UA_Client *client, const UA_NodeId nodeId,
                                    UA_Byte *outAccessLevel) {
     return __UA_Client_readAttribute(client, &nodeId, UA_ATTRIBUTEID_ACCESSLEVEL,
                                      outAccessLevel, &UA_TYPES[UA_TYPES_BYTE]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_Client_readAccessLevelExAttribute(UA_Client *client, const UA_NodeId nodeId,
                                      UA_UInt32 *outAccessLevelEx) {
     return __UA_Client_readAttribute(client, &nodeId, UA_ATTRIBUTEID_ACCESSLEVELEX,
                                      outAccessLevelEx, &UA_TYPES[UA_TYPES_UINT32]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_Client_readUserAccessLevelAttribute(UA_Client *client, const UA_NodeId nodeId,
                                        UA_Byte *outUserAccessLevel) {
     return __UA_Client_readAttribute(client, &nodeId,
@@ -48777,7 +49075,7 @@ UA_Client_readUserAccessLevelAttribute(UA_Client *client, const UA_NodeId nodeId
                                      &UA_TYPES[UA_TYPES_BYTE]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_Client_readMinimumSamplingIntervalAttribute(UA_Client *client,
                                                const UA_NodeId nodeId,
                                                UA_Double *outMinSamplingInterval) {
@@ -48787,21 +49085,21 @@ UA_Client_readMinimumSamplingIntervalAttribute(UA_Client *client,
                                      &UA_TYPES[UA_TYPES_DOUBLE]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_Client_readHistorizingAttribute(UA_Client *client, const UA_NodeId nodeId,
                                    UA_Boolean *outHistorizing) {
     return __UA_Client_readAttribute(client, &nodeId, UA_ATTRIBUTEID_HISTORIZING,
                                      outHistorizing, &UA_TYPES[UA_TYPES_BOOLEAN]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_Client_readExecutableAttribute(UA_Client *client, const UA_NodeId nodeId,
                                   UA_Boolean *outExecutable) {
     return __UA_Client_readAttribute(client, &nodeId, UA_ATTRIBUTEID_EXECUTABLE,
                                      outExecutable, &UA_TYPES[UA_TYPES_BOOLEAN]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_Client_readUserExecutableAttribute(UA_Client *client, const UA_NodeId nodeId,
                                       UA_Boolean *outUserExecutable) {
     return __UA_Client_readAttribute(client, &nodeId,
@@ -48875,21 +49173,21 @@ __UA_Client_writeAttribute(UA_Client *client, const UA_NodeId *nodeId,
                            UA_AttributeId attributeId, const void *in,
                            const UA_DataType *inDataType);
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_Client_writeNodeIdAttribute(UA_Client *client, const UA_NodeId nodeId,
                                const UA_NodeId *newNodeId) {
     return __UA_Client_writeAttribute(client, &nodeId, UA_ATTRIBUTEID_NODEID,
                                       newNodeId, &UA_TYPES[UA_TYPES_NODEID]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_Client_writeNodeClassAttribute(UA_Client *client, const UA_NodeId nodeId,
                                   const UA_NodeClass *newNodeClass) {
     return __UA_Client_writeAttribute(client, &nodeId, UA_ATTRIBUTEID_NODECLASS,
                                       newNodeClass, &UA_TYPES[UA_TYPES_NODECLASS]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_Client_writeBrowseNameAttribute(UA_Client *client, const UA_NodeId nodeId,
                                    const UA_QualifiedName *newBrowseName) {
     return __UA_Client_writeAttribute(client, &nodeId, UA_ATTRIBUTEID_BROWSENAME,
@@ -48897,7 +49195,7 @@ UA_Client_writeBrowseNameAttribute(UA_Client *client, const UA_NodeId nodeId,
                                       &UA_TYPES[UA_TYPES_QUALIFIEDNAME]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_Client_writeDisplayNameAttribute(UA_Client *client, const UA_NodeId nodeId,
                                     const UA_LocalizedText *newDisplayName) {
     return __UA_Client_writeAttribute(client, &nodeId, UA_ATTRIBUTEID_DISPLAYNAME,
@@ -48905,7 +49203,7 @@ UA_Client_writeDisplayNameAttribute(UA_Client *client, const UA_NodeId nodeId,
                                       &UA_TYPES[UA_TYPES_LOCALIZEDTEXT]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_Client_writeDescriptionAttribute(UA_Client *client, const UA_NodeId nodeId,
                                     const UA_LocalizedText *newDescription) {
     return __UA_Client_writeAttribute(client, &nodeId, UA_ATTRIBUTEID_DESCRIPTION,
@@ -48913,14 +49211,14 @@ UA_Client_writeDescriptionAttribute(UA_Client *client, const UA_NodeId nodeId,
                                       &UA_TYPES[UA_TYPES_LOCALIZEDTEXT]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_Client_writeWriteMaskAttribute(UA_Client *client, const UA_NodeId nodeId,
                                   const UA_UInt32 *newWriteMask) {
     return __UA_Client_writeAttribute(client, &nodeId, UA_ATTRIBUTEID_WRITEMASK,
                                       newWriteMask, &UA_TYPES[UA_TYPES_UINT32]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_Client_writeUserWriteMaskAttribute(UA_Client *client, const UA_NodeId nodeId,
                                       const UA_UInt32 *newUserWriteMask) {
     return __UA_Client_writeAttribute(client, &nodeId,
@@ -48929,21 +49227,21 @@ UA_Client_writeUserWriteMaskAttribute(UA_Client *client, const UA_NodeId nodeId,
                                       &UA_TYPES[UA_TYPES_UINT32]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_Client_writeIsAbstractAttribute(UA_Client *client, const UA_NodeId nodeId,
                                    const UA_Boolean *newIsAbstract) {
     return __UA_Client_writeAttribute(client, &nodeId, UA_ATTRIBUTEID_ISABSTRACT,
                                       newIsAbstract, &UA_TYPES[UA_TYPES_BOOLEAN]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_Client_writeSymmetricAttribute(UA_Client *client, const UA_NodeId nodeId,
                                   const UA_Boolean *newSymmetric) {
     return __UA_Client_writeAttribute(client, &nodeId, UA_ATTRIBUTEID_SYMMETRIC,
                                       newSymmetric, &UA_TYPES[UA_TYPES_BOOLEAN]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_Client_writeInverseNameAttribute(UA_Client *client, const UA_NodeId nodeId,
                                     const UA_LocalizedText *newInverseName) {
     return __UA_Client_writeAttribute(client, &nodeId, UA_ATTRIBUTEID_INVERSENAME,
@@ -48951,7 +49249,7 @@ UA_Client_writeInverseNameAttribute(UA_Client *client, const UA_NodeId nodeId,
                                       &UA_TYPES[UA_TYPES_LOCALIZEDTEXT]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_Client_writeContainsNoLoopsAttribute(UA_Client *client, const UA_NodeId nodeId,
                                         const UA_Boolean *newContainsNoLoops) {
     return __UA_Client_writeAttribute(client, &nodeId,
@@ -48960,7 +49258,7 @@ UA_Client_writeContainsNoLoopsAttribute(UA_Client *client, const UA_NodeId nodeI
                                       &UA_TYPES[UA_TYPES_BOOLEAN]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_Client_writeEventNotifierAttribute(UA_Client *client, const UA_NodeId nodeId,
                                       const UA_Byte *newEventNotifier) {
     return __UA_Client_writeAttribute(client, &nodeId,
@@ -48969,14 +49267,14 @@ UA_Client_writeEventNotifierAttribute(UA_Client *client, const UA_NodeId nodeId,
                                       &UA_TYPES[UA_TYPES_BYTE]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_Client_writeValueAttribute(UA_Client *client, const UA_NodeId nodeId,
                               const UA_Variant *newValue) {
     return __UA_Client_writeAttribute(client, &nodeId, UA_ATTRIBUTEID_VALUE,
                                       newValue, &UA_TYPES[UA_TYPES_VARIANT]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_Client_writeValueAttribute_scalar(UA_Client *client, const UA_NodeId nodeId,
                                      const void *newValue,
                                      const UA_DataType *valueType) {
@@ -48985,21 +49283,21 @@ UA_Client_writeValueAttribute_scalar(UA_Client *client, const UA_NodeId nodeId,
 }
 
 /* Write a DataValue that can include timestamps and status codes */
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_Client_writeValueAttributeEx(UA_Client *client, const UA_NodeId nodeId,
                                 const UA_DataValue *newValue) {
     return __UA_Client_writeAttribute(client, &nodeId, UA_ATTRIBUTEID_VALUE,
                                       newValue, &UA_TYPES[UA_TYPES_DATAVALUE]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_Client_writeDataTypeAttribute(UA_Client *client, const UA_NodeId nodeId,
                                  const UA_NodeId *newDataType) {
     return __UA_Client_writeAttribute(client, &nodeId, UA_ATTRIBUTEID_DATATYPE,
                                       newDataType, &UA_TYPES[UA_TYPES_NODEID]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_Client_writeValueRankAttribute(UA_Client *client, const UA_NodeId nodeId,
                                   const UA_Int32 *newValueRank) {
     return __UA_Client_writeAttribute(client, &nodeId, UA_ATTRIBUTEID_VALUERANK,
@@ -49011,21 +49309,21 @@ UA_Client_writeArrayDimensionsAttribute(UA_Client *client, const UA_NodeId nodeI
                                         size_t newArrayDimensionsSize,
                                         const UA_UInt32 *newArrayDimensions);
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_Client_writeAccessLevelAttribute(UA_Client *client, const UA_NodeId nodeId,
                                     const UA_Byte *newAccessLevel) {
     return __UA_Client_writeAttribute(client, &nodeId, UA_ATTRIBUTEID_ACCESSLEVEL,
                                       newAccessLevel, &UA_TYPES[UA_TYPES_BYTE]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_Client_writeAccessLevelExAttribute(UA_Client *client, const UA_NodeId nodeId,
                                       UA_UInt32 *newAccessLevelEx) {
     return __UA_Client_writeAttribute(client, &nodeId, UA_ATTRIBUTEID_ACCESSLEVELEX,
                                       newAccessLevelEx, &UA_TYPES[UA_TYPES_UINT32]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_Client_writeUserAccessLevelAttribute(UA_Client *client, const UA_NodeId nodeId,
                                         const UA_Byte *newUserAccessLevel) {
     return __UA_Client_writeAttribute(client, &nodeId,
@@ -49034,7 +49332,7 @@ UA_Client_writeUserAccessLevelAttribute(UA_Client *client, const UA_NodeId nodeI
                                       &UA_TYPES[UA_TYPES_BYTE]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_Client_writeMinimumSamplingIntervalAttribute(UA_Client *client,
                                                 const UA_NodeId nodeId,
                                                 const UA_Double *newMinInterval) {
@@ -49043,21 +49341,21 @@ UA_Client_writeMinimumSamplingIntervalAttribute(UA_Client *client,
                                       newMinInterval, &UA_TYPES[UA_TYPES_DOUBLE]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_Client_writeHistorizingAttribute(UA_Client *client, const UA_NodeId nodeId,
                                     const UA_Boolean *newHistorizing) {
     return __UA_Client_writeAttribute(client, &nodeId, UA_ATTRIBUTEID_HISTORIZING,
                                       newHistorizing, &UA_TYPES[UA_TYPES_BOOLEAN]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_Client_writeExecutableAttribute(UA_Client *client, const UA_NodeId nodeId,
                                    const UA_Boolean *newExecutable) {
     return __UA_Client_writeAttribute(client, &nodeId, UA_ATTRIBUTEID_EXECUTABLE,
                                       newExecutable, &UA_TYPES[UA_TYPES_BOOLEAN]);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_Client_writeUserExecutableAttribute(UA_Client *client, const UA_NodeId nodeId,
                                        const UA_Boolean *newUserExecutable) {
     return __UA_Client_writeAttribute(client, &nodeId,
@@ -49108,7 +49406,7 @@ __UA_Client_addNode(UA_Client *client, const UA_NodeClass nodeClass,
                     const UA_NodeId typeDefinition, const UA_NodeAttributes *attr,
                     const UA_DataType *attributeType, UA_NodeId *outNewNodeId);
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_Client_addVariableNode(UA_Client *client, const UA_NodeId requestedNewNodeId,
                           const UA_NodeId parentNodeId,
                           const UA_NodeId referenceTypeId,
@@ -49123,7 +49421,7 @@ UA_Client_addVariableNode(UA_Client *client, const UA_NodeId requestedNewNodeId,
                                outNewNodeId);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_Client_addVariableTypeNode(UA_Client *client,
                               const UA_NodeId requestedNewNodeId,
                               const UA_NodeId parentNodeId,
@@ -49139,7 +49437,7 @@ UA_Client_addVariableTypeNode(UA_Client *client,
                                outNewNodeId);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_Client_addObjectNode(UA_Client *client, const UA_NodeId requestedNewNodeId,
                         const UA_NodeId parentNodeId,
                         const UA_NodeId referenceTypeId,
@@ -49152,7 +49450,7 @@ UA_Client_addObjectNode(UA_Client *client, const UA_NodeId requestedNewNodeId,
                                &UA_TYPES[UA_TYPES_OBJECTATTRIBUTES], outNewNodeId);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_Client_addObjectTypeNode(UA_Client *client, const UA_NodeId requestedNewNodeId,
                             const UA_NodeId parentNodeId,
                             const UA_NodeId referenceTypeId,
@@ -49166,7 +49464,7 @@ UA_Client_addObjectTypeNode(UA_Client *client, const UA_NodeId requestedNewNodeI
                                outNewNodeId);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_Client_addViewNode(UA_Client *client, const UA_NodeId requestedNewNodeId,
                       const UA_NodeId parentNodeId,
                       const UA_NodeId referenceTypeId,
@@ -49179,7 +49477,7 @@ UA_Client_addViewNode(UA_Client *client, const UA_NodeId requestedNewNodeId,
                                &UA_TYPES[UA_TYPES_VIEWATTRIBUTES], outNewNodeId);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_Client_addReferenceTypeNode(UA_Client *client,
                                const UA_NodeId requestedNewNodeId,
                                const UA_NodeId parentNodeId,
@@ -49195,7 +49493,7 @@ UA_Client_addReferenceTypeNode(UA_Client *client,
                                outNewNodeId);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_Client_addDataTypeNode(UA_Client *client, const UA_NodeId requestedNewNodeId,
                           const UA_NodeId parentNodeId,
                           const UA_NodeId referenceTypeId,
@@ -49209,7 +49507,7 @@ UA_Client_addDataTypeNode(UA_Client *client, const UA_NodeId requestedNewNodeId,
                                outNewNodeId);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_Client_addMethodNode(UA_Client *client, const UA_NodeId requestedNewNodeId,
                         const UA_NodeId parentNodeId,
                         const UA_NodeId referenceTypeId,
@@ -49303,7 +49601,7 @@ typedef void (*UA_Client_StatusChangeNotificationCallback)
  * MaxNotificationsPerPublish: 0 (unlimited)
  * PublishingEnabled: true
  * Priority: 0 */
-UA_EXPORT UA_CreateSubscriptionRequest
+static UA_INLINE UA_CreateSubscriptionRequest
 UA_CreateSubscriptionRequest_default(void) {
     UA_CreateSubscriptionRequest request;
     UA_CreateSubscriptionRequest_init(&request);
@@ -49357,7 +49655,7 @@ UA_Client_Subscriptions_delete_async(UA_Client *client,
 UA_StatusCode UA_EXPORT
 UA_Client_Subscriptions_deleteSingle(UA_Client *client, UA_UInt32 subscriptionId);
 
-UA_EXPORT UA_SetPublishingModeResponse
+static UA_INLINE UA_SetPublishingModeResponse
 UA_Client_Subscriptions_setPublishingMode(UA_Client *client,
     const UA_SetPublishingModeRequest request) {
     UA_SetPublishingModeResponse response;
@@ -49380,7 +49678,7 @@ UA_Client_Subscriptions_setPublishingMode(UA_Client *client,
  * to get the current parameters. */
 
 /* Provides default values for a new monitored item. */
-UA_EXPORT UA_MonitoredItemCreateRequest
+static UA_INLINE UA_MonitoredItemCreateRequest
 UA_MonitoredItemCreateRequest_default(UA_NodeId nodeId) {
     UA_MonitoredItemCreateRequest request;
     UA_MonitoredItemCreateRequest_init(&request);
@@ -49490,7 +49788,7 @@ UA_Client_MonitoredItems_modify_async(UA_Client *client,
  * The following service calls go directly to the server. The MonitoredItem
  * settings are not stored in the client. */
 
-UA_EXPORT UA_SetMonitoringModeResponse
+static UA_INLINE UA_SetMonitoringModeResponse
 UA_Client_MonitoredItems_setMonitoringMode(UA_Client *client,
     const UA_SetMonitoringModeRequest request) {
     UA_SetMonitoringModeResponse response;
@@ -49500,7 +49798,7 @@ UA_Client_MonitoredItems_setMonitoringMode(UA_Client *client,
     return response;
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_Client_MonitoredItems_setMonitoringMode_async(UA_Client *client,
     const UA_SetMonitoringModeRequest request,
     UA_ClientAsyncServiceCallback callback,
@@ -49511,7 +49809,7 @@ UA_Client_MonitoredItems_setMonitoringMode_async(UA_Client *client,
         userdata, requestId);
 }
 
-UA_EXPORT UA_SetTriggeringResponse
+static UA_INLINE UA_SetTriggeringResponse
 UA_Client_MonitoredItems_setTriggering(UA_Client *client,
     const UA_SetTriggeringRequest request) {
     UA_SetTriggeringResponse response;
@@ -49521,7 +49819,7 @@ UA_Client_MonitoredItems_setTriggering(UA_Client *client,
     return response;
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_Client_MonitoredItems_setTriggering_async(UA_Client *client,
     const UA_SetTriggeringRequest request,
     UA_ClientAsyncServiceCallback callback,
@@ -49563,7 +49861,7 @@ typedef void
     UA_Client *client, void *userdata,
     UA_UInt32 requestId, UA_ReadResponse *rr);
 
-UA_EXPORT UA_THREADSAFE UA_StatusCode
+static UA_INLINE UA_THREADSAFE UA_StatusCode
 UA_Client_sendAsyncReadRequest(
     UA_Client *client, UA_ReadRequest *request,
     UA_ClientAsyncReadCallback readCallback,
@@ -49579,7 +49877,7 @@ typedef void
     UA_Client *client, void *userdata,
     UA_UInt32 requestId, UA_WriteResponse *wr);
 
-UA_EXPORT UA_THREADSAFE UA_StatusCode
+static UA_INLINE UA_THREADSAFE UA_StatusCode
 UA_Client_sendAsyncWriteRequest(
     UA_Client *client, UA_WriteRequest *request,
     UA_ClientAsyncWriteCallback writeCallback,
@@ -49595,7 +49893,7 @@ typedef void
     UA_Client *client, void *userdata,
     UA_UInt32 requestId, UA_BrowseResponse *wr);
 
-UA_EXPORT UA_THREADSAFE UA_StatusCode
+static UA_INLINE UA_THREADSAFE UA_StatusCode
 UA_Client_sendAsyncBrowseRequest(
     UA_Client *client, UA_BrowseRequest *request,
     UA_ClientAsyncBrowseCallback browseCallback,
@@ -49611,7 +49909,7 @@ typedef void
     UA_Client *client, void *userdata,
     UA_UInt32 requestId, UA_BrowseNextResponse *wr);
 
-UA_EXPORT UA_THREADSAFE UA_StatusCode
+static UA_INLINE UA_THREADSAFE UA_StatusCode
 UA_Client_sendAsyncBrowseNextRequest(
     UA_Client *client, UA_BrowseNextRequest *request,
     UA_ClientAsyncBrowseNextCallback browseNextCallback,
@@ -49941,7 +50239,7 @@ __UA_Client_writeAttribute_async(
     UA_ClientAsyncServiceCallback callback,
     void *userdata, UA_UInt32 *reqId);
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_Client_writeValueAttribute_async(
     UA_Client *client, const UA_NodeId nodeId,
     const UA_Variant *attr, UA_ClientAsyncWriteCallback callback,
@@ -49953,7 +50251,7 @@ UA_Client_writeValueAttribute_async(
         userdata, reqId);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_Client_writeNodeIdAttribute_async(
     UA_Client *client, const UA_NodeId nodeId,
     const UA_NodeId *attr, UA_ClientAsyncServiceCallback callback,
@@ -49963,7 +50261,7 @@ UA_Client_writeNodeIdAttribute_async(
         &UA_TYPES[UA_TYPES_NODEID], callback, userdata, reqId);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_Client_writeNodeClassAttribute_async(
     UA_Client *client, const UA_NodeId nodeId,
     const UA_NodeClass *attr, UA_ClientAsyncServiceCallback callback,
@@ -49973,7 +50271,7 @@ UA_Client_writeNodeClassAttribute_async(
         &UA_TYPES[UA_TYPES_NODECLASS], callback, userdata, reqId);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_Client_writeBrowseNameAttribute_async(
     UA_Client *client, const UA_NodeId nodeId,
     const UA_QualifiedName *attr, UA_ClientAsyncServiceCallback callback,
@@ -49983,7 +50281,7 @@ UA_Client_writeBrowseNameAttribute_async(
         &UA_TYPES[UA_TYPES_QUALIFIEDNAME], callback, userdata, reqId);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_Client_writeDisplayNameAttribute_async(
     UA_Client *client, const UA_NodeId nodeId,
     const UA_LocalizedText *attr, UA_ClientAsyncServiceCallback callback,
@@ -49993,7 +50291,7 @@ UA_Client_writeDisplayNameAttribute_async(
         &UA_TYPES[UA_TYPES_LOCALIZEDTEXT], callback, userdata, reqId);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_Client_writeDescriptionAttribute_async(
     UA_Client *client, const UA_NodeId nodeId,
     const UA_LocalizedText *attr, UA_ClientAsyncServiceCallback callback,
@@ -50003,7 +50301,7 @@ UA_Client_writeDescriptionAttribute_async(
         &UA_TYPES[UA_TYPES_LOCALIZEDTEXT], callback, userdata, reqId);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_Client_writeWriteMaskAttribute_async(
     UA_Client *client, const UA_NodeId nodeId,
     const UA_UInt32 *attr, UA_ClientAsyncServiceCallback callback,
@@ -50013,7 +50311,7 @@ UA_Client_writeWriteMaskAttribute_async(
         &UA_TYPES[UA_TYPES_UINT32], callback, userdata, reqId);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_Client_writeUserWriteMaskAttribute_async(
     UA_Client *client, const UA_NodeId nodeId,
     const UA_UInt32 *attr, UA_ClientAsyncServiceCallback callback,
@@ -50023,7 +50321,7 @@ UA_Client_writeUserWriteMaskAttribute_async(
         &UA_TYPES[UA_TYPES_UINT32], callback, userdata, reqId);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_Client_writeIsAbstractAttribute_async(
     UA_Client *client, const UA_NodeId nodeId,
     const UA_Boolean *attr, UA_ClientAsyncServiceCallback callback,
@@ -50033,7 +50331,7 @@ UA_Client_writeIsAbstractAttribute_async(
         &UA_TYPES[UA_TYPES_BOOLEAN], callback, userdata, reqId);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_Client_writeSymmetricAttribute_async(
     UA_Client *client, const UA_NodeId nodeId,
     const UA_Boolean *attr, UA_ClientAsyncServiceCallback callback,
@@ -50043,7 +50341,7 @@ UA_Client_writeSymmetricAttribute_async(
         &UA_TYPES[UA_TYPES_BOOLEAN], callback, userdata, reqId);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_Client_writeInverseNameAttribute_async(
     UA_Client *client, const UA_NodeId nodeId,
     const UA_LocalizedText *attr,
@@ -50054,7 +50352,7 @@ UA_Client_writeInverseNameAttribute_async(
         &UA_TYPES[UA_TYPES_LOCALIZEDTEXT], callback, userdata, reqId);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_Client_writeContainsNoLoopsAttribute_async(
     UA_Client *client, const UA_NodeId nodeId,
     const UA_Boolean *attr, UA_ClientAsyncServiceCallback callback,
@@ -50064,7 +50362,7 @@ UA_Client_writeContainsNoLoopsAttribute_async(
         &UA_TYPES[UA_TYPES_BOOLEAN], callback, userdata, reqId);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_Client_writeEventNotifierAttribute_async(
     UA_Client *client, const UA_NodeId nodeId,
     const UA_Byte *attr, UA_ClientAsyncServiceCallback callback,
@@ -50074,7 +50372,7 @@ UA_Client_writeEventNotifierAttribute_async(
         &UA_TYPES[UA_TYPES_BYTE], callback, userdata, reqId);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_Client_writeDataTypeAttribute_async(
     UA_Client *client, const UA_NodeId nodeId,
     const UA_NodeId *attr, UA_ClientAsyncServiceCallback callback,
@@ -50084,7 +50382,7 @@ UA_Client_writeDataTypeAttribute_async(
         &UA_TYPES[UA_TYPES_NODEID], callback, userdata, reqId);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_Client_writeValueRankAttribute_async(
     UA_Client *client, const UA_NodeId nodeId,
     const UA_Int32 *attr, UA_ClientAsyncServiceCallback callback,
@@ -50094,7 +50392,7 @@ UA_Client_writeValueRankAttribute_async(
         &UA_TYPES[UA_TYPES_INT32], callback, userdata, reqId);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_Client_writeAccessLevelAttribute_async(
     UA_Client *client, const UA_NodeId nodeId,
     const UA_Byte *attr, UA_ClientAsyncServiceCallback callback,
@@ -50104,7 +50402,7 @@ UA_Client_writeAccessLevelAttribute_async(
         &UA_TYPES[UA_TYPES_BYTE], callback, userdata, reqId);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_Client_writeAccessLevelExAttribute_async(
     UA_Client *client, const UA_NodeId nodeId,
     const UA_UInt32 *attr, UA_ClientAsyncServiceCallback callback,
@@ -50114,7 +50412,7 @@ UA_Client_writeAccessLevelExAttribute_async(
         &UA_TYPES[UA_TYPES_UINT32], callback, userdata, reqId);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_Client_writeUserAccessLevelAttribute_async(
     UA_Client *client, const UA_NodeId nodeId,
     const UA_Byte *attr, UA_ClientAsyncServiceCallback callback,
@@ -50124,7 +50422,7 @@ UA_Client_writeUserAccessLevelAttribute_async(
         &UA_TYPES[UA_TYPES_BYTE], callback, userdata, reqId);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_Client_writeMinimumSamplingIntervalAttribute_async(
     UA_Client *client, const UA_NodeId nodeId,
     const UA_Double *attr, UA_ClientAsyncServiceCallback callback,
@@ -50134,7 +50432,7 @@ UA_Client_writeMinimumSamplingIntervalAttribute_async(
         attr, &UA_TYPES[UA_TYPES_DOUBLE], callback, userdata, reqId);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_Client_writeHistorizingAttribute_async(
     UA_Client *client, const UA_NodeId nodeId,
     const UA_Boolean *attr, UA_ClientAsyncServiceCallback callback,
@@ -50144,7 +50442,7 @@ UA_Client_writeHistorizingAttribute_async(
         &UA_TYPES[UA_TYPES_BOOLEAN], callback, userdata, reqId);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_Client_writeExecutableAttribute_async(
     UA_Client *client, const UA_NodeId nodeId,
     const UA_Boolean *attr, UA_ClientAsyncServiceCallback callback,
@@ -50154,7 +50452,7 @@ UA_Client_writeExecutableAttribute_async(
         &UA_TYPES[UA_TYPES_BOOLEAN], callback, userdata, reqId);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_Client_writeUserExecutableAttribute_async(
     UA_Client *client, const UA_NodeId nodeId,
     const UA_Boolean *attr, UA_ClientAsyncServiceCallback callback,
@@ -50180,7 +50478,7 @@ typedef void
     UA_Client *client, void *userdata,
     UA_UInt32 requestId, UA_CallResponse *cr);
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_Client_call_async(
     UA_Client *client,
     const UA_NodeId objectId, const UA_NodeId methodId,
@@ -50210,7 +50508,7 @@ __UA_Client_addNode_async(
     UA_ClientAsyncServiceCallback callback, void *userdata,
     UA_UInt32 *reqId);
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_Client_addVariableNode_async(
     UA_Client *client, const UA_NodeId requestedNewNodeId,
     const UA_NodeId parentNodeId, const UA_NodeId referenceTypeId,
@@ -50226,7 +50524,7 @@ UA_Client_addVariableNode_async(
         (UA_ClientAsyncServiceCallback)callback, userdata, reqId);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_Client_addVariableTypeNode_async(
     UA_Client *client, const UA_NodeId requestedNewNodeId,
     const UA_NodeId parentNodeId, const UA_NodeId referenceTypeId,
@@ -50243,7 +50541,7 @@ UA_Client_addVariableTypeNode_async(
         outNewNodeId, (UA_ClientAsyncServiceCallback)callback, userdata, reqId);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_Client_addObjectNode_async(
     UA_Client *client, const UA_NodeId requestedNewNodeId,
     const UA_NodeId parentNodeId, const UA_NodeId referenceTypeId,
@@ -50259,7 +50557,7 @@ UA_Client_addObjectNode_async(
         (UA_ClientAsyncServiceCallback)callback, userdata, reqId);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_Client_addObjectTypeNode_async(
     UA_Client *client, const UA_NodeId requestedNewNodeId,
     const UA_NodeId parentNodeId, const UA_NodeId referenceTypeId,
@@ -50275,7 +50573,7 @@ UA_Client_addObjectTypeNode_async(
         (UA_ClientAsyncServiceCallback)callback, userdata, reqId);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_Client_addViewNode_async(
     UA_Client *client, const UA_NodeId requestedNewNodeId,
     const UA_NodeId parentNodeId, const UA_NodeId referenceTypeId,
@@ -50290,7 +50588,7 @@ UA_Client_addViewNode_async(
         (UA_ClientAsyncServiceCallback)callback, userdata, reqId);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_Client_addReferenceTypeNode_async(
     UA_Client *client, const UA_NodeId requestedNewNodeId,
     const UA_NodeId parentNodeId, const UA_NodeId referenceTypeId,
@@ -50306,7 +50604,7 @@ UA_Client_addReferenceTypeNode_async(
         (UA_ClientAsyncServiceCallback)callback, userdata, reqId);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_Client_addDataTypeNode_async(
     UA_Client *client, const UA_NodeId requestedNewNodeId,
     const UA_NodeId parentNodeId, const UA_NodeId referenceTypeId,
@@ -50321,7 +50619,7 @@ UA_Client_addDataTypeNode_async(
         (UA_ClientAsyncServiceCallback)callback, userdata, reqId);
 }
 
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_Client_addMethodNode_async(
     UA_Client *client, const UA_NodeId requestedNewNodeId,
     const UA_NodeId parentNodeId, const UA_NodeId referenceTypeId,
@@ -50552,7 +50850,7 @@ UA_ServerConfig_setMinimalCustomBuffer(UA_ServerConfig *config,
  * The config will set the tcp network layer to the given port and adds a single
  * endpoint with the security policy ``SecurityPolicy#None`` to the server. A
  * server certificate may be supplied but is optional. */
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_ServerConfig_setMinimal(UA_ServerConfig *config, UA_UInt16 portNumber,
                            const UA_ByteString *certificate) {
     return UA_ServerConfig_setMinimalCustomBuffer(config, portNumber,
@@ -50589,7 +50887,7 @@ UA_ServerConfig_setDefaultWithSecureSecurityPolicies(UA_ServerConfig *conf,
 
 /* Creates a server config on the default port 4840 with no server
  * certificate. */
-UA_EXPORT UA_StatusCode
+static UA_INLINE UA_StatusCode
 UA_ServerConfig_setDefault(UA_ServerConfig *config) {
     return UA_ServerConfig_setMinimal(config, 4840, NULL);
 }

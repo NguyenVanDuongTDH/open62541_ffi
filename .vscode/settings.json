@@ -11,6 +11,7 @@
         "config.h": "c",
         "statuscodes.h": "c",
         "types.h": "c",
-        "log_stdout.h": "c"
+        "log_stdout.h": "c",
+        "open62541.h": "c"
     }
 }

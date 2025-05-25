@@ -1,64 +1,64 @@
-// ignore_for_file: non_constant_identifier_names
+// // ignore_for_file: non_constant_identifier_names
 
-import 'dart:ffi';
-import 'package:ffi/ffi.dart';
-import 'package:open62541_ffi/open62541.dart';
-import 'package:open62541_ffi/src/open62541_gen.dart';
+// import 'dart:ffi';
+// import 'package:ffi/ffi.dart';
+// import 'package:open62541_ffi/open62541.dart';
+// import 'package:open62541_ffi/open62541_bindings.dart';
 
-final Map<Pointer<UA_Client>,
-    Map<String, Function(UANodeId nodeId, dynamic value)>> _callBack = {};
+// final Map<Pointer<UA_Client>,
+//     Map<String, Function(UANodeId nodeId, dynamic value)>> _callBack = {};
 
-void UAClientAddClientCallBack(Pointer<UA_Client> client) {
-  _callBack[client] = {};
-}
+// void UAClientAddClientCallBack(Pointer<UA_Client> client) {
+//   _callBack[client] = {};
+// }
 
-void UAClientRemoveClientCallBack(Pointer<UA_Client> client) {
-  _callBack.remove(client);
-}
+// void UAClientRemoveClientCallBack(Pointer<UA_Client> client) {
+//   _callBack.remove(client);
+// }
 
-void UAClientListenNodeId(Pointer<UA_Client> client, UANodeId nodeId,
-    Function(UANodeId nodeID, dynamic value) callBack) {
-  _callBack[client]![nodeId.toString()] = callBack;
+// void UAClientListenNodeId(Pointer<UA_Client> client, UANodeId nodeId,
+//     Function(UANodeId nodeID, dynamic value) callBack) {
+//   _callBack[client]![nodeId.toString()] = callBack;
 
-  UA_CreateSubscriptionRequest request =
-      cOPC.UA_CreateSubscriptionRequest_default();
-  Pointer<UA_CreateSubscriptionResponse> res =
-      cOPC.UA_Client_Subscriptions_create_(
-              client,
-              request,
-              Pointer.fromAddress(0),
-              Pointer.fromAddress(0),
-              Pointer.fromAddress(0))
-          .cast();
+//   UA_CreateSubscriptionRequest request =
+//       lib.UA_CreateSubscriptionRequest_default();
+//   Pointer<UA_CreateSubscriptionResponse> res =
+//       lib.UA_Client_Subscriptions_create_(
+//               client,
+//               request,
+//               Pointer.fromAddress(0),
+//               Pointer.fromAddress(0),
+//               Pointer.fromAddress(0))
+//           .cast();
 
-  int response = cOPC.UA_Client_SubSubscriptions_Check(res.cast());
-  UA_NodeId target = nodeId.nodeId;
-  final cString = nodeId.toString().toNativeUtf8();
-  UA_MonitoredItemCreateRequest monRequest =
-      cOPC.UA_MonitoredItemCreateRequest_default(target);
-  monRequest.requestedParameters.samplingInterval = 100.0;
-  cOPC.UA_Client_MonitoredItems_createDataChange(
-      client,
-      response,
-      UA_TimestampsToReturn.UA_TIMESTAMPSTORETURN_BOTH,
-      monRequest,
-      cString.cast(),
-      _UAClientDataChangeCallbackPtr,
-      Pointer.fromAddress(0));
-}
+//   int response = lib.UA_Client_SubSubscriptions_Check(res.cast());
+//   UA_NodeId target = nodeId.nodeId;
+//   final cString = nodeId.toString().toNativeUtf8();
+//   UA_MonitoredItemCreateRequest monRequest =
+//       lib.UA_MonitoredItemCreateRequest_default(target);
+//   monRequest.requestedParameters.samplingInterval = 100.0;
+//   lib.UA_Client_MonitoredItems_createDataChange(
+//       client,
+//       response,
+//       UA_TimestampsToReturn.UA_TIMESTAMPSTORETURN_BOTH,
+//       monRequest,
+//       cString.cast(),
+//       _UAClientDataChangeCallbackPtr,
+//       Pointer.fromAddress(0));
+// }
 
-void _UAClientDataChangeCallBack(
-    Pointer<UA_Client> client,
-    int subId,
-    Pointer<Void> subContext,
-    int monId,
-    Pointer<Void> monContext,
-    Pointer<UA_DataValue> value) {
-  dynamic res = UADataValue.toDart(value);
-  String context = monContext.cast<Utf8>().toDartString().toString();
-  _callBack[client]![context]!(UANodeId.parse(context), res);
-}
+// void _UAClientDataChangeCallBack(
+//     Pointer<UA_Client> client,
+//     int subId,
+//     Pointer<Void> subContext,
+//     int monId,
+//     Pointer<Void> monContext,
+//     Pointer<UA_DataValue> value) {
+//   dynamic res = UADataValue.toDart(value);
+//   String context = monContext.cast<Utf8>().toDartString().toString();
+//   _callBack[client]![context]!(UANodeId.parse(context), res);
+// }
 
-final _UAClientDataChangeCallbackPtr = Pointer.fromFunction<
-    Void Function(Pointer<UA_Client>, Uint32, Pointer<Void>, Uint32,
-        Pointer<Void>, Pointer<UA_DataValue>)>(_UAClientDataChangeCallBack);
+// final _UAClientDataChangeCallbackPtr = Pointer.fromFunction<
+//     Void Function(Pointer<UA_Client>, Uint32, Pointer<Void>, Uint32,
+//         Pointer<Void>, Pointer<UA_DataValue>)>(_UAClientDataChangeCallBack);

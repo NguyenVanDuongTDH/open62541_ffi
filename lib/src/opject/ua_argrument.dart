@@ -1,7 +1,10 @@
 import 'dart:ffi';
 import 'package:ffi/ffi.dart';
-import 'package:open62541_ffi/open62541.dart';
-import 'package:open62541_ffi/src/open62541_gen.dart';
+import 'package:open62541_ffi/open62541_bindings.dart';
+import 'package:open62541_ffi/src/ua_client.dart';
+
+import 'opc_type.dart';
+import 'ua_variable_attributes.dart';
 
 class UAArgument {
   late final Pointer<UA_Argument> attr;
@@ -11,8 +14,8 @@ class UAArgument {
     int uaValueRank = UA_VALUERANK_SCALAR,
     String? description,
   }) {
-    attr = cOPC.UA_Argument_new();
-    cOPC.UA_Argument_init(attr);
+    attr = lib.UA_Argument_new();
+    lib.UA_Argument_init(attr);
     setName(name);
     setDataType(uaType);
     setDescription(description);
@@ -21,15 +24,14 @@ class UAArgument {
 
   void setDescription(String? description) {
     if (description != null) {
-      attr.ref.description = cOPC.UA_LOCALIZEDTEXT(
-          UAVariableAttributes.en_US.cast(),
-          description.toNativeUtf8().cast());
+      attr.ref.description = lib.UA_LOCALIZEDTEXT(
+          UAVariableAttributes.en_US.cast(), description.toNativeUtf8().cast());
     }
   }
 
   void setName(String? name) {
     if (name != null) {
-      attr.ref.name = cOPC.UA_String_fromChars(name.toNativeUtf8().cast());
+      attr.ref.name = lib.UA_String_fromChars(name.toNativeUtf8().cast());
     }
   }
 

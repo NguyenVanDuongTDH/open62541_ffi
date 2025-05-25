@@ -4,8 +4,10 @@ import 'dart:convert';
 import 'dart:ffi';
 import 'dart:typed_data';
 import 'package:open62541_ffi/open62541.dart';
-import 'package:open62541_ffi/src/open62541_gen.dart';
 import 'package:ffi/ffi.dart';
+import 'package:open62541_ffi/open62541_bindings.dart';
+import 'package:open62541_ffi/src/opject/opc_variant.dart';
+import 'package:open62541_ffi/src/ua_client.dart';
 
 class UANodeId {
   UA_NodeId get nodeId => _getNodeId().ref;
@@ -24,20 +26,20 @@ class UANodeId {
   Pointer<UA_NodeId> _getNodeId() {
     if (_pNodeId == null) {
       if (identifier is int) {
-        _pNodeId = cOPC.UA_NodeId_new();
-        _pNodeId!.ref = cOPC.UA_NODEID_NUMERIC(namespaceIndex, identifier);
+        _pNodeId = lib.UA_NodeId_new();
+        _pNodeId!.ref = lib.UA_NODEID_NUMERIC(namespaceIndex, identifier);
       } else if (identifier is String) {
-        _pNodeId = cOPC.UA_NodeId_new();
+        _pNodeId = lib.UA_NodeId_new();
         var nativeUtf8 = identifier.toString().toNativeUtf8();
         _pNodeId!.ref =
-            cOPC.UA_NODEID_STRING_ALLOC(namespaceIndex, nativeUtf8.cast());
+            lib.UA_NODEID_STRING_ALLOC(namespaceIndex, nativeUtf8.cast());
         calloc.free(nativeUtf8);
       } else if (identifier is Uint8List) {
-        _pNodeId = cOPC.UA_NodeId_new();
+        _pNodeId = lib.UA_NodeId_new();
         final bytes = calloc.allocate<Uint8>(identifier.length);
         bytes.asTypedList(identifier.length).setAll(0, identifier);
         _pNodeId!.ref =
-            cOPC.UA_NODEID_BYTESTRING_ALLOC(namespaceIndex, bytes.cast());
+            lib.UA_NODEID_BYTESTRING_ALLOC(namespaceIndex, bytes.cast());
         calloc.free(bytes);
       } else {
         throw "UANodeId NOT TYPE $identifier ${identifier.runtimeType}";
@@ -72,23 +74,23 @@ class UANodeId {
   }
 
   factory UANodeId.parse(String nodeIdStr) {
-    final pId = cOPC.UA_NodeId_new();
+    final pId = lib.UA_NodeId_new();
     final uaStr = nodeIdStr.uaString();
-    cOPC.UA_NodeId_parse(pId, uaStr.variant.ref.data.cast<UA_String>().ref);
+    lib.UA_NodeId_parse(pId, uaStr.variant.ref.data.cast<UA_String>().ref);
     final res = UANodeId.fromNode(pId.ref);
-    cOPC.UA_NodeId_delete(pId);
+    lib.UA_NodeId_delete(pId);
     uaStr.delete();
     return res;
   }
 
   static String ptr2String(Pointer<UA_NodeId> id) {
-    Pointer<UA_String> uaStr = cOPC.UA_String_new();
-    cOPC.UA_String_init(uaStr);
-    cOPC.UA_NodeId_print(id, uaStr);
+    Pointer<UA_String> uaStr = lib.UA_String_new();
+    lib.UA_String_init(uaStr);
+    lib.UA_NodeId_print(id, uaStr);
     String res =
         String.fromCharCodes(uaStr.ref.data.asTypedList(uaStr.ref.length))
             .toString();
-    cOPC.UA_String_delete(uaStr);
+    lib.UA_String_delete(uaStr);
     return res;
   }
 
@@ -108,7 +110,7 @@ class UANodeId {
 
   void delete() {
     if (_pNodeId != null) {
-      cOPC.UA_NodeId_delete(_pNodeId!);
+      lib.UA_NodeId_delete(_pNodeId!);
       _pNodeId = null;
     }
   }

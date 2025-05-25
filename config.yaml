@@ -5,30 +5,30 @@ output: 'lib/open62541_bindings.dart'
 headers:
   entry-points:
     - 'android/main.c'
+    - 'android/open62541.h'
+    - 'android/open62541.c'
 
-include-directories:
-    - 'android'
+objc-interfaces:
+  exclude:
+    - "^(?!UA_)(?!FFI_).*"
+    # - "^(?!FFI_).*"
 
-exclude-all-by-default: true
+enums:
+  exclude:
+    - "^(?!UA_)(?!FFI_).*"
+    # - "^(?!FFI_).*"
 
-include:
-  functions:
-    - '^FFI_.*'
-    - '^FFI_.*'
-  structs:
-    - '^UA_.*'
-  enums:
-    - '^UA_.*'
-  globals:
-    - '^UA_.*'
+functions:
+  exclude:
+    - "^(?!UA_)(?!FFI_).*"
+    # - "^(?!FFI_).*"
 
-exclude:
-  functions:
-    - '^_.*'
-  structs:
-    - '^_.*'
-  globals:
-    - '^_.*'
+structs:
+  exclude:
+    - "^(?!UA_)(?!FFI_).*"
+    # - "^(?!FFI_).*"
 
-ffi-native:
-  asset-id: 'lib/open62541_bindings.dart'
+globals:
+  exclude:
+    - "^(?!UA_)(?!FFI_).*"
+    # - "^(?!FFI_).*"

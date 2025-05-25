@@ -2,15 +2,16 @@
 
 import 'dart:ffi';
 
-import 'package:open62541_ffi/open62541.dart';
-import 'package:open62541_ffi/src/open62541_gen.dart';
+import 'package:open62541_ffi/open62541_bindings.dart';
+import 'package:open62541_ffi/src/opject/opc_type.dart';
 import 'package:open62541_ffi/src/opject/ua_convert.dart';
+import 'package:open62541_ffi/src/ua_client.dart';
 
 class UAVariant {
   UAVariant([Pointer<UA_Variant>? ptr]) {
     if (ptr == null) {
-      _variant = cOPC.UA_Variant_new();
-      cOPC.UA_Variant_init(_variant!);
+      _variant = lib.UA_Variant_new();
+      lib.UA_Variant_init(_variant!);
     } else {
       _variant = ptr;
     }
@@ -20,42 +21,39 @@ class UAVariant {
   Pointer<UA_Variant> get variant => _variant!;
   int get arrayLength => variant.ref.arrayLength;
   int get arrayDimensionsSize => variant.ref.arrayDimensionsSize;
-  int get type =>  UATypes.from(variant.ref.type).index;//   cOPC.UA_GET_TYPES_INTDEX(variant.ref.type);
+  int get type => UATypes.from(variant.ref.type)
+      .index; //   lib.UA_GET_TYPES_INTDEX(variant.ref.type);
   dynamic get data => UaConvert.variant2Dart(this);
 
   bool isEmpty() {
-    return cOPC.UA_Variant_isEmpty(variant);
+    return lib.UA_Variant_isEmpty(variant);
   }
 
   void delete() {
-    cOPC.UA_Variant_delete(variant);
+    lib.UA_Variant_delete(variant);
   }
 
-
   void clear() {
-    cOPC.UA_Variant_clear(variant);
+    lib.UA_Variant_clear(variant);
   }
 
   int coppyTo(UAVariant dst) {
-    return cOPC.UA_Variant_copy(variant, dst.variant);
+    return lib.UA_Variant_copy(variant, dst.variant);
   }
 
   void copyFrom(UAVariant src) {
-    cOPC.UA_Variant_copy(src.variant, variant);
+    lib.UA_Variant_copy(src.variant, variant);
   }
 
   void setScalar(dynamic value, int uaType) {
     Pointer ptr = UaConvert.dart2Pointer(value, uaType);
     if (value is List) {
-      cOPC.UA_Variant_setArray(variant, ptr.cast(), value.length,
-      UATypes.from(uaType).type);
+      lib.UA_Variant_setArray(
+          variant, ptr.cast(), value.length, UATypes.from(uaType).type);
     } else {
-      cOPC.UA_Variant_setScalar(
-          variant, ptr.cast(), UATypes.from(uaType).type);
+      lib.UA_Variant_setScalar(variant, ptr.cast(), UATypes.from(uaType).type);
     }
   }
-
-
 
   @override
   String toString() {

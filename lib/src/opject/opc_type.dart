@@ -2,8 +2,8 @@
 
 import 'dart:ffi';
 
-import 'package:open62541_ffi/open62541.dart';
-import 'package:open62541_ffi/src/open62541_gen.dart';
+import 'package:open62541_ffi/open62541_bindings.dart';
+import 'package:open62541_ffi/src/ua_client.dart';
 
 class _TYPES_ {
   dynamic _value;
@@ -12,7 +12,7 @@ class _TYPES_ {
   Pointer<UA_DataType> get type => _type();
   Pointer<UA_DataType> _type() {
     if (_value is int) {
-      return cOPC.UA_FFI_TYPE_FROM_INDEX(_value);
+      return lib.FFI_Type_index(_value);
     } else {
       return _value;
     }
@@ -24,15 +24,15 @@ class _TYPES_ {
     if (_value is int) {
       return _value;
     }
-    return cOPC.UA_FFI_INDEX_FROM_TYPE(_value);
+    return lib.FFI_Index_type(_value);
   }
 
   UA_NodeId get typeId => _typeId();
   UA_NodeId _typeId() {
     if (_value is int) {
-      return cOPC.UA_FFI_TYPEID_FROM_INDEX(_value);
+      return lib.FFI_Typeid_form_index(_value);
     }
-    return cOPC.UA_FFI_TYPEID_FROM_TYPE(_value);
+    return lib.FFI_Typeid_form_type(_value);
   }
 }
 

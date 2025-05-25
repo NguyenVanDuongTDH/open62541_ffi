@@ -21,7 +21,6 @@ class _MyAppState extends State<MyApp> {
   }
 
   String text = "connect";
-  UAServer server = UAServer();
   UAClient client = UAClient();
   @override
   Widget build(BuildContext context) {
@@ -34,13 +33,13 @@ class _MyAppState extends State<MyApp> {
                   final rev = client.connect("opc.tcp://192.168.31.193:4840/");
                   setState(() {
                     text = "connect: $rev";
+                    print(text);
                   });
                   for (var i = 0; i < 1; i++) {
                     await Future.delayed(const Duration(milliseconds: 1));
                     // print(client.writeNodeId(
                     //     UANodeId(1, "VAR"), "$i".uaString()));
-                    print(
-                        "read: ${await client.readNodeId(UANodeId(1, "VAR"))}");
+                    print("read: ${await client.readAttr(UANodeId(1, "VAR"))}");
                   }
                 },
                 child: Text(text))
