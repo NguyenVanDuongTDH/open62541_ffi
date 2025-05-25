@@ -17,7 +17,6 @@
 
 #ifndef OPEN62541_H_
 #define OPEN62541_H_
-
 /**** amalgamated original file "/build/src_generated/open62541/config.h" ****/
 
 /* This Source Code Form is subject to the terms of the Mozilla Public
@@ -28450,7 +28449,8 @@ UA_String_clear(UA_String *p) {
 static UA_INLINE void
 UA_String_delete(UA_String *p) {
     UA_delete(p, &UA_TYPES[UA_TYPES_STRING]);
-}static UA_INLINE UA_Boolean
+}
+static UA_INLINE UA_Boolean
 UA_String_equal(const UA_String *p1, const UA_String *p2) {
     return (UA_order(p1, p2, &UA_TYPES[UA_TYPES_STRING]) == UA_ORDER_EQ);
 }

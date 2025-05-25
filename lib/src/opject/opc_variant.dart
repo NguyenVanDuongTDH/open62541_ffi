@@ -10,8 +10,8 @@ import 'package:open62541_ffi/src/ua_client.dart';
 class UAVariant {
   UAVariant([Pointer<UA_Variant>? ptr]) {
     if (ptr == null) {
-      _variant = lib.UA_Variant_new();
-      lib.UA_Variant_init(_variant!);
+      _variant = lib.UA_Variant_new(); //
+      lib.UA_Variant_init(_variant!); //
     } else {
       _variant = ptr;
     }

@@ -4,6 +4,7 @@ import 'dart:convert';
 import 'dart:ffi';
 import 'dart:typed_data';
 
+import 'package:ffi/ffi.dart';
 import 'package:open62541_ffi/open62541_bindings.dart';
 
 import '../ua_client.dart';
@@ -13,9 +14,9 @@ import 'opc_variant.dart';
 class UaConvert {
   static Pointer<Uint8> utf8Convert(value) {
     final units = utf8.encode(value);
-    final result = lib.UA_Array_new(
-            value.length + 1, UATypes.from(UATypes.BYTE).type)
-        .cast<Uint8>();
+    final result =
+        lib.UA_Array_new(value.length + 1, UATypes.from(UATypes.BYTE).type)
+            .cast<Uint8>();
     final nativeString = result.asTypedList(units.length + 1);
     nativeString.setAll(0, units);
     nativeString[units.length] = 0;
@@ -26,8 +27,7 @@ class UaConvert {
     int uaType = type ?? getUaTypes(value);
     Pointer? _ptr;
     if (value is List) {
-      _ptr =
-          lib.UA_Array_new(value.length, UATypes.from(uaType).type );
+      _ptr = lib.UA_Array_new(value.length, UATypes.from(uaType).type);
     }
 
     switch (uaType) {
@@ -42,17 +42,13 @@ class UaConvert {
                   variant.variant.cast(), UATypes.from(uaType).type);
             } else {
               if (element is UAVariant) {
-                lib.UA_Variant_setScalar(
-                    _ptr.cast<UA_Variant>().elementAt(i),
-                    element.variant.cast(),
-                    UATypes.from(uaType).type);
+                lib.UA_Variant_setScalar(_ptr.cast<UA_Variant>().elementAt(i),
+                    element.variant.cast(), UATypes.from(uaType).type);
               } else {
                 final variant0 = UAVariant();
                 variant0.setScalar(element, getUaTypes(element));
-                lib.UA_Variant_setScalar(
-                    _ptr.cast<UA_Variant>().elementAt(i),
-                    variant0.variant.cast(),
-                    UATypes.from(uaType).type);
+                lib.UA_Variant_setScalar(_ptr.cast<UA_Variant>().elementAt(i),
+                    variant0.variant.cast(), UATypes.from(uaType).type);
               }
             }
           }
@@ -72,7 +68,7 @@ class UaConvert {
               .setAll(0, Uint8List.fromList(nList.cast()));
           break;
         } else {
-          _ptr = lib.UA_Boolean_new()..value = value;
+          _ptr = calloc.allocate<Bool>(1)..value = value;
         }
         break;
 
@@ -80,7 +76,7 @@ class UaConvert {
         if (_ptr != null) {
           _ptr.cast<Uint8>().asTypedList(value.length).setAll(0, value);
         } else {
-          _ptr = lib.UA_Byte_new()..value = value;
+          _ptr = calloc.allocate<Uint8>(1)..value = value;
         }
 
         break;
@@ -104,56 +100,56 @@ class UaConvert {
         if (_ptr != null) {
           _ptr.cast<Int16>().asTypedList(value.length).setAll(0, value);
         } else {
-          _ptr = lib.UA_Int16_new()..value = value;
+          _ptr = calloc.allocate<Int16>(1)..value = value;
         }
         break;
       case UATypes.UINT16:
         if (_ptr != null) {
           _ptr.cast<Uint16>().asTypedList(value.length).setAll(0, value);
         } else {
-          _ptr = lib.UA_UInt16_new()..value = value;
+          _ptr = calloc.allocate<Uint16>(1)..value = value;
         }
         break;
       case UATypes.INT32:
         if (_ptr != null) {
           _ptr.cast<Int32>().asTypedList(value.length).setAll(0, value);
         } else {
-          _ptr = lib.UA_Int32_new()..value = value;
+          _ptr = calloc.allocate<Int32>(1)..value = value;
         }
         break;
       case UATypes.UINT32:
         if (_ptr != null) {
           _ptr.cast<Uint32>().asTypedList(value.length).setAll(0, value);
         } else {
-          _ptr = lib.UA_UInt32_new()..value = value;
+          _ptr = calloc.allocate<Uint32>(1)..value = value;
         }
         break;
       case UATypes.INT64:
         if (_ptr != null) {
           _ptr.cast<Int64>().asTypedList(value.length).setAll(0, value);
         } else {
-          _ptr = lib.UA_Int64_new()..value = value;
+          _ptr = calloc.allocate<Int64>(1)..value = value;
         }
         break;
       case UATypes.UINT64:
         if (_ptr != null) {
           _ptr.cast<Uint64>().asTypedList(value.length).setAll(0, value);
         } else {
-          _ptr = lib.UA_UInt64_new()..value = value;
+          _ptr = calloc.allocate<Uint64>(1)..value = value;
         }
         break;
       case UATypes.FLOAT:
         if (_ptr != null) {
           _ptr.cast<Float>().asTypedList(value.length).setAll(0, value);
         } else {
-          _ptr = lib.UA_Float_new()..value = value;
+          _ptr = calloc.allocate<Float>(1)..value = value;
         }
         break;
       case UATypes.DOUBLE:
         if (_ptr != null) {
           _ptr.cast<Double>().asTypedList(value.length).setAll(0, value);
         } else {
-          _ptr = lib.UA_Double_new()..value = value;
+          _ptr = calloc.allocate<Double>(1)..value = value;
         }
         break;
     }

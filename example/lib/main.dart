@@ -1,4 +1,3 @@
-import 'package:ffi/ffi.dart';
 import 'package:flutter/material.dart';
 import 'dart:async';
 import 'package:open62541_ffi/open62541.dart';
@@ -37,8 +36,6 @@ class _MyAppState extends State<MyApp> {
                   });
                   for (var i = 0; i < 1; i++) {
                     await Future.delayed(const Duration(milliseconds: 1));
-                    // print(client.writeNodeId(
-                    //     UANodeId(1, "VAR"), "$i".uaString()));
                     print("read: ${await client.readAttr(UANodeId(1, "VAR"))}");
                   }
                 },
