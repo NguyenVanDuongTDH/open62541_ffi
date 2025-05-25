@@ -1,6 +1,16 @@
 {
     "files.associations": {
         "variant": "c",
-        "memory": "c"
+        "memory": "c",
+        "server.h": "c",
+        "client_config_default.h": "c",
+        "client_highlevel.h": "c",
+        "client_subscriptions.h": "c",
+        "server_config_default.h": "c",
+        "client.h": "c",
+        "config.h": "c",
+        "statuscodes.h": "c",
+        "types.h": "c",
+        "log_stdout.h": "c"
     }
 }

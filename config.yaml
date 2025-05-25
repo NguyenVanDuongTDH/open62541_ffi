@@ -1,0 +1,34 @@
+name: FFIOpen62541
+description: Bindings for open62541
+output: 'lib/open62541_bindings.dart'
+
+headers:
+  entry-points:
+    - 'android/main.c'
+
+include-directories:
+    - 'android'
+
+exclude-all-by-default: true
+
+include:
+  functions:
+    - '^FFI_.*'
+    - '^FFI_.*'
+  structs:
+    - '^UA_.*'
+  enums:
+    - '^UA_.*'
+  globals:
+    - '^UA_.*'
+
+exclude:
+  functions:
+    - '^_.*'
+  structs:
+    - '^_.*'
+  globals:
+    - '^_.*'
+
+ffi-native:
+  asset-id: 'lib/open62541_bindings.dart'
